@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Story Magic ✨</title>
+<script>
+  var l = window.location;
+  var segments = l.pathname.split('/').filter(Boolean);
+  var repoBase = segments.length > 0 ? '/' + segments[0] + '/' : '/';
+  sessionStorage.setItem('sm_redirect', l.pathname + l.search + l.hash);
+  l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + repoBase);
+</script>
+<style>
+  body{background:#08051A;color:#EDE9FF;font-family:sans-serif;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;}
+</style>
+</head>
+<body><p style="font-size:1.1rem;opacity:.7;">✨ Loading Story Magic…</p></body>
+</html>
