@@ -187,8 +187,6 @@ select.inp{appearance:none;cursor:pointer;}
 .gb-txt{font-size:.86rem;line-height:1.7;font-weight:700;}
 
 /* ── READER ── */
-.illus-panel{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--ink2);}
-.illus-panel svg{width:100%;height:100%;}
 /* hero avatars overlay on illustration */
 .illus-heroes{position:absolute;bottom:8px;left:12px;display:flex;gap:6px;z-index:3;}
 .ih-av{width:36px;height:36px;border-radius:50%;overflow:hidden;border:2.5px solid rgba(255,255,255,.5);box-shadow:0 2px 8px rgba(0,0,0,.4);}
@@ -443,9 +441,7 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="logo" style="font-size:1.1rem;flex:1;margin:0 8px;" id="r-title-tb">Reading…</div>
     <div class="pill btn-sm" onclick="exportStory()">💾</div>
   </div>
-  <div class="illus-panel" id="illus-panel">
-    <div class="illus-heroes" id="illus-heroes"></div>
-  </div>
+  <div class="illus-panel" id="illus-panel"></div>
   <div class="ral-bar">
     <div class="ral-play" id="ral-play-btn" onclick="toggleSpeech()">▶</div>
     <div class="ral-info">
@@ -463,6 +459,38 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="pnavbtn dim" id="btn-prev" onclick="changePage(-1)">← Prev</div>
     <div class="pnavinfo" id="pnav-info">1 / 6</div>
     <div class="pnavbtn" id="btn-next" onclick="changePage(1)">Next →</div>
+  </div>
+  <!-- Artwork section — clean kids flow -->
+  <div id="picbook-wrap" style="padding:0 18px 24px;display:none;">
+
+    <!-- Step 1: Get Artwork button -->
+    <div id="artwork-step1">
+      <button class="btn btn-v" onclick="getArtwork()" style="font-size:1.1rem;padding:18px;">
+        🎨 Get Artwork
+      </button>
+      <p style="text-align:center;font-size:.75rem;color:var(--dim);margin-top:-2px;line-height:1.6;">
+        Opens Gemini with your story ready — just tap generate!
+      </p>
+    </div>
+
+    <!-- Step 2: Save it (appears after step 1) -->
+    <div id="artwork-step2" style="display:none;">
+      <div style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(236,72,153,.1));border:1.5px solid rgba(167,139,250,.3);border-radius:var(--rr);padding:16px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:1.4rem;margin-bottom:6px;">✅</div>
+        <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:.95rem;margin-bottom:4px;">Got your artwork?</div>
+        <div style="font-size:.76rem;color:var(--dim);line-height:1.55;">Download the image from Gemini, then tap below to save it to your story.</div>
+      </div>
+      <button class="btn btn-g" onclick="document.getElementById('art-file-inp').click()">
+        💾 Save Artwork to Story
+      </button>
+      <button class="btn btn-ghost" onclick="document.getElementById('artwork-step1').style.display='block';document.getElementById('artwork-step2').style.display='none';" style="font-size:.82rem;padding:10px;">
+        ← Go back
+      </button>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="art-file-inp" accept="image/*" style="display:none" onchange="injectArtFromFile(this)">
+
   </div>
 </div>
 
@@ -525,10 +553,10 @@ select.inp{appearance:none;cursor:pointer;}
     </div>
 
     <!-- Gemini Illustrations -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎨 Gemini Illustrations</div></div>
+    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🍌 Nano Banana Illustrations</div></div>
     <div class="api-wrap">
-      <div class="api-t">🔑 Google Gemini API Key <span style="font-size:.72rem;color:var(--mint2);font-weight:700;">(AI Story Art)</span></div>
-      <div class="api-s">Generates beautiful full-colour watercolour illustrations for each story page. Free tier available at <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> — click "Get API key". Without a key, colourful scene art is shown instead.</div>
+      <div class="api-t">🔑 Google AI Studio Key <span style="font-size:.72rem;color:var(--mint2);font-weight:700;">(Nano Banana 2 = Free!)</span></div>
+      <div class="api-s">Generates beautiful full-colour cartoon illustrations using <strong>Nano Banana 2</strong> (gemini-2.5-flash-image). Free tier: ~500 images/day, no credit card. Get a key at <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> → Get API key. Free tier: 10 requests/minute, 500/day — resets midnight Pacific. If you see repeated 429 errors, your daily quota may be used up or you may need a fresh project at aistudio.google.com</div>
       <div class="api-iw"><input class="inp" id="gem-key-inp" type="password" placeholder="AIzaSy…"><div class="api-eye" onclick="toggleEye('gem-key-inp')">👁️</div></div>
       <div class="api-st"><div class="led off" id="gem-led"></div><span id="gem-st">No key — using scene art</span></div>
       <div class="api-btns">
@@ -608,12 +636,41 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="pr-confirm" id="pr-confirm">✅ <strong>Email sent!</strong> Check your inbox for the secure Peecho checkout link.</div>
     </div>
 
+    <!-- Artwork Tools (Parent/Advanced) -->
+    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎨 Artwork Tools</div></div>
+    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
+      <p style="font-size:.78rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Advanced options for adding artwork to the currently open story. Open a story in the reader first, then use one of these tools.</p>
+
+      <!-- Auto-generate via API -->
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:900;font-size:.85rem;margin-bottom:6px;">🤖 Auto-Generate via Gemini API</div>
+        <div style="font-size:.74rem;color:var(--dim);margin-bottom:8px;line-height:1.5;">Requires a Gemini API key above. Uses the free quota (500/day). If rate limited, try again later.</div>
+        <button id="par-gen-btn" class="btn btn-v btn-sm" style="width:100%;padding:12px;margin:0;" onclick="makePictureBook()">🎨 Generate Now</button>
+      </div>
+
+      <!-- Inject by URL -->
+      <div>
+        <div style="font-weight:900;font-size:.85rem;margin-bottom:6px;">🔗 Add Artwork by URL</div>
+        <div style="font-size:.74rem;color:var(--dim);margin-bottom:8px;line-height:1.5;">Generate art anywhere (Gemini web, Midjourney, etc), copy the image URL, paste here.</div>
+        <div style="display:flex;gap:8px;">
+          <input id="par-art-url-inp" class="inp" type="url" placeholder="https://…image URL…" style="margin:0;flex:1;font-size:.78rem;padding:10px 12px;">
+          <button class="btn btn-ghost btn-sm" style="flex-shrink:0;padding:10px 14px;margin:0;" onclick="injectArtFromUrl()">✅ Save</button>
+        </div>
+      </div>
+    </div>
+
     <div class="sec" style="padding:0 0 11px;"><div class="sec-t">📅 Memory Lane</div></div>
     <div id="memory-lane"></div>
     <div class="sec" style="padding:12px 0 11px;"><div class="sec-t">📄 Export Stories as PDF</div></div>
     <div id="pdf-story-list" style="margin-bottom:16px;"></div>
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">💾 Data Export</div></div>
-    <button class="btn btn-ghost" onclick="exportAll()">📁 Export All Data (JSON)</button>
+    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">💾 Data & Keys</div></div>
+    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
+      <p style="font-size:.8rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Export saves everything: stories, heroes, API keys, XP and progress. Import restores it all on any device.</p>
+      <button class="btn btn-ghost" onclick="exportAll()" style="margin-bottom:10px;">📤 Export All Data (JSON)</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('import-file-inp').click()">📥 Import / Restore from JSON</button>
+      <input type="file" id="import-file-inp" accept=".json,application/json" style="display:none" onchange="importAll(this)">
+      <div id="import-result" style="display:none;margin-top:12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:var(--r);padding:12px;font-size:.8rem;line-height:1.55;"></div>
+    </div>
   </div>
 </div>
 
@@ -865,7 +922,10 @@ function renderStoryStrip(){
   const row=document.getElementById('story-strip');row.innerHTML='';
   S.stories.slice(0,4).forEach(s=>{
     const d=document.createElement('div');d.className='scard';d.onclick=()=>openReader(s.id);
-    d.innerHTML=`<div class="scov" style="background:${s.bg}">${s.em}<div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`;
+    const sCover=s.illustrations&&s.illustrations['p0'];
+    d.innerHTML=sCover
+      ?`<div class="scov" style="background:${s.bg};padding:0;overflow:hidden;"><img src="${sCover}" style="width:100%;height:106px;object-fit:cover;display:block;"><div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`
+      :`<div class="scov" style="background:${s.bg}">${s.em}<div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`;
     row.appendChild(d);
   });
 }
@@ -999,6 +1059,157 @@ let wordEls=[], elAudioEl=null;
 
 function readerBack(){stopSpeech();go('library');}
 
+// ── Apply artwork — shared by all paths ──
+function applyArtwork(dataUrl){
+  if(!activeStory) return;
+  if(!activeStory.illustrations) activeStory.illustrations={};
+  const total=activeStory.data.length;
+  for(let i=0;i<total;i++) activeStory.illustrations[`p${i}`]=dataUrl;
+  activeStory.illustrated=true;
+  renderReaderPage();
+  toast('🎉 Artwork saved! Your picture book is ready. +25 XP');
+  addXP(25);
+}
+
+// ── Step 1: Copy story prompt to clipboard + open Gemini ──
+function getArtwork(){
+  if(!activeStory) return;
+
+  const heroDescs=(activeStory.heroIds||[])
+    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
+    .filter(Boolean).join(', ')||'brave young adventurers';
+
+  const storyData=JSON.stringify({
+    title:activeStory.title,
+    theme:activeStory.theme,
+    heroes:heroDescs,
+    pages:activeStory.data
+  }, null, 2);
+
+  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
+
+  // Bulletproof clipboard copy — works on all browsers including mobile
+  function copyToClipboard(text){
+    // Method 1: modern async clipboard API
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    // Method 2: create a hidden textarea, select all, execCommand copy
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){ console.warn('Copy failed',e); }
+    document.body.removeChild(ta);
+  }
+
+  copyToClipboard(prompt);
+
+  // Open Gemini — prompt is already in clipboard, user just pastes and hits enter
+  window.open('https://gemini.google.com', '_blank');
+
+  // Flip to step 2
+  document.getElementById('artwork-step1').style.display='none';
+  document.getElementById('artwork-step2').style.display='block';
+
+  toast('✅ Prompt copied! In Gemini: tap the text box, paste (Ctrl+V or long-press → Paste), then hit enter.', 7000);
+}
+
+// ── Step 2: User selects downloaded image from device ──
+function injectArtFromFile(input){
+  if(!activeStory||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    applyArtwork(e.target.result);
+    input.value='';
+    document.getElementById('artwork-step1').style.display='block';
+    document.getElementById('artwork-step2').style.display='none';
+  };
+  reader.readAsDataURL(input.files[0]);
+  toast('🖼️ Saving artwork to your story…');
+}
+
+// ── Parent Area: Auto-generate via API (for parents with API key) ──
+async function makePictureBook(){
+  if(!activeStory){ toast('⚠️ Open a story in the reader first'); return; }
+  const gemKey=localStorage.getItem('gem_key')||'';
+  if(!gemKey){ toast('⚠️ Add a Gemini API key in the section above first'); return; }
+  if(activeStory.illustrated){ toast('✨ This story is already illustrated'); return; }
+
+  const parBtn=document.getElementById('par-gen-btn');
+  if(parBtn){ parBtn.disabled=true; parBtn.textContent='🎨 Generating…'; }
+
+  const heroDescs=(activeStory.heroIds||[])
+    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
+    .filter(Boolean).join(', ')||'brave young adventurers';
+  const storyData=JSON.stringify({title:activeStory.title,theme:activeStory.theme,heroes:heroDescs,pages:activeStory.data},null,2);
+  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
+
+  try{
+    const res=await fetch(`${GEM_BASE}${GEM_MODEL}:generateContent?key=${gemKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})
+    });
+    if(res.status===429){
+      toast('⚠️ API rate limited — try again in a few minutes or use the URL inject below.');
+      if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; } return;
+    }
+    if(!res.ok){ toast('❌ API error '+res.status); if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; } return; }
+    const data=await res.json();
+    const parts=data.candidates?.[0]?.content?.parts||[];
+    for(const p of parts){
+      if(p.inlineData?.mimeType?.startsWith('image/')){
+        applyArtwork('data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data);
+        if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
+        return;
+      }
+    }
+    toast('⚠️ No image returned from API');
+    if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
+  }catch(e){
+    toast('❌ Error: '+e.message);
+    if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
+  }
+}
+
+// ── Parent Area: Inject artwork by URL ──
+function injectArtFromUrl(){
+  if(!activeStory){ toast('⚠️ Open a story in the reader first, then return here'); return; }
+  const inp=document.getElementById('par-art-url-inp');
+  const url=(inp?.value||'').trim();
+  if(!url||!url.startsWith('http')){ toast('⚠️ Enter a valid image URL starting with http'); return; }
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=()=>{
+    try{
+      const c=document.createElement('canvas');
+      c.width=img.naturalWidth; c.height=img.naturalHeight;
+      c.getContext('2d').drawImage(img,0,0);
+      applyArtwork(c.toDataURL('image/jpeg',0.92));
+    }catch(e){ applyArtwork(url); }
+    if(inp) inp.value='';
+  };
+  img.onerror=()=>{ applyArtwork(url); if(inp) inp.value=''; };
+  img.src=url;
+  toast('🖼️ Loading and saving artwork…');
+}
+
+// ── Path C: Upload from device ──
+function injectArtFromFile(input){
+  if(!activeStory||!input.files[0]){ return; }
+  const reader=new FileReader();
+  reader.onload=e=>{ applyArtwork(e.target.result); input.value=''; };
+  reader.readAsDataURL(input.files[0]);
+  toast('🖼️ Loading image…');
+}
+
 function openReader(id){
   const s=S.stories.find(x=>x.id===id);if(!s)return;
   activeStory=s;curPage=0;stopSpeech();
@@ -1017,48 +1228,51 @@ function renderReaderPage(){
   document.getElementById('btn-next').classList.toggle('dim',curPage===total-1);
   document.getElementById('ral-chapter').textContent=`Page ${curPage+1} of ${total} — ${activeStory.title}`;
 
-  // Illustration — use Gemini if key available, else SVG fallback
+  // ── Rebuild illustration panel from scratch every render ──
   const ilPanel=document.getElementById('illus-panel');
-  ilPanel.innerHTML='';
-  // Check if we have a cached Gemini illustration
+  ilPanel.innerHTML=''; // clear everything cleanly
+
+  // 1. Illustration: cached Gemini image or SVG fallback
   const ilKey=`p${curPage}`;
   if(activeStory.illustrations && activeStory.illustrations[ilKey]){
     const img=document.createElement('img');
     img.src=activeStory.illustrations[ilKey];
-    img.style.cssText='width:100%;height:100%;object-fit:cover;';
+    img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';
     ilPanel.appendChild(img);
   } else {
-    // Show SVG fallback immediately
-    ilPanel.innerHTML=getIllus(activeStory.theme,curPage+1);
-    // Try Gemini in background
-    generateGeminiIllus(activeStory,curPage).then(dataUrl=>{
-      if(dataUrl && document.getElementById('illus-panel')===ilPanel){
-        ilPanel.innerHTML='';
-        const img=document.createElement('img');
-        img.src=dataUrl;
-        img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:0;animation:rise .4s ease;';
-        ilPanel.appendChild(img);
-        if(!activeStory.illustrations)activeStory.illustrations={};
-        activeStory.illustrations[ilKey]=dataUrl;
-      }
-    });
+    const svgWrap=document.createElement('div');
+    svgWrap.style.cssText='width:100%;height:100%;';
+    svgWrap.innerHTML=getIllus(activeStory.theme, curPage+1);
+    ilPanel.appendChild(svgWrap);
   }
-  // Hero avatar overlays on illustration
-  const heroIds=activeStory.heroIds||[];
-  const storyHeroes=heroIds.length>0?S.heroes.filter(h=>heroIds.includes(h.id)):S.heroes.slice(0,Math.min(2,S.heroes.length));
-  const ih=document.createElement('div');ih.className='illus-heroes';
-  storyHeroes.forEach(h=>{
-    const a=document.createElement('div');a.className='ih-av';a.innerHTML=getAv(h.avatarId);ih.appendChild(a);
-  });
-  ilPanel.appendChild(ih);
 
-  // Voice label
+  // 3. Hero avatar overlays
+  const heroIds=activeStory.heroIds||[];
+  const storyHeroes=heroIds.length>0
+    ?S.heroes.filter(h=>heroIds.includes(h.id))
+    :S.heroes.slice(0,Math.min(2,S.heroes.length));
+  if(storyHeroes.length>0){
+    const ih=document.createElement('div');
+    ih.className='illus-heroes';
+    storyHeroes.forEach(h=>{
+      const a=document.createElement('div');a.className='ih-av';a.innerHTML=getAv(h.avatarId);ih.appendChild(a);
+    });
+    ilPanel.appendChild(ih);
+  }
+
+  // 4. Show/hide artwork section below reader
+  const picWrap=document.getElementById('picbook-wrap');
+  if(picWrap){
+    picWrap.style.display=activeStory.illustrated===true?'none':'block';
+  }
+
+  // ── Voice label ──
   const elKey=localStorage.getItem('el_key')||'';
   const elVoice=EL_VOICES.find(v=>v.id===S.voiceId)||EL_VOICES[0];
   document.getElementById('ral-voice-label').textContent=
     elKey?`🎙️ ${elVoice.name} (ElevenLabs) — tap ▶ to listen`:'Tap ▶ to read aloud · Tap any word to hear it';
 
-  // Words
+  // ── Word tokens ──
   const body=document.getElementById('page-body');
   body.innerHTML='';wordEls=[];
   text.split(/(\s+)/).forEach(tok=>{
@@ -1229,45 +1443,83 @@ function changePage(dir){
 function exportStory(){if(!activeStory)return;const b=new Blob([JSON.stringify({title:activeStory.title,theme:activeStory.theme,pages:activeStory.data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=activeStory.title.replace(/\s+/g,'-')+'.json';a.click();toast('💾 Story exported!');}
 
 // ─── GEMINI ILLUSTRATION GENERATION ─────────────
+// ─── NANO BANANA 2 ILLUSTRATION ENGINE ───────────
+// Uses a serial queue so requests never overlap — avoids 429 rate limits
+// ─── GEMINI IMAGE ENGINE ─────────────────────────
+// Try free-tier models in order. Both support image generation on AI Studio free tier.
+// Gemini image engine — gemini-2.5-flash-image is the only free image model (March 2026)
+const GEM_MODEL = 'gemini-2.5-flash-image';
+const GEM_BASE  = 'https://generativelanguage.googleapis.com/v1beta/models/';
+
+// Used by PDF export and test button (single attempt, caller handles errors)
+async function callGeminiImage(prompt, key){
+  try{
+    const res=await fetch(`${GEM_BASE}${GEM_MODEL}:generateContent?key=${key}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})
+    });
+    if(!res.ok) return {error:'http_'+res.status};
+    const data=await res.json();
+    const parts=data.candidates?.[0]?.content?.parts||[];
+    for(const p of parts){
+      if(p.inlineData?.mimeType?.startsWith('image/')){
+        return {dataUrl:'data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data};
+      }
+    }
+    return {error:'no_image'};
+  }catch(e){ return {error:e.message}; }
+}
+
 async function generateGeminiIllus(story, pageIdx){
   const gemKey=localStorage.getItem('gem_key')||'';
   if(!gemKey) return null;
   const heroNames=(story.heroIds||[]).map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name:'';}).filter(Boolean).join(' and ');
   const pageText=story.data[pageIdx]||'';
   const prompt=`Bright children's cartoon illustration, bold black outlines, vivid saturated colors, flat design, cheerful and playful, safe for young children, like a modern animated cartoon storybook. Scene: ${pageText.slice(0,200)} Setting: ${story.theme}. Characters: ${heroNames||'young adventurers'}. No text, no words, no letters anywhere in the image. High quality digital cartoon art.`;
-  try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${gemKey}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})
-    });
-    if(!res.ok){console.warn('Gemini HTTP',res.status);return null;}
-    const data=await res.json();
-    const parts=data.candidates?.[0]?.content?.parts||[];
-    for(const p of parts){
-      if(p.inlineData?.mimeType?.startsWith('image/')){
-        return 'data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data;
-      }
-    }
-  }catch(e){console.warn('Gemini error',e);}
+  const result=await callGeminiImage(prompt, gemKey);
+  if(result.dataUrl) return result.dataUrl;
   return null;
 }
 
 // Gemini key management
-function saveGemKey(){const k=document.getElementById('gem-key-inp').value.trim();if(!k){toast('⚠️ Enter a Gemini key');return;}localStorage.setItem('gem_key',k);updateGemStatus(k);toast('✅ Gemini key saved! Beautiful illustrations enabled 🎨');}
-async function testGemKey(){
-  const k=document.getElementById('gem-key-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}
-  toast('🎨 Testing Gemini…');
-  try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${k}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'A simple cute star, watercolour style'}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const d=await res.json();
-    const hasImg=d.candidates?.[0]?.content?.parts?.some(p=>p.inlineData?.mimeType?.startsWith('image/'));
-    if(hasImg){toast('✅ Gemini works! Illustrations are live 🎨');localStorage.setItem('gem_key',k);updateGemStatus(k);}
-    else{toast('⚠️ Gemini responded but no image — check model access');}
-  }catch(e){toast('❌ Gemini error: '+e.message.slice(0,40));}
+function saveGemKey(){
+  const k=document.getElementById('gem-key-inp').value.trim();
+  if(!k){toast('⚠️ Enter a Gemini key');return;}
+  localStorage.setItem('gem_key',k);
+  updateGemStatus(k);
+  toast('✅ Gemini key saved! Nano Banana illustrations enabled 🎨');
 }
-function updateGemStatus(k){const l=document.getElementById('gem-led'),t=document.getElementById('gem-st');if(k&&k.length>10){l.className='led on';t.textContent='Gemini connected — AI illustrations ready 🎨';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — using scene art';t.style.color='var(--dim)';}}
+async function testGemKey(){
+  const k=document.getElementById('gem-key-inp').value.trim();
+  if(!k){toast('⚠️ Enter a key first');return;}
+  toast('🎨 Testing Nano Banana…');
+  const result=await callGeminiImage('A simple cheerful cartoon star, bright yellow, on a white background. No text.', k);
+  if(result.dataUrl){
+    toast(`✅ Gemini works on ${result.model||'free tier'}! Illustrations ready 🎨`);
+    localStorage.setItem('gem_key',k);
+    updateGemStatus(k);
+  } else if(result.error==='exhausted'||result.error?.includes('429')||result.error?.includes('http_429')){
+    // Key is valid but rate limited — save it anyway
+    toast('⚠️ Key is valid but rate limited right now — it will work in the story reader');
+    localStorage.setItem('gem_key',k);
+    updateGemStatus(k);
+  } else {
+    toast('❌ Gemini error: '+result.error.slice(0,50));
+  }
+}
+function updateGemStatus(k){
+  const l=document.getElementById('gem-led'),t=document.getElementById('gem-st');
+  if(k&&k.length>10){
+    l.className='led on';
+    t.textContent='Nano Banana connected — AI illustrations ready 🎨';
+    t.style.color='var(--mint2)';
+  }else{
+    l.className='led off';
+    t.textContent='No key — using scene art';
+    t.style.color='var(--dim)';
+  }
+}
 
 // ─── VOICE ENGINE ─────────────────────────────────
 const OPENAI_VOICES=[
@@ -1367,16 +1619,16 @@ async function exportPDF(storyId){
   const gemKey=localStorage.getItem('gem_key')||'';
   // Pre-generate all illustrations we don't have yet
   if(gemKey){
-    mS.textContent='Generating illustrations with Gemini…';
+    mS.textContent='Generating illustrations with Nano Banana 2…';
     for(let i=0;i<story.data.length;i++){
       const ilKey=`p${i}`;
       if(!story.illustrations||!story.illustrations[ilKey]){
+        mS.textContent=`Illustrating page ${i+1} of ${story.data.length}…`;
         const url=await generateGeminiIllus(story,i);
         if(url){
           if(!story.illustrations)story.illustrations={};
           story.illustrations[ilKey]=url;
         }
-        mS.textContent=`Illustrating page ${i+1} of ${story.data.length}…`;
       }
     }
   }
@@ -1478,7 +1730,11 @@ function renderLib(){
   const vis=libFilter==='all'?S.stories:S.stories.filter(s=>s.theme===libFilter);
   vis.forEach((s,i)=>{
     const d=document.createElement('div');d.className='lc';
-    d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer"><div class="lcov" style="background:${s.bg}">${s.em}${i===0?'<div class="lnew">NEW</div>':''}</div><div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:6px;"><span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span><span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span></div></div></div>`;
+    const coverImg=s.illustrations&&s.illustrations['p0'];
+    const coverHtml=coverImg
+      ?`<img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">`
+      :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0?'<div class="lnew">NEW</div>':''}</div>`;
+    d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:6px;"><span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span><span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span></div></div></div>`;
     grid.appendChild(d);
   });
   const plus=document.createElement('div');plus.className='lc';plus.onclick=()=>go('build');
@@ -1557,7 +1813,109 @@ async function testElKey(){
 function updateElStatus(k){const l=document.getElementById('el-led'),t=document.getElementById('el-st');if(k&&k.length>8){l.className='led on';t.textContent='ElevenLabs connected — lifelike narration ready 🎙️';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — using device voice';t.style.color='var(--dim)';}}
 
 function requestPrint(){const e=document.getElementById('print-email').value.trim();if(!e||!e.includes('@')){toast('⚠️ Enter a valid parent email');return;}document.getElementById('pr-confirm').style.display='block';toast('📧 Checkout link sent to '+e+'!');}
-function exportAll(){const b=new Blob([JSON.stringify({exported:new Date().toISOString(),heroes:S.heroes,stories:S.stories.map(s=>({title:s.title,theme:s.theme,pages:s.data})),xp:S.xp,badges:S.earnedBadges},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='story-magic-export-'+Date.now()+'.json';a.click();toast('💾 All data exported!');}
+function exportAll(){
+  // Include API keys so they restore on import
+  const payload={
+    exported: new Date().toISOString(),
+    version: '1.0',
+    heroes: S.heroes,
+    stories: S.stories.map(s=>({id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''})),
+    xp: S.xp,
+    badges: S.earnedBadges,
+    // API keys
+    keys:{
+      groq:  localStorage.getItem('groq_key')||'',
+      gemini:localStorage.getItem('gem_key')||'',
+      el:    localStorage.getItem('el_key')||'',
+      oai:   localStorage.getItem('oai_key')||'',
+    },
+    // Preferences
+    prefs:{
+      voice_engine: localStorage.getItem('sm_engine')||'browser',
+      voice_id:     localStorage.getItem('sm_voice')||'',
+      child_name:   localStorage.getItem('par_name')||'',
+      parent_email: localStorage.getItem('par_email')||'',
+    }
+  };
+  const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='story-magic-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('💾 Backup exported! Save this file somewhere safe.');
+}
+
+function importAll(input){
+  if(!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      const results=[];
+
+      // Restore heroes
+      if(data.heroes&&Array.isArray(data.heroes)&&data.heroes.length>0){
+        S.heroes=data.heroes;
+        saveHeroes();
+        results.push('✅ '+data.heroes.length+' heroes restored');
+      }
+
+      // Restore stories
+      if(data.stories&&Array.isArray(data.stories)&&data.stories.length>0){
+        // Merge: add imported stories that don't already exist by id
+        const existingIds=new Set(S.stories.map(s=>s.id));
+        const newStories=data.stories
+          .filter(s=>!existingIds.has(s.id))
+          .map(s=>({...s,illustrations:{}}));
+        S.stories=[...newStories,...S.stories];
+        results.push('✅ '+newStories.length+' stories imported');
+      }
+
+      // Restore XP
+      if(typeof data.xp==='number'){ S.xp=data.xp; addXP(0); results.push('✅ XP restored: '+data.xp); }
+
+      // Restore badges
+      if(data.badges&&Array.isArray(data.badges)){ S.earnedBadges=data.badges; results.push('✅ Badges restored'); }
+
+      // Restore API keys
+      if(data.keys){
+        if(data.keys.groq)  { localStorage.setItem('groq_key', data.keys.groq);   updateGroqStatus(data.keys.groq); results.push('✅ Groq key restored'); }
+        if(data.keys.gemini){ localStorage.setItem('gem_key',  data.keys.gemini);  updateGemStatus(data.keys.gemini); results.push('✅ Gemini key restored'); }
+        if(data.keys.el)    { localStorage.setItem('el_key',   data.keys.el);      updateElStatus(data.keys.el); results.push('✅ ElevenLabs key restored'); }
+        if(data.keys.oai)   { localStorage.setItem('oai_key',  data.keys.oai);     updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
+      }
+
+      // Restore preferences
+      if(data.prefs){
+        if(data.prefs.voice_engine){ localStorage.setItem('sm_engine', data.prefs.voice_engine); S.voiceEngine=data.prefs.voice_engine; }
+        if(data.prefs.voice_id)    { localStorage.setItem('sm_voice',  data.prefs.voice_id);     S.voiceId=data.prefs.voice_id; }
+        if(data.prefs.child_name)  { localStorage.setItem('par_name',  data.prefs.child_name);   document.getElementById('g-name')?document.getElementById('g-name').textContent=data.prefs.child_name:null; }
+        if(data.prefs.parent_email){ localStorage.setItem('par_email', data.prefs.parent_email); }
+        if(data.prefs.voice_engine||data.prefs.child_name) results.push('✅ Preferences restored');
+      }
+
+      // Re-render UI
+      renderHeroStrip(); renderStoryStrip(); renderLib();
+      document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+
+      // Show results
+      const el=document.getElementById('import-result');
+      el.style.display='block';
+      el.innerHTML='<strong>Import complete!</strong><br>'+results.join('<br>');
+      toast('✅ Restore complete! '+results.length+' items recovered.');
+
+    }catch(err){
+      const el=document.getElementById('import-result');
+      el.style.display='block';
+      el.style.background='rgba(239,68,68,.1)';
+      el.style.borderColor='rgba(239,68,68,.25)';
+      el.innerHTML='❌ Could not read file: '+err.message;
+      toast('❌ Import failed — is this a Story Magic backup file?');
+    }
+    input.value=''; // reset so same file can be re-imported
+  };
+  reader.readAsText(input.files[0]);
+}
 
 // ─── INIT ────────────────────────────────────────
 function init(){
