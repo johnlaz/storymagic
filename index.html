@@ -537,12 +537,11 @@ select.inp{appearance:none;cursor:pointer;}
       </div>
     </div>
 
-    <!-- ElevenLabs + Voice -->
+    <!-- Voice -->
     <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎙️ Narrator Voice</div></div>
     <div class="api-wrap">
       <div class="api-t">Choose Voice Engine</div>
-      <div class="api-s">Pick how the story gets read aloud. <strong>Device Voice</strong> is free and works on all devices — sounds great on iPhone/iPad with Siri voices. <strong>ElevenLabs</strong> is the most lifelike option. <strong>OpenAI</strong> is very natural at a tiny cost.</div>
-      <!-- Voice engine toggle -->
+      <div class="api-s">Pick how the story gets read aloud. <strong>Device Voice</strong> is free and works on all devices — sounds great on iPhone/iPad with Siri voices. <strong>ElevenLabs</strong> is the most lifelike. <strong>OpenAI</strong> is very natural at a tiny cost.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
         <div class="vc on" id="ve-browser" onclick="setVoiceEngine('browser')"><div class="vc-name">🖥️ Device Voice</div><div class="vc-desc">Free, always works</div></div>
         <div class="vc" id="ve-elevenlabs" onclick="setVoiceEngine('elevenlabs')"><div class="vc-name">🎤 ElevenLabs</div><div class="vc-desc">Most lifelike, 10K/mo free</div></div>
@@ -552,7 +551,7 @@ select.inp{appearance:none;cursor:pointer;}
       <!-- Device voice note -->
       <div id="tts-browser-section">
         <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r);padding:12px 14px;font-size:.78rem;line-height:1.55;color:var(--dim);">
-          💡 <strong style="color:var(--txt);">Tip:</strong> Device voice quality varies by browser and OS. For the best experience, use <strong style="color:var(--txt);">Safari on iPhone/iPad</strong> — it uses Siri's high-quality neural voices automatically. On desktop, Chrome and Edge also sound good.
+          💡 <strong style="color:var(--txt);">Tip:</strong> For the best free voice, use <strong style="color:var(--txt);">Safari on iPhone/iPad</strong> — it uses Siri's high-quality neural voices automatically.
         </div>
       </div>
 
@@ -572,7 +571,7 @@ select.inp{appearance:none;cursor:pointer;}
       <!-- OpenAI TTS -->
       <div id="tts-openai-section" style="display:none;">
         <div class="api-t" style="font-size:.9rem;margin-top:12px;">🤖 OpenAI API Key</div>
-        <div class="api-s">Uses OpenAI TTS-1 model (~$0.015/1000 chars). Get a key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></div>
+        <div class="api-s">Uses OpenAI TTS-1 (~$0.015/1000 chars). Get a key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></div>
         <div class="api-iw"><input class="inp" id="oai-key-inp" type="password" placeholder="sk-…"><div class="api-eye" onclick="toggleEye('oai-key-inp')">👁️</div></div>
         <div class="api-st"><div class="led off" id="oai-led"></div><span id="oai-st">No key</span></div>
         <div class="api-btns"><button class="btn btn-v" onclick="saveOAIKey()">💾 Save</button><button class="btn btn-ghost" onclick="testOAI()">🧪 Test</button></div>
@@ -1271,7 +1270,7 @@ async function testGemKey(){
 function updateGemStatus(k){const l=document.getElementById('gem-led'),t=document.getElementById('gem-st');if(k&&k.length>10){l.className='led on';t.textContent='Gemini connected — AI illustrations ready 🎨';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — using scene art';t.style.color='var(--dim)';}}
 
 // ─── VOICE ENGINE ─────────────────────────────────
-// OpenAI TTS
+const OPENAI_VOICES=[
   {id:'nova',  label:'Nova',   desc:'Warm & friendly female'},
   {id:'alloy', label:'Alloy',  desc:'Neutral & clear'},
   {id:'echo',  label:'Echo',   desc:'Soft male narrator'},
@@ -1289,7 +1288,7 @@ function setVoiceEngine(engine){
   document.getElementById('tts-el-section').style.display=engine==='elevenlabs'?'block':'none';
   document.getElementById('tts-openai-section').style.display=engine==='openai'?'block':'none';
   const labels={browser:'🖥️ Device voice selected',elevenlabs:'🎤 ElevenLabs selected',openai:'🤖 OpenAI TTS selected'};
-  toast(labels[engine]||'Voice engine updated');
+  toast(labels[engine]||'Voice updated');
 }
 
 function renderOAIVoiceGrid(){
@@ -1313,15 +1312,6 @@ function renderElVoiceGrid(){
 }
 
 // OpenAI TTS
-const OPENAI_VOICES=[
-  {id:'nova',   label:'Nova',    desc:'Warm & friendly female'},
-  {id:'alloy',  label:'Alloy',   desc:'Neutral & clear'},
-  {id:'echo',   label:'Echo',    desc:'Soft male narrator'},
-  {id:'fable',  label:'Fable',   desc:'Expressive & warm'},
-  {id:'onyx',   label:'Onyx',    desc:'Deep & authoritative'},
-  {id:'shimmer',label:'Shimmer', desc:'Bright & cheerful'},
-];
-
 function saveOAIKey(){const k=document.getElementById('oai-key-inp').value.trim();if(!k)return;if(!k.startsWith('sk-')){toast('⚠️ OpenAI keys start with sk-');return;}localStorage.setItem('oai_key',k);updateOAIStatus(k);toast('✅ OpenAI key saved!');}
 async function testOAI(){
   const k=document.getElementById('oai-key-inp').value.trim();if(!k){toast('⚠️ Enter an OpenAI key');return;}
@@ -1349,7 +1339,6 @@ async function startSpeech(){
     const k=localStorage.getItem('oai_key')||'';
     if(k) return await startOpenAITTS(text,k);
   }
-  // fallback: browser
   startBrowserTTS(text);
 }
 
@@ -1582,10 +1571,9 @@ function init(){
   window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{});
   go('home');
 }
-
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', init);
-} else {
+  document.addEventListener('DOMContentLoaded',init);
+}else{
   init();
 }
 
