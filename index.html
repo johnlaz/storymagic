@@ -1313,6 +1313,15 @@ function renderElVoiceGrid(){
 }
 
 // OpenAI TTS
+const OPENAI_VOICES=[
+  {id:'nova',   label:'Nova',    desc:'Warm & friendly female'},
+  {id:'alloy',  label:'Alloy',   desc:'Neutral & clear'},
+  {id:'echo',   label:'Echo',    desc:'Soft male narrator'},
+  {id:'fable',  label:'Fable',   desc:'Expressive & warm'},
+  {id:'onyx',   label:'Onyx',    desc:'Deep & authoritative'},
+  {id:'shimmer',label:'Shimmer', desc:'Bright & cheerful'},
+];
+
 function saveOAIKey(){const k=document.getElementById('oai-key-inp').value.trim();if(!k)return;if(!k.startsWith('sk-')){toast('⚠️ OpenAI keys start with sk-');return;}localStorage.setItem('oai_key',k);updateOAIStatus(k);toast('✅ OpenAI key saved!');}
 async function testOAI(){
   const k=document.getElementById('oai-key-inp').value.trim();if(!k){toast('⚠️ Enter an OpenAI key');return;}
@@ -1573,7 +1582,12 @@ function init(){
   window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{});
   go('home');
 }
-init();
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // ─── SERVICE WORKER REGISTRATION ─────────────────
 if ('serviceWorker' in navigator) {
