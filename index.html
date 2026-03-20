@@ -179,12 +179,12 @@ select.inp{appearance:none;cursor:pointer;}
 .hsel-power{font-size:.66rem;color:var(--v2);}
 .hsel-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--bdr);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;}
 .hsel.on .hsel-check{background:var(--gold2);border-color:var(--gold2);color:#000;}
-.groq-box{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(14,165,233,.07));border:1px solid rgba(16,185,129,.22);border-radius:var(--rr);padding:16px;margin-bottom:14px;}
-.gb-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.gb-led{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px var(--mint);animation:blink 1.5s infinite;}
+.ai-story-box{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(14,165,233,.07));border:1px solid rgba(16,185,129,.22);border-radius:var(--rr);padding:16px;margin-bottom:14px;}
+.ai-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ai-led{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px var(--mint);animation:blink 1.5s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.gb-lbl{font-weight:900;font-size:.79rem;color:var(--mint2);}
-.gb-txt{font-size:.86rem;line-height:1.7;font-weight:700;}
+.ai-lbl{font-weight:900;font-size:.79rem;color:var(--mint2);}
+.ai-txt{font-size:.86rem;line-height:1.7;font-weight:700;}
 
 /* ── READER ── */
 /* hero avatars overlay on illustration */
@@ -437,7 +437,7 @@ select.inp{appearance:none;cursor:pointer;}
         <option value="8">Long — 8 pages (~5 min)</option>
       </select>
       <button class="btn btn-g" onclick="generateStory()">✨ Generate Story with Gemini!</button>
-      <div id="groq-out"></div>
+      <div id="story-out"></div>
     </div>
   </div>
 </div>
@@ -1021,13 +1021,13 @@ IMPORTANT: The illustration_prompt for each page must include the hero_descripti
   renderStoryStrip();
 
   // Show preview
-  const out = document.getElementById('groq-out');
+  const out = document.getElementById('story-out');
   const prev = pagesArr.slice(0,2).map((p,i)=>`<strong style="color:var(--v2)">Page ${i+1}:</strong> ${p}`).join('<br><br>');
   const aiLabel = gemKey ? '✨ Gemini AI — Unique Story' : '📖 Demo Story (add Gemini key for AI stories)';
   out.innerHTML = `
-    <div class="groq-box">
-      <div class="gb-hd"><div class="gb-led"></div><span class="gb-lbl">${aiLabel}</span></div>
-      <div class="gb-txt">${prev}<br><br><em style="color:var(--dim)">…and ${pagesArr.length-2} more pages</em></div>
+    <div class="ai-story-box">
+      <div class="ai-hd"><div class="ai-led"></div><span class="gb-lbl">${aiLabel}</span></div>
+      <div class="ai-txt">${prev}<br><br><em style="color:var(--dim)">…and ${pagesArr.length-2} more pages</em></div>
     </div>
     <button class="btn btn-v" onclick="openReader('${ns.id}')">📖 Read My Story!</button>
     <button class="btn btn-ghost" onclick="go('library')">📚 Go to Library</button>`;
@@ -1544,7 +1544,7 @@ let buildStep=1;
 function initBuild(){
   buildStep=1;
   S.build={world:'',worldEm:'',quest:'',twist:'',selectedHeroes:[]};
-  document.getElementById('groq-out').innerHTML='';
+  document.getElementById('story-out').innerHTML='';
   document.getElementById('story-title-inp').value='';
   document.getElementById('story-extras-inp').value='';
   renderHeroSelector();
