@@ -179,12 +179,12 @@ select.inp{appearance:none;cursor:pointer;}
 .hsel-power{font-size:.66rem;color:var(--v2);}
 .hsel-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--bdr);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;}
 .hsel.on .hsel-check{background:var(--gold2);border-color:var(--gold2);color:#000;}
-.ai-story-box{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(14,165,233,.07));border:1px solid rgba(16,185,129,.22);border-radius:var(--rr);padding:16px;margin-bottom:14px;}
-.ai-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.ai-led{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px var(--mint);animation:blink 1.5s infinite;}
+.groq-box{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(14,165,233,.07));border:1px solid rgba(16,185,129,.22);border-radius:var(--rr);padding:16px;margin-bottom:14px;}
+.gb-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.gb-led{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 6px var(--mint);animation:blink 1.5s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.ai-lbl{font-weight:900;font-size:.79rem;color:var(--mint2);}
-.ai-txt{font-size:.86rem;line-height:1.7;font-weight:700;}
+.gb-lbl{font-weight:900;font-size:.79rem;color:var(--mint2);}
+.gb-txt{font-size:.86rem;line-height:1.7;font-weight:700;}
 
 /* ── READER ── */
 /* hero avatars overlay on illustration */
@@ -283,15 +283,7 @@ select.inp{appearance:none;cursor:pointer;}
 .vc-name{font-weight:900;font-size:.85rem;}
 .vc-desc{font-size:.7rem;color:var(--dim);margin-top:2px;}
 
-/* Sparkle particles (XP rewards) */
-.sparkle-particle{position:fixed;pointer-events:none;animation:float-up 1s ease-out forwards;z-index:200;font-size:14px;}
-@keyframes float-up{0%{transform:translateY(0) scale(1);opacity:1;}100%{transform:translateY(-60px) scale(.4);opacity:0;}}
-/* Shimmer loading skeleton */
-.image-shimmer{background:linear-gradient(90deg,#1c1540 25%,#2e1065 50%,#1c1540 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite;border-radius:var(--rr);}
-@keyframes skeleton-loading{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-/* Magic shimmer text */
-.magic-shimmer{background:linear-gradient(120deg,#ffd700 0%,#fff 50%,#ffd700 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer-text 2s linear infinite;}
-@keyframes shimmer-text{to{background-position:200% center;}}
+/* ── MODAL ── */
 .modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(8,5,26,.94);backdrop-filter:blur(16px);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;}
 .modal.on{display:flex;animation:rise .25s ease;}
 .xf-ring{position:relative;width:140px;height:140px;margin:0 auto 22px;display:flex;align-items:center;justify-content:center;}
@@ -436,8 +428,8 @@ select.inp{appearance:none;cursor:pointer;}
         <option value="6" selected>Medium — 6 pages (~3 min)</option>
         <option value="8">Long — 8 pages (~5 min)</option>
       </select>
-      <button class="btn btn-g" onclick="generateStory()">✨ Generate Story with Gemini!</button>
-      <div id="story-out"></div>
+      <button class="btn btn-g" onclick="generateStory()">⚡ Generate Story with Groq!</button>
+      <div id="groq-out"></div>
     </div>
   </div>
 </div>
@@ -471,40 +463,37 @@ select.inp{appearance:none;cursor:pointer;}
   <!-- Artwork section — clean kids flow -->
   <div id="picbook-wrap" style="padding:0 18px 24px;display:none;">
 
-    <!-- Step 1: Get Artwork in-app -->
+    <!-- Step 1: Get Artwork button -->
     <div id="artwork-step1">
       <button class="btn btn-v" onclick="getArtwork()" style="font-size:1.1rem;padding:18px;">
         🎨 Get Artwork
       </button>
+      <button class="btn btn-v" onclick="getFullIllustration()" style="font-size:1.1rem;padding:18px;margin-top:10px;background:linear-gradient(135deg,#0ea5e9,#6366f1);">
+        🖼️ Get Full Illustration
+      </button>
       <p style="text-align:center;font-size:.75rem;color:var(--dim);margin-top:-2px;line-height:1.6;">
-        Generates a unique illustration for this story using Gemini AI
+        Opens Gemini with your story ready — just tap generate!
       </p>
     </div>
 
-    <!-- Step 2: Progress (shown while generating or if rate limited) -->
+    <!-- Step 2: Save it (appears after step 1) -->
     <div id="artwork-step2" style="display:none;">
-      <div id="artwork-progress-wrap" style="background:var(--ink3);border:1px solid var(--bdr);border-radius:var(--rr);padding:16px;margin-bottom:12px;text-align:center;">
-        <div style="font-size:1.8rem;margin-bottom:8px;">🎨</div>
-        <div id="artwork-progress" style="font-weight:900;font-size:.9rem;margin-bottom:10px;">Generating illustration…</div>
-        <div style="height:4px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden;">
-          <div class="image-shimmer" style="height:100%;width:100%;"></div>
-        </div>
+      <div style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(236,72,153,.1));border:1.5px solid rgba(167,139,250,.3);border-radius:var(--rr);padding:16px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:1.4rem;margin-bottom:6px;">✅</div>
+        <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:.95rem;margin-bottom:4px;">Got your artwork?</div>
+        <div style="font-size:.76rem;color:var(--dim);line-height:1.55;">Download the image from Gemini, then tap below to save it to your story.</div>
       </div>
-      <!-- Shown only if API rate limited -->
-      <div id="artwork-upload-fallback" style="display:none;">
-        <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--rr);padding:14px;margin-bottom:10px;font-size:.78rem;line-height:1.55;color:var(--dim);">
-          📋 Prompt copied! Paste into Gemini, generate the image, download it, then save below.
-        </div>
-        <button class="btn btn-g" onclick="document.getElementById('art-file-inp').click()">
-          💾 Save Artwork to Story
-        </button>
-      </div>
-      <button class="btn btn-ghost" onclick="document.getElementById('artwork-step1').style.display='block';document.getElementById('artwork-step2').style.display='none';document.getElementById('artwork-upload-fallback').style.display='none';" style="font-size:.82rem;padding:10px;margin-top:8px;">
-        ← Back
+      <button class="btn btn-g" onclick="document.getElementById('art-file-inp').click()">
+        💾 Save Artwork to Story
+      </button>
+      <button class="btn btn-ghost" onclick="document.getElementById('artwork-step1').style.display='block';document.getElementById('artwork-step2').style.display='none';" style="font-size:.82rem;padding:10px;">
+        ← Go back
       </button>
     </div>
 
+    <!-- Hidden file input -->
     <input type="file" id="art-file-inp" accept="image/*" style="display:none" onchange="injectArtFromFile(this)">
+
   </div>
 </div>
 
@@ -567,7 +556,7 @@ select.inp{appearance:none;cursor:pointer;}
     </div>
 
     <!-- Gemini Illustrations -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">✨ Gemini AI — Stories & Artwork</div></div>
+    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🍌 Nano Banana Illustrations</div></div>
     <div class="api-wrap">
       <div class="api-t">🔑 Google AI Studio Key <span style="font-size:.72rem;color:var(--mint2);font-weight:700;">(Nano Banana 2 = Free!)</span></div>
       <div class="api-s">Generates beautiful full-colour cartoon illustrations using <strong>Nano Banana 2</strong> (gemini-2.5-flash-image). Free tier: ~500 images/day, no credit card. Get a key at <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> → Get API key. Free tier: 10 requests/minute, 500/day — resets midnight Pacific. If you see repeated 429 errors, your daily quota may be used up or you may need a fresh project at aistudio.google.com</div>
@@ -624,7 +613,18 @@ select.inp{appearance:none;cursor:pointer;}
       </div>
     </div>
 
-
+    <!-- Groq -->
+    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🧠 Groq AI (Story Generation)</div></div>
+    <div class="api-wrap">
+      <div class="api-t">🔑 Groq API Key</div>
+      <div class="api-s">Enables live AI story generation using Llama 3.3. Get a free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
+      <div class="api-iw"><input class="inp" id="groq-inp" type="password" placeholder="gsk_xxxxxxxxxxxxxxxxxxxx"><div class="api-eye" onclick="toggleEye('groq-inp')">👁️</div></div>
+      <div class="api-st"><div class="led off" id="api-led"></div><span id="api-st-txt">No key — demo stories used</span></div>
+      <div class="api-btns">
+        <button class="btn btn-v" onclick="saveGroqKey()">💾 Save Key</button>
+        <button class="btn btn-ghost" onclick="testGroqKey()">🧪 Test</button>
+      </div>
+    </div>
 
     <!-- Print -->
     <div class="sec" style="padding:0 0 11px;"><div class="sec-t">📦 Order a Printed Book</div></div>
@@ -807,1104 +807,6 @@ S.stories.forEach(s=>{if(!s.data) s.data=demoPages(s.theme,[S.heroes[0]?.name||'
 function saveHeroes(){localStorage.setItem('sm_heroes',JSON.stringify(S.heroes));}
 
 // ─── NAVIGATION ─────────────────────────────────
-// ═══════════════════════════════════════════════════════
-//  GEMINI ENGINE — Stories + Artwork (single API key)
-// ═══════════════════════════════════════════════════════
-const GEMINI_TEXT_MODEL  = 'gemini-2.0-flash';
-const GEMINI_IMAGE_MODEL = 'gemini-2.5-flash-image';
-const GEMINI_BASE        = 'https://generativelanguage.googleapis.com/v1beta/models/';
-
-// Magic loading messages cycle while Gemini works
-const MAGIC_MSGS = [
-  '✨ Finding the sparkliest stars…',
-  '🎨 Mixing dragon-green paint…',
-  '✍️ Sharpening the giant story-pencil…',
-  '🚀 Fuelling the imagination rocket…',
-  '🌙 Asking the moon for story ideas…',
-  '🦄 Borrowing some unicorn magic…',
-  '📚 Dusting off ancient adventure maps…',
-  '🔮 Gazing into the story crystal ball…',
-];
-
-// ── Cycling magic loading message ──
-let _magicInterval = null;
-function startMagicMessages(subEl){
-  let i = 0;
-  if(subEl) subEl.textContent = MAGIC_MSGS[0];
-  _magicInterval = setInterval(()=>{
-    i = (i + 1) % MAGIC_MSGS.length;
-    if(subEl) subEl.textContent = MAGIC_MSGS[i];
-  }, 2500);
-}
-function stopMagicMessages(){ clearInterval(_magicInterval); }
-
-// ── Gemini text call (story generation) ──
-async function geminiText(systemInstruction, userPrompt){
-  const key = localStorage.getItem('gem_key')||'';
-  if(!key) throw new Error('no_key');
-  const res = await fetch(
-    `${GEMINI_BASE}${GEMINI_TEXT_MODEL}:generateContent?key=${key}`,
-    {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        system_instruction:{ parts:[{ text: systemInstruction }] },
-        contents:[{ role:'user', parts:[{ text: userPrompt }] }],
-        generationConfig:{ temperature:0.9, responseMimeType:'application/json' }
-      })
-    }
-  );
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const data = await res.json();
-  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return JSON.parse(raw.replace(/^```json\s*|```\s*$/g,'').trim());
-}
-
-// ── Gemini image call (single attempt, no queue) ──
-async function geminiImage(prompt){
-  const key = localStorage.getItem('gem_key')||'';
-  if(!key) return null;
-  try{
-    const res = await fetch(
-      `${GEMINI_BASE}${GEMINI_IMAGE_MODEL}:generateContent?key=${key}`,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contents:[{ parts:[{ text: prompt }] }],
-          generationConfig:{ responseModalities:['IMAGE','TEXT'] }
-        })
-      }
-    );
-    if(!res.ok){ console.warn('Gemini image HTTP', res.status); return null; }
-    const data = await res.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    for(const p of parts){
-      if(p.inlineData?.mimeType?.startsWith('image/')){
-        return 'data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data;
-      }
-    }
-  }catch(e){ console.warn('Gemini image error:', e.message); }
-  return null;
-}
-
-// ═══════════════════════════════════════════════════════
-//  GENERATE STORY
-// ═══════════════════════════════════════════════════════
-async function generateStory(){
-  const selIds = S.build.selectedHeroes;
-  const selHeroes = selIds.length>0
-    ? S.heroes.filter(h=>selIds.includes(h.id))
-    : S.heroes.slice(0,1);
-  if(selHeroes.length===0){ toast('⚠️ Create a hero first in My Heroes!'); return; }
-
-  const heroDesc = selHeroes.map(h=>`${h.name} who has ${h.power}`).join(', and ');
-  const heroNames = selHeroes.map(h=>h.name);
-  const customTitle = document.getElementById('story-title-inp').value.trim();
-  const extras = document.getElementById('story-extras-inp').value.trim();
-  const pageCount = parseInt(document.getElementById('story-len').value)||6;
-  const world = S.build.world||'Space';
-  const quest = S.build.quest||'find the lost treasure';
-  const twist = S.build.twist||'a secret power awakened';
-
-  // Show modal with magic cycling messages
-  const modal = document.getElementById('modal');
-  const mEm = document.getElementById('modal-em');
-  const mT  = document.getElementById('modal-title');
-  const mS  = document.getElementById('modal-sub');
-  modal.classList.add('on');
-  mEm.textContent='✨'; mT.textContent='Writing your story…';
-  startMagicMessages(mS);
-
-  const gemKey = localStorage.getItem('gem_key')||'';
-  let storyResult = null;
-
-  if(gemKey){
-    try{
-      const system = `You are StoryMagic — an award-winning children's book author and illustrator for ages 4-10.
-You write UNIQUE, ORIGINAL stories every single time. Never reuse plots or phrases.
-For EVERY story you MUST:
-1. Define a vivid hero_description (physical appearance, outfit, distinguishing feature).
-2. Use that EXACT hero_description in EVERY illustration_prompt to ensure character consistency.
-3. Make each page's text feel like a different moment in a genuine adventure.
-4. Output ONLY valid JSON — no markdown, no extra text.`;
-
-      const userPrompt = `Write a completely original ${pageCount}-page children's story with these details:
-World: ${world}
-Heroes: ${heroDesc}
-Quest: ${quest}
-Twist: ${twist}
-${customTitle ? 'Title: '+customTitle : ''}
-${extras ? 'Personal touches to weave in: '+extras : ''}
-
-Output this exact JSON (no other text):
-{
-  "title": "A unique story title",
-  "hero_description": "vivid physical description of the main hero for consistent illustration",
-  "pages": [
-    {
-      "text": "2-3 simple sentences for page 1",
-      "illustration_prompt": "Detailed scene description including hero_description, action, setting, mood"
-    }
-  ],
-  "moral": "The friendship/teamwork lesson"
-}
-
-IMPORTANT: The illustration_prompt for each page must include the hero_description verbatim so every image looks consistent. Make the story genuinely unique — different plot points, character moments, and surprises every time.`;
-
-      storyResult = await geminiText(system, userPrompt);
-    }catch(e){
-      console.warn('Story generation error:', e);
-      storyResult = null;
-    }
-  } else {
-    // No key — animate then use demo
-    await sleep(3500);
-  }
-
-  stopMagicMessages();
-
-  // Extract pages array
-  let pagesArr = [];
-  let illustrationPrompts = [];
-  let heroDescription = '';
-
-  if(storyResult?.pages && Array.isArray(storyResult.pages)){
-    storyResult.pages.forEach(p=>{
-      if(typeof p === 'string'){
-        pagesArr.push(p);
-        illustrationPrompts.push('');
-      } else if(p?.text){
-        pagesArr.push(p.text);
-        illustrationPrompts.push(p.illustration_prompt||'');
-      }
-    });
-    heroDescription = storyResult.hero_description || '';
-  }
-
-  if(pagesArr.length === 0) pagesArr = demoPages(world.toLowerCase(), heroNames);
-
-  // Build story object
-  const wk = (world||'space').toLowerCase();
-  const emMap = {space:'🚀',jungle:'🌿',kingdom:'🏰',ocean:'🌊','spooky manor':'👻','dino land':'🦕'};
-  const bgMap = {
-    space:'linear-gradient(135deg,#1e1b4b,#312e81)',
-    jungle:'linear-gradient(135deg,#14532d,#166534)',
-    kingdom:'linear-gradient(135deg,#4a1942,#6b21a8)',
-    ocean:'linear-gradient(135deg,#0c4a6e,#075985)',
-    'spooky manor':'linear-gradient(135deg,#1c1917,#292524)',
-    'dino land':'linear-gradient(135deg,#14532d,#3f6212)'
-  };
-  const titleFinal = customTitle || storyResult?.title || (S.build.worldEm+' '+world+' Adventure');
-
-  const ns = {
-    id: 'gen-'+Date.now(),
-    theme: wk,
-    em: emMap[wk]||'✨',
-    title: titleFinal,
-    pages: pagesArr.length,
-    bg: bgMap[wk]||'linear-gradient(135deg,#2e1065,#4c1d95)',
-    data: pagesArr,
-    heroIds: selIds,
-    extras,
-    heroDescription,
-    illustrationPrompts,
-    illustrations: {},
-    illustrated: false,
-  };
-
-  S.stories.unshift(ns);
-  modal.classList.remove('on');
-  addXP(50);
-  toast('🎉 Story created! +50 XP');
-  document.getElementById('lib-count-lbl').textContent = S.stories.length+' stories saved';
-  renderStoryStrip();
-
-  // Show preview
-  const out = document.getElementById('story-out');
-  const prev = pagesArr.slice(0,2).map((p,i)=>`<strong style="color:var(--v2)">Page ${i+1}:</strong> ${p}`).join('<br><br>');
-  const aiLabel = gemKey ? '✨ Gemini AI — Unique Story' : '📖 Demo Story (add Gemini key for AI stories)';
-  out.innerHTML = `
-    <div class="ai-story-box">
-      <div class="ai-hd"><div class="ai-led"></div><span class="gb-lbl">${aiLabel}</span></div>
-      <div class="ai-txt">${prev}<br><br><em style="color:var(--dim)">…and ${pagesArr.length-2} more pages</em></div>
-    </div>
-    <button class="btn btn-v" onclick="openReader('${ns.id}')">📖 Read My Story!</button>
-    <button class="btn btn-ghost" onclick="go('library')">📚 Go to Library</button>`;
-}
-
-// ═══════════════════════════════════════════════════════
-//  READER
-// ═══════════════════════════════════════════════════════
-let activeStory=null, curPage=0;
-let speechActive=false, speechRate=1;
-let wordEls=[], elAudioEl=null;
-
-function readerBack(){ stopSpeech(); go('library'); }
-
-function openReader(id){
-  const s = S.stories.find(x=>x.id===id);
-  if(!s) return;
-  activeStory=s; curPage=0; stopSpeech();
-  document.getElementById('r-title-tb').textContent = s.title;
-  renderReaderPage();
-  go('reader');
-}
-
-function renderReaderPage(){
-  if(!activeStory) return;
-  stopSpeech();
-  const total = activeStory.data.length;
-  const text  = activeStory.data[curPage];
-
-  document.getElementById('page-lbl').textContent  = `Page ${curPage+1} of ${total}`;
-  document.getElementById('pnav-info').textContent  = `${curPage+1} / ${total}`;
-  document.getElementById('btn-prev').classList.toggle('dim', curPage===0);
-  document.getElementById('btn-next').classList.toggle('dim', curPage===total-1);
-  document.getElementById('ral-chapter').textContent = `Page ${curPage+1} of ${total} — ${activeStory.title}`;
-
-  // Illustration panel — clean rebuild
-  const ilPanel = document.getElementById('illus-panel');
-  ilPanel.innerHTML = '';
-
-  const ilKey = `p${curPage}`;
-  if(activeStory.illustrations?.[ilKey]){
-    const img = document.createElement('img');
-    img.src = activeStory.illustrations[ilKey];
-    img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-    ilPanel.appendChild(img);
-  } else {
-    const svgWrap = document.createElement('div');
-    svgWrap.style.cssText = 'width:100%;height:100%;';
-    svgWrap.innerHTML = getIllus(activeStory.theme, curPage+1);
-    ilPanel.appendChild(svgWrap);
-  }
-
-  // Hero overlays
-  const heroIds = activeStory.heroIds||[];
-  const storyHeroes = heroIds.length>0
-    ? S.heroes.filter(h=>heroIds.includes(h.id))
-    : S.heroes.slice(0, Math.min(2, S.heroes.length));
-  if(storyHeroes.length>0){
-    const ih = document.createElement('div');
-    ih.className = 'illus-heroes';
-    storyHeroes.forEach(h=>{
-      const a = document.createElement('div'); a.className='ih-av';
-      a.innerHTML = getAv(h.avatarId); ih.appendChild(a);
-    });
-    ilPanel.appendChild(ih);
-  }
-
-  // Artwork section visibility
-  const picWrap = document.getElementById('picbook-wrap');
-  if(picWrap) picWrap.style.display = activeStory.illustrated ? 'none' : 'block';
-
-  // Reset artwork steps
-  const s1 = document.getElementById('artwork-step1');
-  const s2 = document.getElementById('artwork-step2');
-  if(s1) s1.style.display = 'block';
-  if(s2) s2.style.display = 'none';
-
-  // Voice label
-  const elKey2 = localStorage.getItem('el_key')||'';
-  const elVoice = EL_VOICES.find(v=>v.id===S.voiceId)||EL_VOICES[0];
-  document.getElementById('ral-voice-label').textContent =
-    elKey2 ? `🎙️ ${elVoice.name} (ElevenLabs) — tap ▶ to listen`
-           : 'Tap ▶ to read aloud · Tap any word to hear it';
-
-  // Word tokens
-  const body = document.getElementById('page-body');
-  body.innerHTML = ''; wordEls = [];
-  text.split(/(\s+)/).forEach(tok=>{
-    if(/^\s+$/.test(tok)){ body.appendChild(document.createTextNode(tok)); }
-    else{
-      const sp = document.createElement('span'); sp.className='word'; sp.textContent=tok;
-      sp.onclick = ()=>speakWord(tok.replace(/[^a-zA-Z']/g,''));
-      body.appendChild(sp); wordEls.push(sp);
-    }
-  });
-  document.getElementById('ral-fill').style.width = '0%';
-  document.getElementById('ral-play-btn').textContent = '▶';
-}
-
-// ═══════════════════════════════════════════════════════
-//  ARTWORK — fully in-app, sequential, Gemini image API
-// ═══════════════════════════════════════════════════════
-function applyArtwork(dataUrl){
-  if(!activeStory) return;
-  if(!activeStory.illustrations) activeStory.illustrations={};
-  const total = activeStory.data.length;
-  for(let i=0;i<total;i++) activeStory.illustrations[`p${i}`] = dataUrl;
-  activeStory.illustrated = true;
-  renderReaderPage();
-  renderLib();
-  renderStoryStrip();
-  toast('🎉 Artwork saved! Picture book ready. +25 XP');
-  addXP(25);
-}
-
-// Build the illustration prompt for a page — uses Gemini's own per-page prompt if available
-function buildIllustrationPrompt(story, pageIdx){
-  const heroDesc = story.heroDescription || '';
-  const pageText = story.data[pageIdx]||'';
-  // Use Gemini-generated per-page prompt if available, otherwise build from page text
-  const gemPrompt = story.illustrationPrompts?.[pageIdx];
-  if(gemPrompt && gemPrompt.length > 20){
-    return `Children's picture book illustration. Bright cartoon style, bold outlines, vivid colours, safe for young children. ${gemPrompt}. No text, no words, no letters in the image.`;
-  }
-  // Fallback: build from story context
-  const heroDescs = (story.heroIds||[])
-    .map(id=>{ const h=S.heroes.find(x=>x.id===id); return h?h.name+' ('+h.power+')':null; })
-    .filter(Boolean).join(' and ') || 'brave young heroes';
-  return `Children's picture book illustration. Bright cartoon style, bold outlines, vivid colours, safe for young children. Scene: ${pageText.slice(0,200)} Setting: ${story.theme}. Characters: ${heroDescs}${heroDesc?' — '+heroDesc:''}. No text, no words, no letters in the image.`;
-}
-
-// ── Get Artwork button — fully in-app ──
-async function getArtwork(){
-  if(!activeStory) return;
-  const gemKey = localStorage.getItem('gem_key')||'';
-
-  if(!gemKey){
-    toast('⚠️ Add a free Gemini key in Parents first to generate artwork in-app.', 5000);
-    return;
-  }
-  if(activeStory.illustrated){ toast('✨ This story already has artwork!'); return; }
-
-  const s1 = document.getElementById('artwork-step1');
-  const s2 = document.getElementById('artwork-step2');
-
-  // Switch to generating state
-  if(s1) s1.style.display = 'none';
-  if(s2){ s2.style.display = 'block'; }
-
-  // Show the progress indicator
-  const progressEl = document.getElementById('artwork-progress');
-  const progressWrap = document.getElementById('artwork-progress-wrap');
-  if(progressWrap) progressWrap.style.display = 'block';
-
-  if(!activeStory.illustrations) activeStory.illustrations = {};
-  const total = activeStory.data.length;
-
-  // Build a single rich prompt from the full story — same approach that worked in Gemini web
-  const heroDescs = (activeStory.heroIds||[])
-    .map(id=>{ const h=S.heroes.find(x=>x.id===id); return h?h.name+' ('+h.power+')':null; })
-    .filter(Boolean).join(', ') || 'brave young adventurers';
-
-  const storyJson = JSON.stringify({
-    title: activeStory.title,
-    theme: activeStory.theme,
-    heroes: heroDescs,
-    hero_description: activeStory.heroDescription || '',
-    pages: activeStory.data
-  }, null, 2);
-
-  const prompt = `Create an illustration for this children's story. Bright cartoon style, bold outlines, vivid saturated colours, flat design, safe for young children. Show the heroes in an exciting scene from the story. No text, no words, no letters anywhere in the image.\n\n${storyJson}`;
-
-  if(progressEl) progressEl.textContent = '🎨 Generating your illustration…';
-
-  const dataUrl = await geminiImage(prompt);
-
-  if(dataUrl){
-    // Apply to all pages
-    for(let i=0;i<total;i++) activeStory.illustrations[`p${i}`] = dataUrl;
-    activeStory.illustrated = true;
-    renderReaderPage();
-    renderLib();
-    renderStoryStrip();
-    toast('🎉 Artwork done! Picture book ready. +25 XP');
-    addXP(25);
-  } else {
-    // Rate limited or failed — fall back to clipboard + open Gemini web
-    if(progressEl) progressEl.textContent = '⚠️ Rate limited — opening Gemini instead…';
-    await sleep(1500);
-
-    // Copy prompt to clipboard
-    try{ await navigator.clipboard.writeText(prompt); }
-    catch(e){
-      const ta = document.createElement('textarea');
-      ta.value = prompt;
-      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
-      document.body.appendChild(ta); ta.focus(); ta.select();
-      try{ document.execCommand('copy'); }catch(e2){}
-      document.body.removeChild(ta);
-    }
-
-    window.open('https://gemini.google.com', '_blank');
-
-    // Show upload option
-    if(progressWrap) progressWrap.style.display = 'none';
-    const uploadFallback = document.getElementById('artwork-upload-fallback');
-    if(uploadFallback) uploadFallback.style.display = 'block';
-
-    toast('📋 Prompt copied! Paste into Gemini, generate image, download it, then tap Save below.', 7000);
-  }
-}
-
-// ── Save artwork from file (fallback when API rate limited) ──
-function injectArtFromFile(input){
-  if(!activeStory||!input.files[0]) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    applyArtwork(e.target.result);
-    input.value = '';
-  };
-  reader.readAsDataURL(input.files[0]);
-  toast('🖼️ Saving artwork…');
-}
-
-// ── Parent Area: inject by URL ──
-function injectArtFromUrl(){
-  if(!activeStory){ toast('⚠️ Open a story in the reader first'); return; }
-  const inp = document.getElementById('par-art-url-inp');
-  const url = (inp?.value||'').trim();
-  if(!url||!url.startsWith('http')){ toast('⚠️ Enter a valid image URL'); return; }
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = ()=>{
-    try{
-      const c = document.createElement('canvas');
-      c.width=img.naturalWidth; c.height=img.naturalHeight;
-      c.getContext('2d').drawImage(img,0,0);
-      applyArtwork(c.toDataURL('image/jpeg',0.92));
-    }catch(e){ applyArtwork(url); }
-    if(inp) inp.value='';
-  };
-  img.onerror = ()=>{ applyArtwork(url); if(inp) inp.value=''; };
-  img.src = url;
-  toast('🖼️ Loading artwork…');
-}
-
-// ── Parent Area: auto-generate via API ──
-async function makePictureBook(){
-  if(!activeStory){ toast('⚠️ Open a story in the reader first'); return; }
-  const gemKey = localStorage.getItem('gem_key')||'';
-  if(!gemKey){ toast('⚠️ Add a Gemini API key above first'); return; }
-  if(activeStory.illustrated){ toast('✨ Already illustrated'); return; }
-
-  const parBtn = document.getElementById('par-gen-btn');
-  if(parBtn){ parBtn.disabled=true; parBtn.textContent='🎨 Generating…'; }
-
-  const heroDescs = (activeStory.heroIds||[])
-    .map(id=>{ const h=S.heroes.find(x=>x.id===id); return h?h.name+' ('+h.power+')':null; })
-    .filter(Boolean).join(', ')||'brave young adventurers';
-  const storyData = JSON.stringify({title:activeStory.title,theme:activeStory.theme,heroes:heroDescs,hero_description:activeStory.heroDescription||'',pages:activeStory.data},null,2);
-  const prompt = `Create an illustration for this children's story. Bright cartoon style, bold outlines, vivid saturated colours, safe for young children. Show the heroes in an exciting scene. No text, no words, no letters in the image.\n\n${storyData}`;
-
-  const dataUrl = await geminiImage(prompt);
-  if(dataUrl){
-    applyArtwork(dataUrl);
-  } else {
-    toast('⚠️ Rate limited. Try the Get Artwork button in the reader, or wait a minute.');
-  }
-  if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
-}
-
-// ═══════════════════════════════════════════════════════
-//  SPEECH / TTS
-// ═══════════════════════════════════════════════════════
-async function speakWord(word){
-  if(!word) return;
-  window.speechSynthesis?.cancel();
-  const elKey = localStorage.getItem('el_key')||'';
-  if(elKey){
-    try{
-      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','xi-api-key':elKey},
-        body:JSON.stringify({text:word,model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})
-      });
-      if(res.ok){ const buf=await res.arrayBuffer(); playAudioBuffer(buf); }
-    }catch(e){}
-  } else {
-    const u = new SpeechSynthesisUtterance(word); u.rate=0.9; u.pitch=1.1;
-    window.speechSynthesis.speak(u);
-  }
-  wordEls.forEach(el=>{
-    if(el.textContent.replace(/[^a-zA-Z']/g,'')===word){
-      el.classList.add('hl'); setTimeout(()=>el.classList.remove('hl'),700);
-    }
-  });
-}
-
-async function toggleSpeech(){
-  if(speechActive){ stopSpeech(); return; }
-  await startSpeech();
-}
-
-async function startSpeech(){
-  const engine = S.voiceEngine||'browser';
-  const text   = activeStory.data[curPage];
-  if(engine==='elevenlabs'){
-    const k = localStorage.getItem('el_key')||'';
-    if(k) return await startElevenLabs(text,k);
-  } else if(engine==='openai'){
-    const k = localStorage.getItem('oai_key')||'';
-    if(k) return await startOpenAITTS(text,k);
-  }
-  startBrowserTTS(text);
-}
-
-async function startElevenLabs(text,key){
-  stopSpeech(); speechActive=true; document.getElementById('ral-play-btn').textContent='⏸';
-  try{
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','xi-api-key':key},
-      body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',voice_settings:{stability:.45,similarity_boost:.8,style:0.2,use_speaker_boost:true}})
-    });
-    if(!res.ok) throw new Error('EL HTTP '+res.status);
-    const buf = await res.arrayBuffer();
-    playAudioBuffer(buf, ()=>{
-      speechActive=false;
-      document.getElementById('ral-play-btn').textContent='▶';
-      document.getElementById('ral-fill').style.width='100%';
-      wordEls.forEach(w=>w.classList.remove('spoken'));
-    });
-    animateWordCursor(text);
-  }catch(e){
-    console.warn('ElevenLabs error:', e);
-    startBrowserTTS(text);
-  }
-}
-
-let _audioCtx=null, _audioSource=null;
-function playAudioBuffer(buf, onEnd){
-  if(!_audioCtx) _audioCtx = new(window.AudioContext||window.webkitAudioContext)();
-  _audioCtx.decodeAudioData(buf, decoded=>{
-    if(_audioSource){ try{ _audioSource.stop(); }catch(e){} }
-    const src = _audioCtx.createBufferSource();
-    src.buffer=decoded; src.connect(_audioCtx.destination); src.start(0);
-    _audioSource = src;
-    if(onEnd) src.onended=onEnd;
-    const dur=decoded.duration*1000; const start=Date.now();
-    const tick=()=>{
-      if(!speechActive) return;
-      const pct=Math.min(100,((Date.now()-start)/dur)*100);
-      document.getElementById('ral-fill').style.width=pct+'%';
-      if(pct<100) requestAnimationFrame(tick);
-    };
-    tick();
-  }, e=>console.warn('decode error',e));
-}
-
-async function animateWordCursor(text){
-  const words = text.split(/\s+/).filter(Boolean);
-  const wpm = speechRate*(text.length<200?130:140);
-  const msPerWord = 60000/wpm;
-  let wi=0;
-  while(speechActive && wi<wordEls.length){
-    wordEls.forEach(w=>w.classList.remove('spoken'));
-    if(wordEls[wi]) wordEls[wi].classList.add('spoken');
-    wi++;
-    await sleep(msPerWord);
-  }
-  wordEls.forEach(w=>w.classList.remove('spoken'));
-}
-
-function startBrowserTTS(text){
-  if(!('speechSynthesis' in window)){ toast('⚠️ Speech not supported in this browser'); return; }
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate=speechRate; u.pitch=1.06; u.volume=1;
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v=>/samantha|karen|victoria|zira|google us english|en-us/i.test(v.name))
-    || voices.find(v=>v.lang==='en-US') || voices[0];
-  if(preferred) u.voice=preferred;
-  u.onboundary=e=>{
-    if(e.name!=='word') return;
-    wordEls.forEach(w=>w.classList.remove('spoken'));
-    let pos=0, wi=0;
-    for(const tok of text.split(/(\s+)/)){
-      if(/^\s+$/.test(tok)){ pos+=tok.length; continue; }
-      if(pos>=e.charIndex) break;
-      pos+=tok.length; wi++;
-    }
-    if(wordEls[wi]) wordEls[wi].classList.add('spoken');
-    document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
-  };
-  u.onend=()=>{ speechActive=false; document.getElementById('ral-play-btn').textContent='▶'; document.getElementById('ral-fill').style.width='100%'; wordEls.forEach(w=>w.classList.remove('spoken')); };
-  u.onerror=()=>{ speechActive=false; document.getElementById('ral-play-btn').textContent='▶'; };
-  window.speechSynthesis.speak(u);
-  speechActive=true; document.getElementById('ral-play-btn').textContent='⏸';
-}
-
-function stopSpeech(){
-  window.speechSynthesis?.cancel();
-  if(_audioSource){ try{ _audioSource.stop(); }catch(e){} _audioSource=null; }
-  speechActive=false;
-  const btn=document.getElementById('ral-play-btn'); if(btn) btn.textContent='▶';
-  wordEls.forEach(w=>w.classList.remove('spoken'));
-}
-
-function cycleSpeed(){
-  const speeds=[0.75,1,1.25,1.5]; const labels=['0.75×','1×','1.25×','1.5×'];
-  const i=speeds.indexOf(speechRate); speechRate=speeds[(i+1)%speeds.length];
-  document.getElementById('ral-spd').textContent=labels[(i+1)%speeds.length];
-  if(speechActive){ stopSpeech(); startSpeech(); }
-}
-
-function changePage(dir){
-  if(!activeStory) return;
-  const next=curPage+dir;
-  if(next<0||next>=activeStory.data.length) return;
-  curPage=next; renderReaderPage();
-  if(dir>0) addXP(5);
-  if(curPage===activeStory.data.length-1){ toast('🎉 Story complete! +30 XP'); addXP(30); }
-}
-
-function exportStory(){
-  if(!activeStory) return;
-  const b=new Blob([JSON.stringify({title:activeStory.title,theme:activeStory.theme,pages:activeStory.data},null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
-  a.download=activeStory.title.replace(/\s+/g,'-')+'.json'; a.click();
-  toast('💾 Story exported!');
-}
-
-// ═══════════════════════════════════════════════════════
-//  LIBRARY
-// ═══════════════════════════════════════════════════════
-let libFilter='all';
-function renderLib(){
-  const grid=document.getElementById('lib-grid'); grid.innerHTML='';
-  const vis=libFilter==='all'?S.stories:S.stories.filter(s=>s.theme===libFilter);
-  vis.forEach((s,i)=>{
-    const d=document.createElement('div'); d.className='lc';
-    const coverImg=s.illustrations&&s.illustrations['p0'];
-    const coverHtml=coverImg
-      ?`<img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">`
-      :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0?'<div class="lnew">NEW</div>':''}</div>`;
-    d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:6px;"><span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span><span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span></div></div></div>`;
-    grid.appendChild(d);
-  });
-  const plus=document.createElement('div'); plus.className='lc'; plus.onclick=()=>go('build');
-  plus.innerHTML=`<div class="lcov" style="background:var(--card);border:2px dashed rgba(255,255,255,.12)">✨</div><div class="li"><div class="lt" style="color:var(--v2)">Create New Story</div><div class="lm">Tap to begin</div></div>`;
-  grid.appendChild(plus);
-  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
-  const sel=document.getElementById('print-sel'); if(sel) sel.innerHTML=S.stories.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
-}
-function filterLib(el,f){ document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); libFilter=f; renderLib(); }
-
-// ═══════════════════════════════════════════════════════
-//  PDF EXPORT
-// ═══════════════════════════════════════════════════════
-async function exportPDF(storyId){
-  const story=S.stories.find(s=>s.id===storyId);
-  if(!story){ toast('⚠️ Story not found'); return; }
-  const modal=document.getElementById('modal');
-  const mEm=document.getElementById('modal-em'),mT=document.getElementById('modal-title'),mS=document.getElementById('modal-sub');
-  mEm.textContent='📄'; mT.textContent='Building PDF…'; mS.textContent='Preparing pages';
-  modal.classList.add('on');
-  await sleep(300);
-  const storyHeroes=(story.heroIds||[]).map(id=>{ const h=S.heroes.find(x=>x.id===id); return h?h.name:''; }).filter(Boolean).join(', ');
-  const bgTheme=story.bg||'linear-gradient(135deg,#1e1b4b,#312e81)';
-  let pagesHTML=`<div class="pdf-page pdf-cover" style="background:${bgTheme};">
-    <div class="cover-inner">
-      <div class="cover-em">${story.em}</div>
-      <h1 class="cover-title">${story.title}</h1>
-      <p class="cover-heroes">${storyHeroes?'Starring: '+storyHeroes:''}</p>
-      <p class="cover-byline">✨ Made with Story Magic ✨</p>
-    </div>
-  </div>`;
-  story.data.forEach((text,i)=>{
-    const ilKey=`p${i}`;
-    const imgSrc=story.illustrations&&story.illustrations[ilKey];
-    const ilHTML=imgSrc
-      ?`<img src="${imgSrc}" class="page-illus" alt="Illustration for page ${i+1}">`
-      :`<div class="page-illus-fallback" style="background:${bgTheme};">${story.em}</div>`;
-    pagesHTML+=`<div class="pdf-page">${ilHTML}<div class="page-bottom"><div class="page-num-label">Page ${i+1} of ${story.data.length}</div><div class="page-story-text">${text}</div></div></div>`;
-  });
-  const fullHTML=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
-  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Nunito',sans-serif;background:#fff;}
-  .pdf-page{width:100%;min-height:100vh;page-break-after:always;break-after:page;display:flex;flex-direction:column;overflow:hidden;}
-  .pdf-cover{align-items:center;justify-content:center;}
-  .cover-inner{text-align:center;padding:60px 40px;color:#fff;}
-  .cover-em{font-size:96px;margin-bottom:28px;display:block;}
-  .cover-title{font-family:'Baloo 2',cursive;font-size:44px;font-weight:800;color:#fff;text-shadow:0 3px 16px rgba(0,0,0,.45);margin-bottom:18px;line-height:1.2;}
-  .cover-heroes{font-size:20px;color:rgba(255,255,255,.88);margin-bottom:12px;font-weight:700;}
-  .cover-byline{font-size:15px;color:rgba(255,255,255,.62);margin-top:48px;font-weight:700;}
-  .page-illus{width:100%;height:62vh;object-fit:cover;}
-  .page-illus-fallback{width:100%;height:62vh;display:flex;align-items:center;justify-content:center;font-size:100px;}
-  .page-bottom{flex:1;padding:28px 36px 40px;display:flex;flex-direction:column;justify-content:center;background:#fff;}
-  .page-num-label{font-size:13px;font-weight:900;color:#9CA3AF;margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;}
-  .page-story-text{font-size:24px;font-weight:800;line-height:1.7;color:#1F2937;}
-  @media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}.pdf-page{page-break-after:always;break-after:page;min-height:100vh;}}
-  </style></head><body>${pagesHTML}</body></html>`;
-  modal.classList.remove('on');
-  const w=window.open('','_blank','width=800,height=900');
-  w.document.write(fullHTML); w.document.close();
-  w.onload=()=>{ setTimeout(()=>{ w.focus(); w.print(); },500); };
-  toast('📄 PDF ready — choose Save as PDF in the print dialog!');
-}
-
-// ═══════════════════════════════════════════════════════
-//  BUILD SCREEN
-// ═══════════════════════════════════════════════════════
-let buildStep=1;
-function initBuild(){
-  buildStep=1;
-  S.build={world:'',worldEm:'',quest:'',twist:'',selectedHeroes:[]};
-  document.getElementById('story-out').innerHTML='';
-  document.getElementById('story-title-inp').value='';
-  document.getElementById('story-extras-inp').value='';
-  renderHeroSelector();
-  showStep(1);
-}
-function showStep(n){
-  [1,2,3,4].forEach(i=>{ const el=document.getElementById('step'+i); if(el) el.style.display=i===n?'block':'none'; });
-  ['pd1','pd2','pd3','pd4'].forEach((id,i)=>{
-    const el=document.getElementById(id); if(!el) return;
-    el.classList.remove('cur','done');
-    if(i+1<n) el.classList.add('done'); else if(i+1===n) el.classList.add('cur');
-  });
-  buildStep=n;
-}
-function pick(field,val,em,el){
-  el.closest('[id^=step]').querySelectorAll('.ch').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on'); S.build[field]=val;
-  if(field==='world') S.build.worldEm=em;
-  setTimeout(()=>showStep(buildStep+1),260);
-}
-function renderHeroSelector(){
-  const grid=document.getElementById('hero-sel-grid');
-  const noMsg=document.getElementById('no-heroes-msg');
-  grid.innerHTML='';
-  if(S.heroes.length===0){ noMsg.style.display='block'; return; }
-  noMsg.style.display='none';
-  S.heroes.forEach(h=>{
-    const d=document.createElement('div'); d.className='hsel'; d.dataset.id=h.id;
-    d.onclick=()=>{
-      d.classList.toggle('on');
-      const idx=S.build.selectedHeroes.indexOf(h.id);
-      if(idx>-1) S.build.selectedHeroes.splice(idx,1);
-      else if(S.build.selectedHeroes.length<4) S.build.selectedHeroes.push(h.id);
-      else{ d.classList.remove('on'); toast('👥 Max 4 heroes per story!'); }
-      d.querySelector('.hsel-check').textContent=d.classList.contains('on')?'✓':'';
-    };
-    d.innerHTML=`<div class="hsel-av">${getAv(h.avatarId)}</div><div class="hsel-info"><div class="hsel-name">${h.name}</div><div class="hsel-power">${h.power}</div></div><div class="hsel-check"></div>`;
-    grid.appendChild(d);
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-//  HERO LIBRARY
-// ═══════════════════════════════════════════════════════
-let _selAvId='knight', _selPower='⚡ Super Speed';
-function renderHeroLibrary(){
-  const rg=document.getElementById('roster-grid'); rg.innerHTML='';
-  if(S.heroes.length===0){
-    rg.innerHTML=`<div style="grid-column:1/-1;text-align:center;color:var(--dim);font-size:.85rem;padding:16px;">No heroes yet — add your first one below! 👇</div>`;
-  }
-  S.heroes.forEach(h=>{
-    const d=document.createElement('div'); d.className='rcard';
-    d.innerHTML=`<div class="rcard-av">${getAv(h.avatarId)}</div><div class="rcard-name">${h.name}</div><div class="rcard-power">${h.power}</div><div class="rcard-del" onclick="removeHero('${h.id}')">✕</div>`;
-    rg.appendChild(d);
-  });
-  const apg=document.getElementById('av-pick-grid'); apg.innerHTML='';
-  _selAvId=S.addingAvatarId||'knight';
-  AVATARS.forEach(av=>{
-    const d=document.createElement('div');
-    d.className='apc'+(av.id===_selAvId?' on':'');
-    d.onclick=()=>{ document.querySelectorAll('.apc').forEach(c=>c.classList.remove('on')); d.classList.add('on'); _selAvId=av.id; S.addingAvatarId=av.id; };
-    d.innerHTML=`<div class="apc-sv">${av.svg}</div><div class="apc-nm">${av.name}</div>`;
-    apg.appendChild(d);
-  });
-  const pg=document.getElementById('power-grid'); pg.innerHTML='';
-  _selPower=S.addingPower||POWERS[0].em+' '+POWERS[0].label;
-  POWERS.forEach(pw=>{
-    const label=pw.em+' '+pw.label;
-    const d=document.createElement('div');
-    d.className='power-chip'+(label===_selPower?' on':'');
-    d.onclick=()=>{ document.querySelectorAll('.power-chip').forEach(c=>c.classList.remove('on')); d.classList.add('on'); _selPower=label; S.addingPower=label; };
-    d.textContent=label; pg.appendChild(d);
-  });
-  document.getElementById('hero-count-lbl').textContent=S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
-}
-function addHero(){
-  const name=(document.getElementById('new-hero-name').value.trim());
-  if(!name){ toast('⚠️ Give your hero a name!'); return; }
-  if(S.heroes.length>=4){ toast('👥 Max 4 heroes in your squad!'); return; }
-  const h={id:'h-'+Date.now(),name,avatarId:_selAvId,power:_selPower};
-  S.heroes.push(h); saveHeroes();
-  document.getElementById('new-hero-name').value='';
-  addXP(30); toast('🛡️ '+name+' added to your squad! +30 XP');
-  renderHeroLibrary(); renderHeroStrip();
-}
-function removeHero(id){
-  S.heroes=S.heroes.filter(h=>h.id!==id); saveHeroes();
-  renderHeroLibrary(); renderHeroStrip(); toast('Hero removed');
-}
-
-// ═══════════════════════════════════════════════════════
-//  HOME STRIPS
-// ═══════════════════════════════════════════════════════
-function renderHeroStrip(){
-  const strip=document.getElementById('hero-strip'); strip.innerHTML='';
-  S.heroes.forEach(h=>{
-    const d=document.createElement('div'); d.className='hcard';
-    d.onclick=()=>toast('🦸 '+h.name+' — '+h.power+'!');
-    d.innerHTML=`<div class="av-wrap"><div class="av-img">${getAv(h.avatarId)}</div><div class="av-lv">1</div></div><div class="hname">${h.name}</div><div class="hpower">${h.power.split(' ')[0]}</div>`;
-    strip.appendChild(d);
-  });
-  const add=document.createElement('div'); add.className='hcard add-c'; add.onclick=()=>go('heroes');
-  add.innerHTML=`<div class="av-wrap"><div class="av-img" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:2px dashed rgba(255,255,255,.18);border-radius:50%;font-size:1.4rem;color:rgba(237,233,255,.35);">＋</div></div><div class="hname" style="color:rgba(237,233,255,.35)">Add</div>`;
-  strip.appendChild(add);
-}
-function renderStoryStrip(){
-  const row=document.getElementById('story-strip'); row.innerHTML='';
-  S.stories.slice(0,4).forEach(s=>{
-    const d=document.createElement('div'); d.className='scard'; d.onclick=()=>openReader(s.id);
-    const sCover=s.illustrations&&s.illustrations['p0'];
-    d.innerHTML=sCover
-      ?`<div class="scov" style="background:${s.bg};padding:0;overflow:hidden;"><img src="${sCover}" style="width:100%;height:106px;object-fit:cover;display:block;"><div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`
-      :`<div class="scov" style="background:${s.bg}">${s.em}<div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`;
-    row.appendChild(d);
-  });
-}
-
-// ═══════════════════════════════════════════════════════
-//  BADGES
-// ═══════════════════════════════════════════════════════
-const ALL_BADGES=[
-  {id:'first-story',em:'📖',name:'First Story',xp:50},
-  {id:'streak7',em:'🔥',name:'7-Day Streak',xp:100},
-  {id:'space',em:'🚀',name:'Space Explorer',xp:75},
-  {id:'squad',em:'👥',name:'Squad Leader',xp:80},
-  {id:'wordwiz',em:'💬',name:'Word Wizard',xp:80},
-  {id:'bookmaker',em:'🖨️',name:'Bookmaker',xp:120},
-  {id:'ocean',em:'🌊',name:'Ocean Diver',xp:90},
-  {id:'master',em:'🏆',name:'Story Master',xp:200},
-  {id:'hero-create',em:'🛡️',name:'Hero Creator',xp:60},
-];
-function renderBadges(){
-  const grid=document.getElementById('badge-grid'); grid.innerHTML='';
-  ALL_BADGES.forEach(b=>{
-    const earned=S.earnedBadges.includes(b.id);
-    const d=document.createElement('div'); d.className='bc'+(earned?' earned':' locked');
-    if(earned) d.onclick=()=>toast(b.em+' '+b.name+' — +'+b.xp+' XP earned!');
-    d.innerHTML=`<div class="bem">${b.em}</div><div class="bnm">${b.name}</div><div class="bxp">+${b.xp} XP</div>`;
-    grid.appendChild(d);
-  });
-  document.getElementById('xp-cur').textContent=S.xp;
-  document.getElementById('xpf').style.width=Math.min(100,(S.xp/1000)*100)+'%';
-}
-
-// ═══════════════════════════════════════════════════════
-//  XP
-// ═══════════════════════════════════════════════════════
-function addXP(n){
-  S.xp+=n; S.coins+=n;
-  document.getElementById('xp-show').textContent=S.xp;
-  document.getElementById('coin-show').textContent=S.coins.toLocaleString();
-  const pxp=document.getElementById('ps-xp'); if(pxp) pxp.textContent=S.xp;
-  // Sparkle effect on XP display
-  spawnSparkles(document.getElementById('xp-show'));
-}
-
-// Sparkle particles per Gemini recommendation
-function spawnSparkles(el){
-  if(!el) return;
-  const rect=el.getBoundingClientRect();
-  for(let i=0;i<6;i++){
-    const sp=document.createElement('div');
-    sp.className='sparkle-particle';
-    sp.textContent=['✨','⭐','💫','🌟'][Math.floor(Math.random()*4)];
-    sp.style.cssText=`left:${rect.left+Math.random()*rect.width}px;top:${rect.top}px;font-size:${10+Math.random()*8}px;`;
-    document.body.appendChild(sp);
-    setTimeout(()=>sp.remove(), 1000);
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-//  PARENT AREA
-// ═══════════════════════════════════════════════════════
-function renderParent(){
-  document.getElementById('ps-stories').textContent=S.stories.length;
-  document.getElementById('ps-xp').textContent=S.xp;
-  const ml=document.getElementById('memory-lane'); ml.innerHTML='';
-  S.stories.slice(0,4).forEach(s=>{
-    const d=document.createElement('div'); d.className='ml-item';
-    d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div><div class="ml-b">+50 XP</div>`;
-    ml.appendChild(d);
-  });
-  const ek=localStorage.getItem('el_key')||''; if(ek) document.getElementById('el-key-inp').value=ek; updateElStatus(ek);
-  const gk=localStorage.getItem('gem_key')||''; if(gk) document.getElementById('gem-key-inp').value=gk; updateGemStatus(gk);
-  const ok=localStorage.getItem('oai_key')||''; if(ok) document.getElementById('oai-key-inp').value=ok; updateOAIStatus(ok);
-  const n=localStorage.getItem('par_name'); if(n) document.getElementById('par-name').value=n;
-  const e=localStorage.getItem('par_email'); if(e){ document.getElementById('par-email').value=e; document.getElementById('print-email').value=e; }
-  const eng=S.voiceEngine||'browser';
-  ['browser','elevenlabs','openai'].forEach(e2=>{ const el=document.getElementById('ve-'+e2); if(el) el.classList.toggle('on',e2===eng); });
-  document.getElementById('tts-browser-section').style.display=eng==='browser'?'block':'none';
-  document.getElementById('tts-el-section').style.display=eng==='elevenlabs'?'block':'none';
-  document.getElementById('tts-openai-section').style.display=eng==='openai'?'block':'none';
-  renderElVoiceGrid(); renderOAIVoiceGrid(); renderPDFList(); renderLib();
-}
-function saveProfile(){
-  const n=document.getElementById('par-name').value.trim(), e=document.getElementById('par-email').value.trim();
-  if(n) localStorage.setItem('par_name',n);
-  if(e){ localStorage.setItem('par_email',e); document.getElementById('print-email').value=e; }
-  toast('✅ Profile saved!');
-}
-function toggleEye(id){ const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; }
-
-// Gemini key
-function saveGemKey(){ const k=document.getElementById('gem-key-inp').value.trim(); if(!k){ toast('⚠️ Enter a Gemini key'); return; } localStorage.setItem('gem_key',k); updateGemStatus(k); toast('✅ Gemini key saved! Stories and artwork enabled ✨'); }
-async function testGemKey(){
-  const k=document.getElementById('gem-key-inp').value.trim(); if(!k){ toast('⚠️ Enter a key'); return; }
-  toast('✨ Testing Gemini key…');
-  try{
-    // Use models list endpoint — no quota consumed, just validates the key
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${k}&pageSize=1`);
-    if(res.status===400||res.status===403){ throw new Error('Invalid key — check it in AI Studio'); }
-    if(res.status===429){ 
-      // 429 on models list is extremely rare — key is valid, just save it
-      localStorage.setItem('gem_key',k); updateGemStatus(k);
-      toast('✅ Key looks valid! (Rate limit hit on test, but key saved)'); return;
-    }
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    localStorage.setItem('gem_key',k); updateGemStatus(k);
-    toast('✅ Gemini key works! Stories and artwork ready ✨');
-  }catch(e){ toast('❌ '+e.message.slice(0,60)); }
-}
-function updateGemStatus(k){
-  const l=document.getElementById('gem-led'), t=document.getElementById('gem-st');
-  if(k&&k.length>10){ l.className='led on'; t.textContent='Gemini connected — stories & artwork ready ✨'; t.style.color='var(--mint2)'; }
-  else{ l.className='led off'; t.textContent='No key — demo stories used'; t.style.color='var(--dim)'; }
-}
-
-// ElevenLabs
-function saveElKey(){ const k=document.getElementById('el-key-inp').value.trim(); if(!k){ toast('⚠️ Enter an ElevenLabs key'); return; } localStorage.setItem('el_key',k); updateElStatus(k); toast('✅ ElevenLabs saved!'); }
-async function testElKey(){
-  const k=document.getElementById('el-key-inp').value.trim(); if(!k){ toast('⚠️ Enter a key'); return; }
-  toast('🧪 Testing ElevenLabs…');
-  try{
-    const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{method:'POST',headers:{'Content-Type':'application/json','xi-api-key':k},body:JSON.stringify({text:'Story Magic narration works!',model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const buf=await res.arrayBuffer();
-    if(!_audioCtx) _audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    _audioCtx.decodeAudioData(buf,decoded=>{ const s=_audioCtx.createBufferSource(); s.buffer=decoded; s.connect(_audioCtx.destination); s.start(0); });
-    toast('✅ ElevenLabs works! 🎙️'); localStorage.setItem('el_key',k); updateElStatus(k);
-  }catch(e){ toast('❌ ElevenLabs error: '+e.message.slice(0,40)); }
-}
-function updateElStatus(k){ const l=document.getElementById('el-led'),t=document.getElementById('el-st'); if(k&&k.length>8){ l.className='led on'; t.textContent='ElevenLabs connected 🎙️'; t.style.color='var(--mint2)'; } else{ l.className='led off'; t.textContent='No key'; t.style.color='var(--dim)'; } }
-
-// OpenAI TTS
-const OPENAI_VOICES=[{id:'nova',label:'Nova',desc:'Warm & friendly female'},{id:'alloy',label:'Alloy',desc:'Neutral & clear'},{id:'echo',label:'Echo',desc:'Soft male narrator'},{id:'fable',label:'Fable',desc:'Expressive & warm'},{id:'onyx',label:'Onyx',desc:'Deep & authoritative'},{id:'shimmer',label:'Shimmer',desc:'Bright & cheerful'}];
-function saveOAIKey(){ const k=document.getElementById('oai-key-inp').value.trim(); if(!k) return; if(!k.startsWith('sk-')){ toast('⚠️ OpenAI keys start with sk-'); return; } localStorage.setItem('oai_key',k); updateOAIStatus(k); toast('✅ OpenAI key saved!'); }
-async function testOAI(){
-  const k=document.getElementById('oai-key-inp').value.trim(); if(!k){ toast('⚠️ Enter an OpenAI key'); return; }
-  toast('🧪 Testing OpenAI TTS…');
-  try{
-    const voice=localStorage.getItem('oai_voice')||'nova';
-    const res=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},body:JSON.stringify({model:'tts-1',input:'Story Magic narration works!',voice})});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const buf=await res.arrayBuffer();
-    if(!_audioCtx) _audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    _audioCtx.decodeAudioData(buf,decoded=>{ const s=_audioCtx.createBufferSource(); s.buffer=decoded; s.connect(_audioCtx.destination); s.start(0); });
-    toast('✅ OpenAI TTS works! 🤖'); localStorage.setItem('oai_key',k); updateOAIStatus(k);
-  }catch(e){ toast('❌ OpenAI error: '+e.message.slice(0,40)); }
-}
-function updateOAIStatus(k){ const l=document.getElementById('oai-led'),t=document.getElementById('oai-st'); if(k&&k.startsWith('sk-')){ l.className='led on'; t.textContent='OpenAI TTS connected 🤖'; t.style.color='var(--mint2)'; } else{ l.className='led off'; t.textContent='No key'; t.style.color='var(--dim)'; } }
-
-async function startOpenAITTS(text,key){
-  stopSpeech(); speechActive=true; document.getElementById('ral-play-btn').textContent='⏸';
-  try{
-    const voice=localStorage.getItem('oai_voice')||'nova';
-    const res=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'tts-1',input:text,voice,speed:speechRate})});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const buf=await res.arrayBuffer();
-    playAudioBuffer(buf,()=>{ speechActive=false; document.getElementById('ral-play-btn').textContent='▶'; document.getElementById('ral-fill').style.width='100%'; wordEls.forEach(w=>w.classList.remove('spoken')); });
-    animateWordCursor(text);
-  }catch(e){ console.warn('OpenAI TTS error',e); startBrowserTTS(text); }
-}
-
-function setVoiceEngine(engine){
-  S.voiceEngine=engine; localStorage.setItem('sm_engine',engine);
-  ['browser','elevenlabs','openai'].forEach(e=>{ const el=document.getElementById('ve-'+e); if(el) el.classList.toggle('on',e===engine); });
-  document.getElementById('tts-browser-section').style.display=engine==='browser'?'block':'none';
-  document.getElementById('tts-el-section').style.display=engine==='elevenlabs'?'block':'none';
-  document.getElementById('tts-openai-section').style.display=engine==='openai'?'block':'none';
-  toast(engine==='elevenlabs'?'🎤 ElevenLabs selected':engine==='openai'?'🤖 OpenAI TTS selected':'🖥️ Device voice selected');
-}
-
-function renderOAIVoiceGrid(){ const g=document.getElementById('oai-voice-grid'); if(!g) return; g.innerHTML=''; const sel=localStorage.getItem('oai_voice')||'nova'; OPENAI_VOICES.forEach(v=>{ const d=document.createElement('div'); d.className='vc'+(v.id===sel?' on':''); d.onclick=()=>{ document.querySelectorAll('#oai-voice-grid .vc').forEach(c=>c.classList.remove('on')); d.classList.add('on'); localStorage.setItem('oai_voice',v.id); toast('🤖 Voice: '+v.label); }; d.innerHTML=`<div class="vc-name">${v.label}</div><div class="vc-desc">${v.desc}</div>`; g.appendChild(d); }); }
-function renderElVoiceGrid(){ const g=document.getElementById('el-voice-grid'); if(!g) return; g.innerHTML=''; EL_VOICES.forEach(v=>{ const d=document.createElement('div'); d.className='vc'+(v.id===S.voiceId?' on':''); d.onclick=()=>{ document.querySelectorAll('#el-voice-grid .vc').forEach(c=>c.classList.remove('on')); d.classList.add('on'); S.voiceId=v.id; localStorage.setItem('sm_voice',v.id); toast('🎤 Voice: '+v.name); }; d.innerHTML=`<div class="vc-name">${v.em} ${v.name}</div><div class="vc-desc">${v.desc}</div>`; g.appendChild(d); }); }
-
-function requestPrint(){ const e=document.getElementById('print-email').value.trim(); if(!e||!e.includes('@')){ toast('⚠️ Enter a valid parent email'); return; } document.getElementById('pr-confirm').style.display='block'; toast('📧 Checkout link sent to '+e+'!'); }
-
-function renderPDFList(){
-  const el=document.getElementById('pdf-story-list'); if(!el) return; el.innerHTML='';
-  S.stories.forEach(s=>{
-    const d=document.createElement('div'); d.className='ml-item'; d.style.cursor='pointer';
-    d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div style="flex:1;"><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div>`;
-    const btn=document.createElement('span');
-    btn.style.cssText='font-size:.67rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:999px;padding:4px 10px;color:#FCD34D;font-weight:900;cursor:pointer;flex-shrink:0;';
-    btn.textContent='📄 PDF'; btn.onclick=()=>exportPDF(s.id);
-    d.appendChild(btn); el.appendChild(d);
-  });
-}
-
-// Export / Import
-function exportAll(){
-  const payload={
-    exported:new Date().toISOString(), version:'1.0',
-    heroes:S.heroes,
-    stories:S.stories.map(s=>({id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||'',heroDescription:s.heroDescription||'',illustrationPrompts:s.illustrationPrompts||[]})),
-    xp:S.xp, badges:S.earnedBadges,
-    keys:{ gemini:localStorage.getItem('gem_key')||'', el:localStorage.getItem('el_key')||'', oai:localStorage.getItem('oai_key')||'' },
-    prefs:{ voice_engine:localStorage.getItem('sm_engine')||'browser', voice_id:localStorage.getItem('sm_voice')||'', child_name:localStorage.getItem('par_name')||'', parent_email:localStorage.getItem('par_email')||'' }
-  };
-  const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
-  a.download='story-magic-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
-  toast('💾 Backup exported!');
-}
-
-function importAll(input){
-  if(!input.files[0]) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const data=JSON.parse(e.target.result); const results=[];
-      if(data.heroes?.length>0){ S.heroes=data.heroes; saveHeroes(); results.push('✅ '+data.heroes.length+' heroes restored'); }
-      if(data.stories?.length>0){
-        const existingIds=new Set(S.stories.map(s=>s.id));
-        const newStories=data.stories.filter(s=>!existingIds.has(s.id)).map(s=>({...s,illustrations:{},illustrated:false}));
-        S.stories=[...newStories,...S.stories]; results.push('✅ '+newStories.length+' stories imported');
-      }
-      if(typeof data.xp==='number'){ S.xp=data.xp; addXP(0); results.push('✅ XP restored: '+data.xp); }
-      if(data.badges?.length>0){ S.earnedBadges=data.badges; results.push('✅ Badges restored'); }
-      if(data.keys){
-        if(data.keys.gemini){ localStorage.setItem('gem_key',data.keys.gemini); updateGemStatus(data.keys.gemini); results.push('✅ Gemini key restored'); }
-        if(data.keys.el){ localStorage.setItem('el_key',data.keys.el); updateElStatus(data.keys.el); results.push('✅ ElevenLabs key restored'); }
-        if(data.keys.oai){ localStorage.setItem('oai_key',data.keys.oai); updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
-      }
-      if(data.prefs){
-        if(data.prefs.voice_engine){ localStorage.setItem('sm_engine',data.prefs.voice_engine); S.voiceEngine=data.prefs.voice_engine; }
-        if(data.prefs.voice_id){ localStorage.setItem('sm_voice',data.prefs.voice_id); S.voiceId=data.prefs.voice_id; }
-        if(data.prefs.child_name) localStorage.setItem('par_name',data.prefs.child_name);
-        if(data.prefs.parent_email) localStorage.setItem('par_email',data.prefs.parent_email);
-        if(data.prefs.voice_engine||data.prefs.child_name) results.push('✅ Preferences restored');
-      }
-      renderHeroStrip(); renderStoryStrip(); renderLib();
-      document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
-      const el2=document.getElementById('import-result');
-      el2.style.display='block'; el2.innerHTML='<strong>Import complete!</strong><br>'+results.join('<br>');
-      toast('✅ Restore complete! '+results.length+' items recovered.');
-    }catch(err){
-      const el2=document.getElementById('import-result');
-      el2.style.display='block'; el2.style.background='rgba(239,68,68,.1)'; el2.style.borderColor='rgba(239,68,68,.25)';
-      el2.innerHTML='❌ Could not read file: '+err.message;
-      toast('❌ Import failed');
-    }
-    input.value='';
-  };
-  reader.readAsText(input.files[0]);
-}
-
-// ═══════════════════════════════════════════════════════
-//  NAVIGATION
-// ═══════════════════════════════════════════════════════
 const PAGES=['home','heroes','build','reader','library','badges','parent'];
 const NAVMAP={home:'ni-home',library:'ni-library',badges:'ni-badges',parent:'ni-parent'};
 function go(id){
@@ -1919,51 +821,1214 @@ function go(id){
   if(id==='parent')  renderParent();
 }
 
-// ═══════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════
+// ─── XP ─────────────────────────────────────────
+function addXP(n){
+  S.xp+=n;S.coins+=n;
+  document.getElementById('xp-show').textContent=S.xp;
+  document.getElementById('coin-show').textContent=S.coins.toLocaleString();
+  const pxp=document.getElementById('ps-xp');if(pxp)pxp.textContent=S.xp;
+}
+
+// ─── HERO LIBRARY SCREEN ────────────────────────
+let _selAvId='knight', _selPower='⚡ Super Speed';
+
+function renderHeroLibrary(){
+  // Roster
+  const rg=document.getElementById('roster-grid');
+  rg.innerHTML='';
+  if(S.heroes.length===0){
+    rg.innerHTML=`<div style="grid-column:1/-1;text-align:center;color:var(--dim);font-size:.85rem;padding:16px;">No heroes yet — add your first one below! 👇</div>`;
+  }
+  S.heroes.forEach(h=>{
+    const d=document.createElement('div');d.className='rcard';
+    d.innerHTML=`<div class="rcard-av">${getAv(h.avatarId)}</div>
+      <div class="rcard-name">${h.name}</div>
+      <div class="rcard-power">${h.power}</div>
+      <div class="rcard-del" onclick="removeHero('${h.id}')">✕</div>`;
+    rg.appendChild(d);
+  });
+
+  // Avatar pick grid
+  const apg=document.getElementById('av-pick-grid');
+  apg.innerHTML='';
+  _selAvId=S.addingAvatarId||'knight';
+  AVATARS.forEach(av=>{
+    const d=document.createElement('div');
+    d.className='apc'+(av.id===_selAvId?' on':'');
+    d.onclick=()=>{
+      document.querySelectorAll('.apc').forEach(c=>c.classList.remove('on'));
+      d.classList.add('on');_selAvId=av.id;S.addingAvatarId=av.id;
+    };
+    d.innerHTML=`<div class="apc-sv">${av.svg}</div><div class="apc-nm">${av.name}</div>`;
+    apg.appendChild(d);
+  });
+
+  // Power chips
+  const pg=document.getElementById('power-grid');
+  pg.innerHTML='';
+  _selPower=S.addingPower||POWERS[0].em+' '+POWERS[0].label;
+  POWERS.forEach(pw=>{
+    const label=pw.em+' '+pw.label;
+    const d=document.createElement('div');
+    d.className='power-chip'+(label===_selPower?' on':'');
+    d.onclick=()=>{
+      document.querySelectorAll('.power-chip').forEach(c=>c.classList.remove('on'));
+      d.classList.add('on');_selPower=label;S.addingPower=label;
+    };
+    d.textContent=label;
+    pg.appendChild(d);
+  });
+
+  // Update hero count label
+  document.getElementById('hero-count-lbl').textContent=
+    S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
+}
+
+function addHero(){
+  const name=(document.getElementById('new-hero-name').value.trim());
+  if(!name){toast('⚠️ Give your hero a name!');return;}
+  if(S.heroes.length>=4){toast('👥 Max 4 heroes in your squad!');return;}
+  const h={id:'h-'+Date.now(),name,avatarId:_selAvId,power:_selPower};
+  S.heroes.push(h);
+  saveHeroes();
+  document.getElementById('new-hero-name').value='';
+  addXP(30);
+  toast('🛡️ '+name+' added to your squad! +30 XP');
+  renderHeroLibrary();
+  renderHeroStrip();
+}
+
+function removeHero(id){
+  S.heroes=S.heroes.filter(h=>h.id!==id);
+  saveHeroes();
+  renderHeroLibrary();
+  renderHeroStrip();
+  toast('Hero removed from squad');
+}
+
+// ─── HOME STRIP RENDERS ─────────────────────────
+function renderHeroStrip(){
+  const strip=document.getElementById('hero-strip');
+  strip.innerHTML='';
+  S.heroes.forEach(h=>{
+    const d=document.createElement('div');d.className='hcard';
+    d.onclick=()=>toast('🦸 '+h.name+' — '+h.power+'!');
+    d.innerHTML=`<div class="av-wrap"><div class="av-img">${getAv(h.avatarId)}</div><div class="av-lv">1</div></div><div class="hname">${h.name}</div><div class="hpower">${h.power.split(' ')[0]}</div>`;
+    strip.appendChild(d);
+  });
+  const add=document.createElement('div');add.className='hcard add-c';add.onclick=()=>go('heroes');
+  add.innerHTML=`<div class="av-wrap"><div class="av-img" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04);border:2px dashed rgba(255,255,255,.18);border-radius:50%;font-size:1.4rem;color:rgba(237,233,255,.35);">＋</div></div><div class="hname" style="color:rgba(237,233,255,.35)">Add</div>`;
+  strip.appendChild(add);
+}
+
+function renderStoryStrip(){
+  const row=document.getElementById('story-strip');row.innerHTML='';
+  S.stories.slice(0,4).forEach(s=>{
+    const d=document.createElement('div');d.className='scard';d.onclick=()=>openReader(s.id);
+    const sCover=s.illustrations&&s.illustrations['p0'];
+    d.innerHTML=sCover
+      ?`<div class="scov" style="background:${s.bg};padding:0;overflow:hidden;"><img src="${sCover}" style="width:100%;height:106px;object-fit:cover;display:block;"><div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`
+      :`<div class="scov" style="background:${s.bg}">${s.em}<div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`;
+    row.appendChild(d);
+  });
+}
+
+// ─── BUILD A STORY ───────────────────────────────
+let buildStep=1;
+function initBuild(){
+  buildStep=1;
+  S.build={world:'',worldEm:'',quest:'',twist:'',selectedHeroes:[]};
+  document.getElementById('groq-out').innerHTML='';
+  document.getElementById('story-title-inp').value='';
+  renderHeroSelector();
+  showStep(1);
+}
+
+function showStep(n){
+  [1,2,3,4].forEach(i=>{const el=document.getElementById('step'+i);if(el)el.style.display=i===n?'block':'none';});
+  ['pd1','pd2','pd3','pd4'].forEach((id,i)=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('cur','done');if(i+1<n)el.classList.add('done');else if(i+1===n)el.classList.add('cur');});
+  buildStep=n;
+}
+
+function pick(field,val,em,el){
+  el.closest('[id^=step]').querySelectorAll('.ch').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');S.build[field]=val;
+  if(field==='world')S.build.worldEm=em;
+  setTimeout(()=>showStep(buildStep+1),260);
+}
+
+function renderHeroSelector(){
+  const grid=document.getElementById('hero-sel-grid');
+  const noMsg=document.getElementById('no-heroes-msg');
+  grid.innerHTML='';
+  if(S.heroes.length===0){noMsg.style.display='block';return;}
+  noMsg.style.display='none';
+  S.heroes.forEach(h=>{
+    const d=document.createElement('div');d.className='hsel';
+    d.dataset.id=h.id;
+    d.onclick=()=>{
+      d.classList.toggle('on');
+      const idx=S.build.selectedHeroes.indexOf(h.id);
+      if(idx>-1)S.build.selectedHeroes.splice(idx,1);
+      else if(S.build.selectedHeroes.length<4)S.build.selectedHeroes.push(h.id);
+      else{d.classList.remove('on');toast('👥 Max 4 heroes per story!');}
+      d.querySelector('.hsel-check').textContent=d.classList.contains('on')?'✓':'';
+    };
+    d.innerHTML=`<div class="hsel-av">${getAv(h.avatarId)}</div>
+      <div class="hsel-info"><div class="hsel-name">${h.name}</div><div class="hsel-power">${h.power}</div></div>
+      <div class="hsel-check"></div>`;
+    grid.appendChild(d);
+  });
+}
+
+async function generateStory(){
+  const selIds=S.build.selectedHeroes;
+  const selHeroes=selIds.length>0?S.heroes.filter(h=>selIds.includes(h.id)):S.heroes.slice(0,1);
+  if(selHeroes.length===0){toast('⚠️ Create a hero first in My Heroes!');return;}
+  const heroNames=selHeroes.map(h=>h.name);
+  const heroDesc=selHeroes.map(h=>`${h.name} (${h.power})`).join(', ');
+  const customTitle=document.getElementById('story-title-inp').value.trim();
+  const extras=document.getElementById('story-extras-inp').value.trim();
+  const pageCount=parseInt(document.getElementById('story-len').value)||6;
+  const world=S.build.world||'Space';
+  const quest=S.build.quest||'find the lost treasure';
+  const twist=S.build.twist||'a secret power awakened';
+
+  const modal=document.getElementById('modal');
+  const mEm=document.getElementById('modal-em'),mT=document.getElementById('modal-title'),mS=document.getElementById('modal-sub');
+  modal.classList.add('on');
+  const steps=[['⚡','Asking Groq AI…','Llama 3.3 is warming up!'],['🌍','Building the world…','Painting '+world+' landscapes'],['📝','Writing the story…','Your heroes are getting their quests!'],['✨','Adding the twist…','A surprise is being woven in…'],['🌟','Final sparkles…','Almost ready!']];
+
+  const key=localStorage.getItem('groq_key')||'';
+  let pagesArr=[];
+
+  if(key.startsWith('gsk_')){
+    let si=0;mEm.textContent=steps[0][0];mT.textContent=steps[0][1];mS.textContent=steps[0][2];
+    const intv=setInterval(()=>{si=Math.min(si+1,4);mEm.textContent=steps[si][0];mT.textContent=steps[si][1];mS.textContent=steps[si][2];},900);
+    try{
+      const prompt=`You are a children's storybook author writing for ages 5-10.
+Write a story with EXACTLY ${pageCount} pages.
+World: ${world}
+Heroes: ${heroDesc} — they are all equal partners, each using their specific power
+Quest: ${quest}
+Twist: ${twist}
+${customTitle?'Title: '+customTitle:''}
+${extras?`Personal details to weave into the story naturally: ${extras}`:''}
+
+Rules:
+- Each page = exactly 2-3 short, simple sentences. Simple vocabulary.
+- ALL heroes must appear and contribute using their unique power.
+- Naturally weave in any personal details provided above — they should feel organic, not forced.
+- Be vivid, exciting, and positive.
+- End with triumph and a lesson about teamwork.
+- Output ONLY the pages, no preamble, no title.
+
+Format EXACTLY:
+PAGE 1: [text]
+PAGE 2: [text]
+(continue for all ${pageCount} pages)`;
+      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:1400,messages:[{role:'user',content:prompt}]})});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const data=await res.json();const raw=data.choices?.[0]?.message?.content||'';
+      const matches=raw.match(/PAGE \d+:\s*([\s\S]*?)(?=\nPAGE \d+:|$)/g);
+      if(matches)pagesArr=matches.map(m=>m.replace(/^PAGE \d+:\s*/,'').trim().replace(/\n/g,' ')).filter(Boolean);
+      clearInterval(intv);
+    }catch(e){clearInterval(intv);console.warn('Groq error:',e);}
+  }else{
+    for(const[em,t,s]of steps){mEm.textContent=em;mT.textContent=t;mS.textContent=s;await sleep(680);}
+  }
+  if(pagesArr.length===0)pagesArr=demoPages(world.toLowerCase(),heroNames);
+
+  const wk=(world||'space').toLowerCase();
+  const emMap={space:'🚀',jungle:'🌿',kingdom:'🏰',ocean:'🌊','spooky manor':'👻','dino land':'🦕'};
+  const bgMap={space:'linear-gradient(135deg,#1e1b4b,#312e81)',jungle:'linear-gradient(135deg,#14532d,#166534)',kingdom:'linear-gradient(135deg,#4a1942,#6b21a8)',ocean:'linear-gradient(135deg,#0c4a6e,#075985)','spooky manor':'linear-gradient(135deg,#1c1917,#292524)','dino land':'linear-gradient(135deg,#14532d,#3f6212)'};
+  const ns={id:'gen-'+Date.now(),theme:wk,em:emMap[wk]||'✨',title:customTitle||(S.build.worldEm+' '+world+' Adventure'),pages:pagesArr.length,bg:bgMap[wk]||'linear-gradient(135deg,#2e1065,#4c1d95)',data:pagesArr,heroIds:selIds,extras,illustrations:{}};
+  S.stories.unshift(ns);
+  modal.classList.remove('on');
+  addXP(50);toast('🎉 Story created! +50 XP');
+  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  renderStoryStrip();
+  const out=document.getElementById('groq-out');
+  const prev=pagesArr.slice(0,2).map((p,i)=>`<strong style="color:var(--v2)">Page ${i+1}:</strong> ${p}`).join('<br><br>');
+  out.innerHTML=`<div class="groq-box"><div class="gb-hd"><div class="gb-led"></div><span class="gb-lbl">${key.startsWith('gsk_')?'Groq AI Generated ⚡':'Demo Story'}</span></div><div class="gb-txt">${prev}<br><br><em style="color:var(--dim)">…and ${pagesArr.length-2} more pages</em></div></div>
+  <button class="btn btn-v" onclick="openReader('${ns.id}')">📖 Read My Story!</button>
+  <button class="btn btn-ghost" onclick="go('library')">📚 Go to Library</button>`;
+}
+
+// ─── READER ──────────────────────────────────────
+let activeStory=null, curPage=0;
+let speechActive=false, speechRate=1;
+let wordEls=[], elAudioEl=null;
+
+function readerBack(){stopSpeech();go('library');}
+
+// ── Apply artwork — shared by all paths ──
+function applyArtwork(dataUrl){
+  if(!activeStory) return;
+  if(!activeStory.illustrations) activeStory.illustrations={};
+  const total=activeStory.data.length;
+  for(let i=0;i<total;i++) activeStory.illustrations[`p${i}`]=dataUrl;
+  activeStory.illustrated=true;
+  renderReaderPage();
+  toast('🎉 Artwork saved! Your picture book is ready. +25 XP');
+  addXP(25);
+}
+
+// ── Step 1: Copy story prompt to clipboard + open Gemini ──
+function getArtwork(){
+  if(!activeStory) return;
+
+  const heroDescs=(activeStory.heroIds||[])
+    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
+    .filter(Boolean).join(', ')||'brave young adventurers';
+
+  const storyData=JSON.stringify({
+    title:activeStory.title,
+    theme:activeStory.theme,
+    heroes:heroDescs,
+    pages:activeStory.data
+  }, null, 2);
+
+  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
+
+  // Bulletproof clipboard copy — works on all browsers including mobile
+  function copyToClipboard(text){
+    // Method 1: modern async clipboard API
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    // Method 2: create a hidden textarea, select all, execCommand copy
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){ console.warn('Copy failed',e); }
+    document.body.removeChild(ta);
+  }
+
+  copyToClipboard(prompt);
+
+  // Open Gemini — prompt is already in clipboard, user just pastes and hits enter
+  window.open('https://gemini.google.com', '_blank');
+
+  // Flip to step 2
+  document.getElementById('artwork-step1').style.display='none';
+  document.getElementById('artwork-step2').style.display='block';
+
+  toast('✅ Prompt copied! In Gemini: tap the text box, paste (Ctrl+V or long-press → Paste), then hit enter.', 7000);
+}
+
+// ── Get Full Illustration: same clipboard logic, opens Gemini Storybook Illustrator ──
+function getFullIllustration(){
+  if(!activeStory) return;
+
+  const heroDescs=(activeStory.heroIds||[])
+    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
+    .filter(Boolean).join(', ')||'brave young adventurers';
+
+  const storyData=JSON.stringify({
+    title:activeStory.title,
+    theme:activeStory.theme,
+    heroes:heroDescs,
+    pages:activeStory.data
+  }, null, 2);
+
+  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
+
+  // Bulletproof clipboard copy — same as getArtwork
+  function copyToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text){
+    const ta=document.createElement('textarea');
+    ta.value=text;
+    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){ console.warn('Copy failed',e); }
+    document.body.removeChild(ta);
+  }
+
+  copyToClipboard(prompt);
+
+  // Open Gemini Storybook Illustrator
+  window.open('https://gemini.google.com/gem/storybook', '_blank');
+
+  // Flip to step 2
+  document.getElementById('artwork-step1').style.display='none';
+  document.getElementById('artwork-step2').style.display='block';
+
+  toast('✅ Prompt copied! In the Storybook Illustrator: paste (Ctrl+V or long-press → Paste) and generate!', 7000);
+}
+
+// ── Step 2: User selects downloaded image from device ──
+function injectArtFromFile(input){
+  if(!activeStory||!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    applyArtwork(e.target.result);
+    input.value='';
+    document.getElementById('artwork-step1').style.display='block';
+    document.getElementById('artwork-step2').style.display='none';
+  };
+  reader.readAsDataURL(input.files[0]);
+  toast('🖼️ Saving artwork to your story…');
+}
+
+// ── Parent Area: Auto-generate via API (for parents with API key) ──
+async function makePictureBook(){
+  if(!activeStory){ toast('⚠️ Open a story in the reader first'); return; }
+  const gemKey=localStorage.getItem('gem_key')||'';
+  if(!gemKey){ toast('⚠️ Add a Gemini API key in the section above first'); return; }
+  if(activeStory.illustrated){ toast('✨ This story is already illustrated'); return; }
+
+  const parBtn=document.getElementById('par-gen-btn');
+  if(parBtn){ parBtn.disabled=true; parBtn.textContent='🎨 Generating…'; }
+
+  const heroDescs=(activeStory.heroIds||[])
+    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
+    .filter(Boolean).join(', ')||'brave young adventurers';
+  const storyData=JSON.stringify({title:activeStory.title,theme:activeStory.theme,heroes:heroDescs,pages:activeStory.data},null,2);
+  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
+
+  try{
+    const res=await fetch(`${GEM_BASE}${GEM_MODEL}:generateContent?key=${gemKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})
+    });
+    if(res.status===429){
+      toast('⚠️ API rate limited — try again in a few minutes or use the URL inject below.');
+      if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; } return;
+    }
+    if(!res.ok){ toast('❌ API error '+res.status); if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; } return; }
+    const data=await res.json();
+    const parts=data.candidates?.[0]?.content?.parts||[];
+    for(const p of parts){
+      if(p.inlineData?.mimeType?.startsWith('image/')){
+        applyArtwork('data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data);
+        if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
+        return;
+      }
+    }
+    toast('⚠️ No image returned from API');
+    if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
+  }catch(e){
+    toast('❌ Error: '+e.message);
+    if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
+  }
+}
+
+// ── Parent Area: Inject artwork by URL ──
+function injectArtFromUrl(){
+  if(!activeStory){ toast('⚠️ Open a story in the reader first, then return here'); return; }
+  const inp=document.getElementById('par-art-url-inp');
+  const url=(inp?.value||'').trim();
+  if(!url||!url.startsWith('http')){ toast('⚠️ Enter a valid image URL starting with http'); return; }
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  img.onload=()=>{
+    try{
+      const c=document.createElement('canvas');
+      c.width=img.naturalWidth; c.height=img.naturalHeight;
+      c.getContext('2d').drawImage(img,0,0);
+      applyArtwork(c.toDataURL('image/jpeg',0.92));
+    }catch(e){ applyArtwork(url); }
+    if(inp) inp.value='';
+  };
+  img.onerror=()=>{ applyArtwork(url); if(inp) inp.value=''; };
+  img.src=url;
+  toast('🖼️ Loading and saving artwork…');
+}
+
+// ── Path C: Upload from device ──
+function injectArtFromFile(input){
+  if(!activeStory||!input.files[0]){ return; }
+  const reader=new FileReader();
+  reader.onload=e=>{ applyArtwork(e.target.result); input.value=''; };
+  reader.readAsDataURL(input.files[0]);
+  toast('🖼️ Loading image…');
+}
+
+function openReader(id){
+  const s=S.stories.find(x=>x.id===id);if(!s)return;
+  activeStory=s;curPage=0;stopSpeech();
+  document.getElementById('r-title-tb').textContent=s.title;
+  renderReaderPage();go('reader');
+}
+
+function renderReaderPage(){
+  if(!activeStory)return;
+  stopSpeech();
+  const total=activeStory.data.length;
+  const text=activeStory.data[curPage];
+  document.getElementById('page-lbl').textContent=`Page ${curPage+1} of ${total}`;
+  document.getElementById('pnav-info').textContent=`${curPage+1} / ${total}`;
+  document.getElementById('btn-prev').classList.toggle('dim',curPage===0);
+  document.getElementById('btn-next').classList.toggle('dim',curPage===total-1);
+  document.getElementById('ral-chapter').textContent=`Page ${curPage+1} of ${total} — ${activeStory.title}`;
+
+  // ── Rebuild illustration panel from scratch every render ──
+  const ilPanel=document.getElementById('illus-panel');
+  ilPanel.innerHTML=''; // clear everything cleanly
+
+  // 1. Illustration: cached Gemini image or SVG fallback
+  const ilKey=`p${curPage}`;
+  if(activeStory.illustrations && activeStory.illustrations[ilKey]){
+    const img=document.createElement('img');
+    img.src=activeStory.illustrations[ilKey];
+    img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';
+    ilPanel.appendChild(img);
+  } else {
+    const svgWrap=document.createElement('div');
+    svgWrap.style.cssText='width:100%;height:100%;';
+    svgWrap.innerHTML=getIllus(activeStory.theme, curPage+1);
+    ilPanel.appendChild(svgWrap);
+  }
+
+  // 3. Hero avatar overlays
+  const heroIds=activeStory.heroIds||[];
+  const storyHeroes=heroIds.length>0
+    ?S.heroes.filter(h=>heroIds.includes(h.id))
+    :S.heroes.slice(0,Math.min(2,S.heroes.length));
+  if(storyHeroes.length>0){
+    const ih=document.createElement('div');
+    ih.className='illus-heroes';
+    storyHeroes.forEach(h=>{
+      const a=document.createElement('div');a.className='ih-av';a.innerHTML=getAv(h.avatarId);ih.appendChild(a);
+    });
+    ilPanel.appendChild(ih);
+  }
+
+  // 4. Show/hide artwork section below reader
+  const picWrap=document.getElementById('picbook-wrap');
+  if(picWrap){
+    picWrap.style.display=activeStory.illustrated===true?'none':'block';
+  }
+
+  // ── Voice label ──
+  const elKey=localStorage.getItem('el_key')||'';
+  const elVoice=EL_VOICES.find(v=>v.id===S.voiceId)||EL_VOICES[0];
+  document.getElementById('ral-voice-label').textContent=
+    elKey?`🎙️ ${elVoice.name} (ElevenLabs) — tap ▶ to listen`:'Tap ▶ to read aloud · Tap any word to hear it';
+
+  // ── Word tokens ──
+  const body=document.getElementById('page-body');
+  body.innerHTML='';wordEls=[];
+  text.split(/(\s+)/).forEach(tok=>{
+    if(/^\s+$/.test(tok)){body.appendChild(document.createTextNode(tok));}
+    else{
+      const sp=document.createElement('span');sp.className='word';sp.textContent=tok;
+      sp.onclick=()=>speakWord(tok.replace(/[^a-zA-Z']/g,''));
+      body.appendChild(sp);wordEls.push(sp);
+    }
+  });
+  document.getElementById('ral-fill').style.width='0%';
+  document.getElementById('ral-play-btn').textContent='▶';
+}
+
+async function speakWord(word){
+  if(!word)return;
+  window.speechSynthesis?.cancel();
+  const elKey=localStorage.getItem('el_key')||'';
+  if(elKey){
+    // ElevenLabs single-word preview
+    try{
+      const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{method:'POST',headers:{'Content-Type':'application/json','xi-api-key':elKey},body:JSON.stringify({text:word,model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})});
+      if(res.ok){const buf=await res.arrayBuffer();playAudioBuffer(buf);}
+    }catch(e){}
+  } else {
+    const u=new SpeechSynthesisUtterance(word);u.rate=0.9;u.pitch=1.1;window.speechSynthesis.speak(u);
+  }
+  wordEls.forEach(el=>{if(el.textContent.replace(/[^a-zA-Z']/g,'')===word){el.classList.add('hl');setTimeout(()=>el.classList.remove('hl'),700);}});
+}
+
+async function toggleSpeech(){
+  if(speechActive){stopSpeech();return;}
+  await startSpeech();
+}
+
+async function startSpeech(){
+  const elKey=localStorage.getItem('el_key')||'';
+  const text=activeStory.data[curPage];
+  if(elKey){
+    await startElevenLabs(text,elKey);
+  } else {
+    startBrowserTTS(text);
+  }
+}
+
+// ── ElevenLabs TTS ──
+async function startElevenLabs(text,key){
+  stopSpeech();
+  speechActive=true;
+  document.getElementById('ral-play-btn').textContent='⏸';
+  try{
+    const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','xi-api-key':key},
+      body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',voice_settings:{stability:.45,similarity_boost:.8,style:0.2,use_speaker_boost:true}})
+    });
+    if(!res.ok)throw new Error('EL HTTP '+res.status);
+    const buf=await res.arrayBuffer();
+    playAudioBuffer(buf, ()=>{
+      // on ended — animate word highlights
+      speechActive=false;
+      document.getElementById('ral-play-btn').textContent='▶';
+      document.getElementById('ral-fill').style.width='100%';
+      wordEls.forEach(w=>w.classList.remove('spoken'));
+    });
+    // Simulate word sync (ElevenLabs streaming word-level sync requires websockets)
+    // We animate a cursor through words proportionally to audio duration
+    animateWordCursor(text);
+  }catch(e){
+    console.warn('ElevenLabs error:',e);
+    toast('⚠️ ElevenLabs error — switching to device voice');
+    localStorage.removeItem('el_key');
+    document.getElementById('el-led').className='led off';
+    startBrowserTTS(text);
+  }
+}
+
+let _audioCtx=null, _audioSource=null;
+function playAudioBuffer(buf,onEnd){
+  if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  _audioCtx.decodeAudioData(buf,decoded=>{
+    if(_audioSource){try{_audioSource.stop();}catch(e){}}
+    const src=_audioCtx.createBufferSource();src.buffer=decoded;
+    src.connect(_audioCtx.destination);src.start(0);
+    _audioSource=src;
+    if(onEnd)src.onended=onEnd;
+    // progress bar
+    const dur=decoded.duration*1000;
+    const start=Date.now();
+    const tick=()=>{
+      if(!speechActive)return;
+      const pct=Math.min(100,((Date.now()-start)/dur)*100);
+      document.getElementById('ral-fill').style.width=pct+'%';
+      if(pct<100)requestAnimationFrame(tick);
+    };
+    tick();
+  },e=>{console.warn('decode error',e);});
+}
+
+async function animateWordCursor(text){
+  // Estimate total word count and animate cursor at a natural reading pace
+  const words=text.split(/\s+/).filter(Boolean);
+  const wpm=speechRate*(text.length<200?130:140); // words per minute estimate
+  const msPerWord=(60000/wpm);
+  let wi=0;
+  while(speechActive && wi<wordEls.length){
+    wordEls.forEach(w=>w.classList.remove('spoken'));
+    if(wordEls[wi])wordEls[wi].classList.add('spoken');
+    wi++;
+    await sleep(msPerWord);
+  }
+  wordEls.forEach(w=>w.classList.remove('spoken'));
+}
+
+// ── Browser TTS ──
+function startBrowserTTS(text){
+  if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=speechRate;u.pitch=1.06;u.volume=1;
+  const voices=window.speechSynthesis.getVoices();
+  const preferred=voices.find(v=>/samantha|karen|victoria|zira|google us english|en-us/i.test(v.name))||voices.find(v=>v.lang==='en-US')||voices[0];
+  if(preferred)u.voice=preferred;
+  let charCount=0;
+  u.onboundary=e=>{
+    if(e.name!=='word')return;
+    wordEls.forEach(w=>w.classList.remove('spoken'));
+    // Find word index by character position
+    const textChars=text.split(/(\s+)/);
+    let pos=0,wi=0;
+    for(const tok of textChars){
+      if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
+      if(pos>=e.charIndex)break;
+      pos+=tok.length;wi++;
+    }
+    if(wordEls[wi])wordEls[wi].classList.add('spoken');
+    document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
+  };
+  u.onend=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';document.getElementById('ral-fill').style.width='100%';wordEls.forEach(w=>w.classList.remove('spoken'));};
+  u.onerror=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';};
+  window.speechSynthesis.speak(u);
+  speechActive=true;document.getElementById('ral-play-btn').textContent='⏸';
+}
+
+function stopSpeech(){
+  window.speechSynthesis?.cancel();
+  if(_audioSource){try{_audioSource.stop();}catch(e){}_audioSource=null;}
+  speechActive=false;
+  const btn=document.getElementById('ral-play-btn');if(btn)btn.textContent='▶';
+  wordEls.forEach(w=>w.classList.remove('spoken'));
+}
+
+function cycleSpeed(){
+  const speeds=[0.75,1,1.25,1.5];const labels=['0.75×','1×','1.25×','1.5×'];
+  const i=speeds.indexOf(speechRate);speechRate=speeds[(i+1)%speeds.length];
+  document.getElementById('ral-spd').textContent=labels[(i+1)%speeds.length];
+  if(speechActive){stopSpeech();startSpeech();}
+}
+
+function changePage(dir){
+  if(!activeStory)return;
+  const next=curPage+dir;
+  if(next<0||next>=activeStory.data.length)return;
+  curPage=next;renderReaderPage();
+  if(dir>0){addXP(5);}
+  if(curPage===activeStory.data.length-1){toast('🎉 Story complete! +30 XP');addXP(30);}
+}
+function exportStory(){if(!activeStory)return;const b=new Blob([JSON.stringify({title:activeStory.title,theme:activeStory.theme,pages:activeStory.data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=activeStory.title.replace(/\s+/g,'-')+'.json';a.click();toast('💾 Story exported!');}
+
+// ─── GEMINI ILLUSTRATION GENERATION ─────────────
+// ─── NANO BANANA 2 ILLUSTRATION ENGINE ───────────
+// Uses a serial queue so requests never overlap — avoids 429 rate limits
+// ─── GEMINI IMAGE ENGINE ─────────────────────────
+// Try free-tier models in order. Both support image generation on AI Studio free tier.
+// Gemini image engine — gemini-2.5-flash-image is the only free image model (March 2026)
+const GEM_MODEL = 'gemini-2.5-flash-image';
+const GEM_BASE  = 'https://generativelanguage.googleapis.com/v1beta/models/';
+
+// Used by PDF export and test button (single attempt, caller handles errors)
+async function callGeminiImage(prompt, key){
+  try{
+    const res=await fetch(`${GEM_BASE}${GEM_MODEL}:generateContent?key=${key}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})
+    });
+    if(!res.ok) return {error:'http_'+res.status};
+    const data=await res.json();
+    const parts=data.candidates?.[0]?.content?.parts||[];
+    for(const p of parts){
+      if(p.inlineData?.mimeType?.startsWith('image/')){
+        return {dataUrl:'data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data};
+      }
+    }
+    return {error:'no_image'};
+  }catch(e){ return {error:e.message}; }
+}
+
+async function generateGeminiIllus(story, pageIdx){
+  const gemKey=localStorage.getItem('gem_key')||'';
+  if(!gemKey) return null;
+  const heroNames=(story.heroIds||[]).map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name:'';}).filter(Boolean).join(' and ');
+  const pageText=story.data[pageIdx]||'';
+  const prompt=`Bright children's cartoon illustration, bold black outlines, vivid saturated colors, flat design, cheerful and playful, safe for young children, like a modern animated cartoon storybook. Scene: ${pageText.slice(0,200)} Setting: ${story.theme}. Characters: ${heroNames||'young adventurers'}. No text, no words, no letters anywhere in the image. High quality digital cartoon art.`;
+  const result=await callGeminiImage(prompt, gemKey);
+  if(result.dataUrl) return result.dataUrl;
+  return null;
+}
+
+// Gemini key management
+function saveGemKey(){
+  const k=document.getElementById('gem-key-inp').value.trim();
+  if(!k){toast('⚠️ Enter a Gemini key');return;}
+  localStorage.setItem('gem_key',k);
+  updateGemStatus(k);
+  toast('✅ Gemini key saved! Nano Banana illustrations enabled 🎨');
+}
+async function testGemKey(){
+  const k=document.getElementById('gem-key-inp').value.trim();
+  if(!k){toast('⚠️ Enter a key first');return;}
+  toast('🎨 Testing Nano Banana…');
+  const result=await callGeminiImage('A simple cheerful cartoon star, bright yellow, on a white background. No text.', k);
+  if(result.dataUrl){
+    toast(`✅ Gemini works on ${result.model||'free tier'}! Illustrations ready 🎨`);
+    localStorage.setItem('gem_key',k);
+    updateGemStatus(k);
+  } else if(result.error==='exhausted'||result.error?.includes('429')||result.error?.includes('http_429')){
+    // Key is valid but rate limited — save it anyway
+    toast('⚠️ Key is valid but rate limited right now — it will work in the story reader');
+    localStorage.setItem('gem_key',k);
+    updateGemStatus(k);
+  } else {
+    toast('❌ Gemini error: '+result.error.slice(0,50));
+  }
+}
+function updateGemStatus(k){
+  const l=document.getElementById('gem-led'),t=document.getElementById('gem-st');
+  if(k&&k.length>10){
+    l.className='led on';
+    t.textContent='Nano Banana connected — AI illustrations ready 🎨';
+    t.style.color='var(--mint2)';
+  }else{
+    l.className='led off';
+    t.textContent='No key — using scene art';
+    t.style.color='var(--dim)';
+  }
+}
+
+// ─── VOICE ENGINE ─────────────────────────────────
+const OPENAI_VOICES=[
+  {id:'nova',  label:'Nova',   desc:'Warm & friendly female'},
+  {id:'alloy', label:'Alloy',  desc:'Neutral & clear'},
+  {id:'echo',  label:'Echo',   desc:'Soft male narrator'},
+  {id:'fable', label:'Fable',  desc:'Expressive & warm'},
+  {id:'onyx',  label:'Onyx',   desc:'Deep & authoritative'},
+  {id:'shimmer',label:'Shimmer',desc:'Bright & cheerful'},
+];
+
+function setVoiceEngine(engine){
+  S.voiceEngine=engine;localStorage.setItem('sm_engine',engine);
+  ['browser','elevenlabs','openai'].forEach(e=>{
+    const el=document.getElementById('ve-'+e);if(el)el.classList.toggle('on',e===engine);
+  });
+  document.getElementById('tts-browser-section').style.display=engine==='browser'?'block':'none';
+  document.getElementById('tts-el-section').style.display=engine==='elevenlabs'?'block':'none';
+  document.getElementById('tts-openai-section').style.display=engine==='openai'?'block':'none';
+  const labels={browser:'🖥️ Device voice selected',elevenlabs:'🎤 ElevenLabs selected',openai:'🤖 OpenAI TTS selected'};
+  toast(labels[engine]||'Voice updated');
+}
+
+function renderOAIVoiceGrid(){
+  const g=document.getElementById('oai-voice-grid');if(!g)return;g.innerHTML='';
+  const sel=localStorage.getItem('oai_voice')||'nova';
+  OPENAI_VOICES.forEach(v=>{
+    const d=document.createElement('div');d.className='vc'+(v.id===sel?' on':'');
+    d.onclick=()=>{document.querySelectorAll('#oai-voice-grid .vc').forEach(c=>c.classList.remove('on'));d.classList.add('on');localStorage.setItem('oai_voice',v.id);toast('🤖 Voice: '+v.label);};
+    d.innerHTML=`<div class="vc-name">${v.label}</div><div class="vc-desc">${v.desc}</div>`;
+    g.appendChild(d);
+  });
+}
+function renderElVoiceGrid(){
+  const g=document.getElementById('el-voice-grid');if(!g)return;g.innerHTML='';
+  EL_VOICES.forEach(v=>{
+    const d=document.createElement('div');d.className='vc'+(v.id===S.voiceId?' on':'');
+    d.onclick=()=>{document.querySelectorAll('#el-voice-grid .vc').forEach(c=>c.classList.remove('on'));d.classList.add('on');S.voiceId=v.id;localStorage.setItem('sm_voice',v.id);toast('🎤 Voice: '+v.name);};
+    d.innerHTML=`<div class="vc-name">${v.em} ${v.name}</div><div class="vc-desc">${v.desc}</div>`;
+    g.appendChild(d);
+  });
+}
+
+// OpenAI TTS
+function saveOAIKey(){const k=document.getElementById('oai-key-inp').value.trim();if(!k)return;if(!k.startsWith('sk-')){toast('⚠️ OpenAI keys start with sk-');return;}localStorage.setItem('oai_key',k);updateOAIStatus(k);toast('✅ OpenAI key saved!');}
+async function testOAI(){
+  const k=document.getElementById('oai-key-inp').value.trim();if(!k){toast('⚠️ Enter an OpenAI key');return;}
+  toast('🧪 Testing OpenAI TTS…');
+  try{
+    const voice=localStorage.getItem('oai_voice')||'nova';
+    const res=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},body:JSON.stringify({model:'tts-1',input:'Hello! Story Magic narration is working perfectly!',voice})});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const buf=await res.arrayBuffer();
+    if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    _audioCtx.decodeAudioData(buf,decoded=>{const s=_audioCtx.createBufferSource();s.buffer=decoded;s.connect(_audioCtx.destination);s.start(0);});
+    toast('✅ OpenAI TTS works! 🤖');localStorage.setItem('oai_key',k);updateOAIStatus(k);
+  }catch(e){toast('❌ OpenAI error: '+e.message.slice(0,40));}
+}
+function updateOAIStatus(k){const l=document.getElementById('oai-led'),t=document.getElementById('oai-st');if(k&&k.startsWith('sk-')){l.className='led on';t.textContent='OpenAI TTS connected 🤖';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key';t.style.color='var(--dim)';}}
+
+// Override startSpeech to use selected engine
+async function startSpeech(){
+  const engine=S.voiceEngine||'browser';
+  const text=activeStory.data[curPage];
+  if(engine==='elevenlabs'){
+    const k=localStorage.getItem('el_key')||'';
+    if(k) return await startElevenLabs(text,k);
+  } else if(engine==='openai'){
+    const k=localStorage.getItem('oai_key')||'';
+    if(k) return await startOpenAITTS(text,k);
+  }
+  startBrowserTTS(text);
+}
+
+async function startOpenAITTS(text,key){
+  stopSpeech();speechActive=true;document.getElementById('ral-play-btn').textContent='⏸';
+  try{
+    const voice=localStorage.getItem('oai_voice')||'nova';
+    const res=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'tts-1',input:text,voice,speed:speechRate})});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const buf=await res.arrayBuffer();
+    playAudioBuffer(buf,()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';document.getElementById('ral-fill').style.width='100%';wordEls.forEach(w=>w.classList.remove('spoken'));});
+    animateWordCursor(text);
+  }catch(e){console.warn('OpenAI TTS error',e);toast('⚠️ OpenAI TTS failed — using device voice');startBrowserTTS(text);}
+}
+
+// ─── PDF EXPORT ──────────────────────────────────
+async function exportPDF(storyId){
+  const story=S.stories.find(s=>s.id===storyId);
+  if(!story){toast('⚠️ Story not found');return;}
+
+  const modal=document.getElementById('modal');
+  const mEm=document.getElementById('modal-em'),mT=document.getElementById('modal-title'),mS=document.getElementById('modal-sub');
+  mEm.textContent='📄';mT.textContent='Building your PDF…';mS.textContent='Gathering illustrations and text';
+  modal.classList.add('on');
+
+  const gemKey=localStorage.getItem('gem_key')||'';
+  // Pre-generate all illustrations we don't have yet
+  if(gemKey){
+    mS.textContent='Generating illustrations with Nano Banana 2…';
+    for(let i=0;i<story.data.length;i++){
+      const ilKey=`p${i}`;
+      if(!story.illustrations||!story.illustrations[ilKey]){
+        mS.textContent=`Illustrating page ${i+1} of ${story.data.length}…`;
+        const url=await generateGeminiIllus(story,i);
+        if(url){
+          if(!story.illustrations)story.illustrations={};
+          story.illustrations[ilKey]=url;
+        }
+      }
+    }
+  }
+
+  mS.textContent='Building PDF layout…';
+  await sleep(300);
+
+  // Build the PDF as an HTML page and print it
+  const storyHeroes=(story.heroIds||[]).map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name:'';}).filter(Boolean).join(', ');
+  const bgTheme=story.bg||'linear-gradient(135deg,#1e1b4b,#312e81)';
+
+  // COVER PAGE
+  let pagesHTML=`<div class="pdf-page pdf-cover" style="background:${bgTheme};">
+    <div class="cover-inner">
+      <div class="cover-em">${story.em}</div>
+      <h1 class="cover-title">${story.title}</h1>
+      <p class="cover-heroes">${storyHeroes?'Starring: '+storyHeroes:''}</p>
+      <p class="cover-byline">✨ Made with Story Magic ✨</p>
+    </div>
+  </div>`;
+
+  // ONE PAGE PER STORY PAGE: illustration on top, text below
+  story.data.forEach((text,i)=>{
+    const ilKey=`p${i}`;
+    const imgSrc=story.illustrations&&story.illustrations[ilKey];
+    const ilHTML=imgSrc
+      ?`<img src="${imgSrc}" class="page-illus" alt="Illustration for page ${i+1}">`
+      :`<div class="page-illus-fallback" style="background:${bgTheme};">${story.em}</div>`;
+    pagesHTML+=`<div class="pdf-page">
+      ${ilHTML}
+      <div class="page-bottom">
+        <div class="page-num-label">Page ${i+1} of ${story.data.length}</div>
+        <div class="page-story-text">${text}</div>
+      </div>
+    </div>`;
+  });
+
+  const fullHTML=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Nunito',sans-serif;background:#fff;}
+    .pdf-page{
+      width:100%;min-height:100vh;
+      page-break-after:always;break-after:page;
+      display:flex;flex-direction:column;
+      overflow:hidden;
+    }
+    /* COVER */
+    .pdf-cover{align-items:center;justify-content:center;}
+    .cover-inner{text-align:center;padding:60px 40px;color:#fff;}
+    .cover-em{font-size:96px;margin-bottom:28px;display:block;}
+    .cover-title{font-family:'Baloo 2',cursive;font-size:44px;font-weight:800;color:#fff;text-shadow:0 3px 16px rgba(0,0,0,.45);margin-bottom:18px;line-height:1.2;}
+    .cover-heroes{font-size:20px;color:rgba(255,255,255,.88);margin-bottom:14px;font-weight:700;}
+    .cover-byline{font-size:15px;color:rgba(255,255,255,.62);margin-top:48px;font-weight:700;}
+    /* STORY PAGES */
+    .page-illus{width:100%;height:62vh;object-fit:cover;display:block;flex-shrink:0;}
+    .page-illus-fallback{width:100%;height:62vh;display:flex;align-items:center;justify-content:center;font-size:100px;flex-shrink:0;}
+    .page-bottom{flex:1;padding:28px 36px 36px;display:flex;flex-direction:column;justify-content:center;background:#fff;}
+    .page-num-label{font-size:13px;font-weight:900;color:#9CA3AF;margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;}
+    .page-story-text{font-size:24px;font-weight:800;line-height:1.7;color:#1F2937;}
+    @media print{
+      *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+      .pdf-page{page-break-after:always;break-after:page;min-height:100vh;}
+    }
+  </style></head><body>${pagesHTML}</body></html>`;
+
+  modal.classList.remove('on');
+
+  // Open print window
+  const w=window.open('','_blank','width=800,height=900');
+  w.document.write(fullHTML);
+  w.document.close();
+  w.onload=()=>{
+    setTimeout(()=>{w.focus();w.print();},500);
+  };
+  toast('📄 PDF ready — use Save as PDF in the print dialog!');
+}
+
+function renderPDFList(){
+  const el=document.getElementById('pdf-story-list');if(!el)return;
+  el.innerHTML='';
+  S.stories.forEach(s=>{
+    const d=document.createElement('div');
+    d.className='ml-item';
+    d.style.cursor='pointer';
+    d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div style="flex:1;"><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div>`;
+    const btn=document.createElement('span');
+    btn.style.cssText='font-size:.67rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:999px;padding:4px 10px;color:#FCD34D;font-weight:900;cursor:pointer;flex-shrink:0;';
+    btn.textContent='📄 PDF';
+    btn.onclick=()=>exportPDF(s.id);
+    d.appendChild(btn);
+    el.appendChild(d);
+  });
+}
+let libFilter='all';
+function renderLib(){
+  const grid=document.getElementById('lib-grid');grid.innerHTML='';
+  const vis=libFilter==='all'?S.stories:S.stories.filter(s=>s.theme===libFilter);
+  vis.forEach((s,i)=>{
+    const d=document.createElement('div');d.className='lc';
+    const coverImg=s.illustrations&&s.illustrations['p0'];
+    const coverHtml=coverImg
+      ?`<img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">`
+      :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0?'<div class="lnew">NEW</div>':''}</div>`;
+    d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:6px;"><span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span><span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span></div></div></div>`;
+    grid.appendChild(d);
+  });
+  const plus=document.createElement('div');plus.className='lc';plus.onclick=()=>go('build');
+  plus.innerHTML=`<div class="lcov" style="background:var(--card);border:2px dashed rgba(255,255,255,.12)">✨</div><div class="li"><div class="lt" style="color:var(--v2)">Create New Story</div><div class="lm">Tap to begin</div></div>`;
+  grid.appendChild(plus);
+  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  const sel=document.getElementById('print-sel');if(sel)sel.innerHTML=S.stories.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
+}
+function filterLib(el,f){document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));el.classList.add('on');libFilter=f;renderLib();}
+
+// ─── BADGES ──────────────────────────────────────
+const ALL_BADGES=[{id:'first-story',em:'📖',name:'First Story',xp:50},{id:'streak7',em:'🔥',name:'7-Day Streak',xp:100},{id:'space',em:'🚀',name:'Space Explorer',xp:75},{id:'squad',em:'👥',name:'Squad Leader',xp:80},{id:'wordwiz',em:'💬',name:'Word Wizard',xp:80},{id:'bookmaker',em:'🖨️',name:'Bookmaker',xp:120},{id:'ocean',em:'🌊',name:'Ocean Diver',xp:90},{id:'master',em:'🏆',name:'Story Master',xp:200},{id:'hero-create',em:'🛡️',name:'Hero Creator',xp:60}];
+function renderBadges(){
+  const grid=document.getElementById('badge-grid');grid.innerHTML='';
+  ALL_BADGES.forEach(b=>{
+    const earned=S.earnedBadges.includes(b.id);
+    const d=document.createElement('div');d.className='bc'+(earned?' earned':' locked');
+    if(earned)d.onclick=()=>toast(b.em+' '+b.name+' — +'+b.xp+' XP earned!');
+    d.innerHTML=`<div class="bem">${b.em}</div><div class="bnm">${b.name}</div><div class="bxp">+${b.xp} XP</div>`;
+    grid.appendChild(d);
+  });
+  document.getElementById('xp-cur').textContent=S.xp;
+  document.getElementById('xpf').style.width=Math.min(100,(S.xp/1000)*100)+'%';
+}
+
+// ─── PARENT ───────────────────────────────────────
+function renderParent(){
+  document.getElementById('ps-stories').textContent=S.stories.length;
+  document.getElementById('ps-xp').textContent=S.xp;
+  const ml=document.getElementById('memory-lane');ml.innerHTML='';
+  S.stories.slice(0,4).forEach(s=>{const d=document.createElement('div');d.className='ml-item';d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div><div class="ml-b">+50 XP</div>`;ml.appendChild(d);});
+  const k=localStorage.getItem('groq_key')||'';if(k)document.getElementById('groq-inp').value=k;updateGroqStatus(k);
+  const ek=localStorage.getItem('el_key')||'';if(ek)document.getElementById('el-key-inp').value=ek;updateElStatus(ek);
+  const gk=localStorage.getItem('gem_key')||'';if(gk)document.getElementById('gem-key-inp').value=gk;updateGemStatus(gk);
+  const ok=localStorage.getItem('oai_key')||'';if(ok)document.getElementById('oai-key-inp').value=ok;updateOAIStatus(ok);
+  const n=localStorage.getItem('par_name');if(n)document.getElementById('par-name').value=n;
+  const e=localStorage.getItem('par_email');if(e){document.getElementById('par-email').value=e;document.getElementById('print-email').value=e;}
+  // Voice engine
+  const eng=S.voiceEngine||'browser';
+  ['browser','elevenlabs','openai'].forEach(e2=>{const el=document.getElementById('ve-'+e2);if(el)el.classList.toggle('on',e2===eng);});
+  document.getElementById('tts-browser-section').style.display=eng==='browser'?'block':'none';
+  document.getElementById('tts-el-section').style.display=eng==='elevenlabs'?'block':'none';
+  document.getElementById('tts-openai-section').style.display=eng==='openai'?'block':'none';
+  renderElVoiceGrid();renderOAIVoiceGrid();
+  renderPDFList();
+  renderLib();
+}
+function saveProfile(){
+  const n=document.getElementById('par-name').value.trim(),e=document.getElementById('par-email').value.trim();
+  if(n)localStorage.setItem('par_name',n);
+  if(e){localStorage.setItem('par_email',e);document.getElementById('print-email').value=e;}
+  toast('✅ Profile saved!');
+}
+function toggleEye(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
+
+// Groq
+function saveGroqKey(){const k=document.getElementById('groq-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}if(!k.startsWith('gsk_')){toast('⚠️ Keys start with gsk_…');return;}localStorage.setItem('groq_key',k);updateGroqStatus(k);toast('✅ Groq key saved! AI stories now live ⚡');}
+async function testGroqKey(){const k=document.getElementById('groq-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}toast('🧪 Testing…');try{const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:10,messages:[{role:'user',content:'Say: OK'}]})});if(!r.ok)throw new Error('HTTP '+r.status);toast('✅ Groq works! ⚡');localStorage.setItem('groq_key',k);updateGroqStatus(k);}catch(e){toast('❌ '+e.message.slice(0,40));}}
+function updateGroqStatus(k){const l=document.getElementById('api-led'),t=document.getElementById('api-st-txt');if(k&&k.startsWith('gsk_')){l.className='led on';t.textContent='Groq connected — AI stories ready ⚡';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — demo stories used';t.style.color='var(--dim)';}}
+
+// ElevenLabs
+function saveElKey(){const k=document.getElementById('el-key-inp').value.trim();if(!k){toast('⚠️ Enter an ElevenLabs key');return;}localStorage.setItem('el_key',k);updateElStatus(k);toast('✅ ElevenLabs key saved! Lifelike narration enabled 🎙️');}
+async function testElKey(){
+  const k=document.getElementById('el-key-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}
+  toast('🧪 Testing ElevenLabs…');
+  try{
+    const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{method:'POST',headers:{'Content-Type':'application/json','xi-api-key':k},body:JSON.stringify({text:'Hello! Story Magic narration is working perfectly!',model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const buf=await res.arrayBuffer();
+    if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    _audioCtx.decodeAudioData(buf,decoded=>{const s=_audioCtx.createBufferSource();s.buffer=decoded;s.connect(_audioCtx.destination);s.start(0);});
+    toast('✅ ElevenLabs works! Lifelike voice enabled 🎙️');
+    localStorage.setItem('el_key',k);updateElStatus(k);
+  }catch(e){toast('❌ ElevenLabs error: '+e.message.slice(0,40));}
+}
+function updateElStatus(k){const l=document.getElementById('el-led'),t=document.getElementById('el-st');if(k&&k.length>8){l.className='led on';t.textContent='ElevenLabs connected — lifelike narration ready 🎙️';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — using device voice';t.style.color='var(--dim)';}}
+
+function requestPrint(){const e=document.getElementById('print-email').value.trim();if(!e||!e.includes('@')){toast('⚠️ Enter a valid parent email');return;}document.getElementById('pr-confirm').style.display='block';toast('📧 Checkout link sent to '+e+'!');}
+function exportAll(){
+  // Include API keys so they restore on import
+  const payload={
+    exported: new Date().toISOString(),
+    version: '1.0',
+    heroes: S.heroes,
+    stories: S.stories.map(s=>({id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''})),
+    xp: S.xp,
+    badges: S.earnedBadges,
+    // API keys
+    keys:{
+      groq:  localStorage.getItem('groq_key')||'',
+      gemini:localStorage.getItem('gem_key')||'',
+      el:    localStorage.getItem('el_key')||'',
+      oai:   localStorage.getItem('oai_key')||'',
+    },
+    // Preferences
+    prefs:{
+      voice_engine: localStorage.getItem('sm_engine')||'browser',
+      voice_id:     localStorage.getItem('sm_voice')||'',
+      child_name:   localStorage.getItem('par_name')||'',
+      parent_email: localStorage.getItem('par_email')||'',
+    }
+  };
+  const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='story-magic-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('💾 Backup exported! Save this file somewhere safe.');
+}
+
+function importAll(input){
+  if(!input.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      const results=[];
+
+      // Restore heroes
+      if(data.heroes&&Array.isArray(data.heroes)&&data.heroes.length>0){
+        S.heroes=data.heroes;
+        saveHeroes();
+        results.push('✅ '+data.heroes.length+' heroes restored');
+      }
+
+      // Restore stories
+      if(data.stories&&Array.isArray(data.stories)&&data.stories.length>0){
+        // Merge: add imported stories that don't already exist by id
+        const existingIds=new Set(S.stories.map(s=>s.id));
+        const newStories=data.stories
+          .filter(s=>!existingIds.has(s.id))
+          .map(s=>({...s,illustrations:{}}));
+        S.stories=[...newStories,...S.stories];
+        results.push('✅ '+newStories.length+' stories imported');
+      }
+
+      // Restore XP
+      if(typeof data.xp==='number'){ S.xp=data.xp; addXP(0); results.push('✅ XP restored: '+data.xp); }
+
+      // Restore badges
+      if(data.badges&&Array.isArray(data.badges)){ S.earnedBadges=data.badges; results.push('✅ Badges restored'); }
+
+      // Restore API keys
+      if(data.keys){
+        if(data.keys.groq)  { localStorage.setItem('groq_key', data.keys.groq);   updateGroqStatus(data.keys.groq); results.push('✅ Groq key restored'); }
+        if(data.keys.gemini){ localStorage.setItem('gem_key',  data.keys.gemini);  updateGemStatus(data.keys.gemini); results.push('✅ Gemini key restored'); }
+        if(data.keys.el)    { localStorage.setItem('el_key',   data.keys.el);      updateElStatus(data.keys.el); results.push('✅ ElevenLabs key restored'); }
+        if(data.keys.oai)   { localStorage.setItem('oai_key',  data.keys.oai);     updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
+      }
+
+      // Restore preferences
+      if(data.prefs){
+        if(data.prefs.voice_engine){ localStorage.setItem('sm_engine', data.prefs.voice_engine); S.voiceEngine=data.prefs.voice_engine; }
+        if(data.prefs.voice_id)    { localStorage.setItem('sm_voice',  data.prefs.voice_id);     S.voiceId=data.prefs.voice_id; }
+        if(data.prefs.child_name)  { localStorage.setItem('par_name',  data.prefs.child_name);   document.getElementById('g-name')?document.getElementById('g-name').textContent=data.prefs.child_name:null; }
+        if(data.prefs.parent_email){ localStorage.setItem('par_email', data.prefs.parent_email); }
+        if(data.prefs.voice_engine||data.prefs.child_name) results.push('✅ Preferences restored');
+      }
+
+      // Re-render UI
+      renderHeroStrip(); renderStoryStrip(); renderLib();
+      document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+
+      // Show results
+      const el=document.getElementById('import-result');
+      el.style.display='block';
+      el.innerHTML='<strong>Import complete!</strong><br>'+results.join('<br>');
+      toast('✅ Restore complete! '+results.length+' items recovered.');
+
+    }catch(err){
+      const el=document.getElementById('import-result');
+      el.style.display='block';
+      el.style.background='rgba(239,68,68,.1)';
+      el.style.borderColor='rgba(239,68,68,.25)';
+      el.innerHTML='❌ Could not read file: '+err.message;
+      toast('❌ Import failed — is this a Story Magic backup file?');
+    }
+    input.value=''; // reset so same file can be re-imported
+  };
+  reader.readAsText(input.files[0]);
+}
+
+// ─── INIT ────────────────────────────────────────
 function init(){
-  updateGemStatus(localStorage.getItem('gem_key')||'');
+  updateGroqStatus(localStorage.getItem('groq_key')||'');
   updateElStatus(localStorage.getItem('el_key')||'');
+  updateGemStatus(localStorage.getItem('gem_key')||'');
   S.voiceEngine=localStorage.getItem('sm_engine')||'browser';
   S.voiceId=localStorage.getItem('sm_voice')||EL_VOICES[0].id;
-  renderHeroStrip(); renderStoryStrip();
+  renderHeroStrip();renderStoryStrip();
   window.speechSynthesis?.getVoices();
   window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{});
   go('home');
 }
-
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', init);
-} else {
+  document.addEventListener('DOMContentLoaded',init);
+}else{
   init();
 }
 
-// Service Worker
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
+// ─── SERVICE WORKER REGISTRATION ─────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(r=>console.log('SW registered:',r.scope))
-      .catch(e=>console.warn('SW failed:',e));
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.warn('SW failed:', err));
   });
 }
 
-// PWA Install
+// ─── PWA INSTALL PROMPT ──────────────────────────
 let deferredPrompt;
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault(); deferredPrompt=e;
-  setTimeout(()=>{ if(deferredPrompt) showInstallBanner(); },3000);
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show a subtle install banner after 3 seconds
+  setTimeout(() => {
+    if (deferredPrompt) showInstallBanner();
+  }, 3000);
 });
-function showInstallBanner(){
-  const banner=document.createElement('div'); banner.id='install-banner';
-  banner.style.cssText='position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;padding:10px 18px;border-radius:999px;font-family:\'Nunito\',sans-serif;font-weight:900;font-size:.82rem;z-index:300;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(124,58,237,.5);animation:rise .4s ease;white-space:nowrap;max-width:calc(100vw - 36px);';
-  banner.innerHTML='<span>📲 Add Story Magic to your home screen!</span><span id="install-yes" style="cursor:pointer;background:rgba(255,255,255,.25);border-radius:999px;padding:3px 10px;">Install</span><span id="install-no" style="cursor:pointer;opacity:.7;padding:3px;">✕</span>';
-  document.body.appendChild(banner);
-  document.getElementById('install-yes').onclick=async()=>{ banner.remove(); if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; } };
-  document.getElementById('install-no').onclick=()=>banner.remove();
-  setTimeout(()=>banner?.remove(),8000);
-}
 
+function showInstallBanner() {
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = `
+    position:fixed;bottom:96px;left:50%;transform:translateX(-50%);
+    background:linear-gradient(135deg,#7C3AED,#EC4899);
+    color:#fff;padding:10px 18px;border-radius:999px;
+    font-family:'Nunito',sans-serif;font-weight:900;font-size:.82rem;
+    z-index:300;display:flex;align-items:center;gap:10px;
+    box-shadow:0 8px 24px rgba(124,58,237,.5);
+    animation:rise .4s ease;white-space:nowrap;
+    max-width:calc(100vw - 36px);
+  `;
+  banner.innerHTML = `<span>📲 Add Story Magic to your home screen!</span><span id="install-yes" style="cursor:pointer;background:rgba(255,255,255,.25);border-radius:999px;padding:3px 10px;">Install</span><span id="install-no" style="cursor:pointer;opacity:.7;padding:3px;">✕</span>`;
+  document.body.appendChild(banner);
+  document.getElementById('install-yes').onclick = async () => {
+    banner.remove();
+    if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; }
+  };
+  document.getElementById('install-no').onclick = () => banner.remove();
+  setTimeout(() => banner?.remove(), 8000);
+}
 </script>
 </body>
 </html>
