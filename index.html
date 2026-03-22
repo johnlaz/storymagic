@@ -322,7 +322,7 @@ select.inp{appearance:none;cursor:pointer;}
 <!-- ══════════ HOME ══════════ -->
 <div id="pg-home" class="scr on">
   <div class="tb">
-    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.1</span></div>
+    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.3</span></div>
     <div class="tb-r">
       <div class="pill" id="api-status-pill" onclick="go('parent')" title="API Status">⚡ <span id="xp-show">0</span> XP</div>
       <div class="pill" style="cursor:pointer;" onclick="openFeedback()">📝</div>
@@ -558,7 +558,7 @@ select.inp{appearance:none;cursor:pointer;}
 <div id="pg-library" class="scr">
   <div class="tb">
     <div class="logo">📚 My Library</div>
-    <div class="tb-r"><button class="btn btn-ghost btn-sm" onclick="exportAll()">💾 Export</button></div>
+    <div class="tb-r"><button class="btn btn-ghost btn-sm" onclick="exportAll(false)">💾 Export</button></div>
   </div>
   <div class="frow" id="lib-filter-row">
     <div class="ftab on" onclick="filterLib(this,'all')">All</div>
@@ -721,8 +721,21 @@ select.inp{appearance:none;cursor:pointer;}
     <div id="pdf-story-list" style="margin-bottom:16px;"></div>
     <div class="sec" style="padding:0 0 11px;"><div class="sec-t">💾 Data & Keys</div></div>
     <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
-      <p style="font-size:.8rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Export saves everything: stories, heroes, API keys, XP and progress. Import restores it all on any device.</p>
-      <button class="btn btn-ghost" onclick="exportAll()" style="margin-bottom:10px;">📤 Export All Data (JSON)</button>
+      <p style="font-size:.8rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Export saves your stories, heroes, API keys, XP and progress. Import restores everything on any device.</p>
+
+      <div style="background:var(--ink3);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:12px;">
+        <div style="font-weight:900;font-size:.85rem;margin-bottom:3px;">📤 Export Data Only</div>
+        <div style="font-size:.73rem;color:var(--dim);margin-bottom:10px;line-height:1.5;">Stories, heroes, keys and progress — no artwork. Small file, fast.</div>
+        <button class="btn btn-ghost btn-sm" style="width:100%;padding:11px;margin:0;" onclick="exportAll(false)">📤 Export (No Artwork)</button>
+      </div>
+
+      <div style="background:var(--ink3);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:12px;">
+        <div style="font-weight:900;font-size:.85rem;margin-bottom:3px;">🖼️ Export with Artwork</div>
+        <div style="font-size:.73rem;color:var(--dim);margin-bottom:4px;line-height:1.5;">Includes all saved illustrations so they restore on import. File may be several MB.</div>
+        <div id="artwork-size-hint" style="font-size:.7rem;color:var(--v2);font-weight:800;margin-bottom:10px;"></div>
+        <button class="btn btn-v btn-sm" style="width:100%;padding:11px;margin:0;" onclick="exportAll(true)">🖼️ Export with Artwork</button>
+      </div>
+
       <button class="btn btn-ghost" onclick="document.getElementById('import-file-inp').click()">📥 Import / Restore from JSON</button>
       <input type="file" id="import-file-inp" accept=".json,application/json" style="display:none" onchange="importAll(this)">
       <div id="import-result" style="display:none;margin-top:12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:var(--r);padding:12px;font-size:.8rem;line-height:1.55;"></div>
@@ -1950,6 +1963,24 @@ function renderParent(){
   document.getElementById('ps-stories').textContent=S.stories.length;
   document.getElementById('ps-xp').textContent=S.xp;
   const pStreak=document.getElementById('ps-streak');if(pStreak)pStreak.textContent='🔥'+getStreak();
+
+  // Artwork export size hint
+  const hint=document.getElementById('artwork-size-hint');
+  if(hint){
+    const illustrated=S.stories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0);
+    if(illustrated.length===0){
+      hint.textContent='No artwork saved yet — add illustrations in the reader first.';
+      hint.style.color='var(--dim)';
+    } else {
+      let totalBytes=0;
+      illustrated.forEach(s=>Object.values(s.illustrations).forEach(v=>totalBytes+=v.length));
+      const kb=Math.round(totalBytes/1024);
+      const mb=(totalBytes/1048576).toFixed(1);
+      const sizeStr=kb>1024?mb+' MB':kb+' KB';
+      hint.textContent=`${illustrated.length} illustrated ${illustrated.length===1?'story':'stories'} · ~${sizeStr} artwork data`;
+      hint.style.color='var(--v2)';
+    }
+  }
   const ml=document.getElementById('memory-lane');ml.innerHTML='';
   S.stories.slice(0,4).forEach(s=>{const d=document.createElement('div');d.className='ml-item';d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div><div class="ml-b">+50 XP</div>`;ml.appendChild(d);});
   const k=localStorage.getItem('groq_key')||'';if(k)document.getElementById('groq-inp').value=k;updateGroqStatus(k);
@@ -1998,16 +2029,28 @@ async function testElKey(){
 function updateElStatus(k){const l=document.getElementById('el-led'),t=document.getElementById('el-st');if(k&&k.length>8){l.className='led on';t.textContent='ElevenLabs connected — lifelike narration ready 🎙️';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — using device voice';t.style.color='var(--dim)';}}
 
 function requestPrint(){const e=document.getElementById('print-email').value.trim();if(!e||!e.includes('@')){toast('⚠️ Enter a valid parent email');return;}document.getElementById('pr-confirm').style.display='block';toast('📧 Checkout link sent to '+e+'!');}
-function exportAll(){
+function exportAll(includeArtwork=false){
+  // Count illustrated stories and estimate size
+  const illustratedStories=S.stories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0);
+
+  const storiesPayload=S.stories.map(s=>{
+    const base={
+      id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,
+      pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''
+    };
+    if(includeArtwork && s.illustrations && Object.keys(s.illustrations).length>0){
+      base.illustrations=s.illustrations;
+    }
+    return base;
+  });
+
   const payload={
     exported: new Date().toISOString(),
     app: 'Story Magic',
-    version: '2.1',
+    version: '2.3',
+    includesArtwork: includeArtwork,
     heroes: S.heroes,
-    stories: S.stories.map(s=>({
-      id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,
-      pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''
-    })),
+    stories: storiesPayload,
     xp: S.xp,
     coins: S.coins,
     badges: S.earnedBadges,
@@ -2028,12 +2071,19 @@ function exportAll(){
       follow_along: localStorage.getItem('sm_follow')||'false',
     }
   };
-  const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+
+  const json=JSON.stringify(payload,null,2);
+  const kb=Math.round(json.length/1024);
+  const b=new Blob([json],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(b);
-  a.download='story-magic-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  const suffix=includeArtwork?'-with-artwork':'';
+  a.download='story-magic-backup'+suffix+'-'+new Date().toISOString().slice(0,10)+'.json';
   a.click();
-  toast('💾 Backup exported! Save this file somewhere safe.');
+  const artNote=includeArtwork&&illustratedStories.length>0
+    ? ` (includes artwork from ${illustratedStories.length} ${illustratedStories.length===1?'story':'stories'})`
+    :'';
+  toast(`💾 Backup exported — ${kb}KB${artNote}`);
 }
 
 function importAll(input){
@@ -2059,10 +2109,21 @@ function importAll(input){
         const existingIds=new Set(S.stories.map(s=>s.id));
         const newStories=data.stories
           .filter(s=>!existingIds.has(s.id))
-          .map(s=>({...s,illustrations:{}}));
+          .map(s=>({...s, illustrations: s.illustrations||{}}));
+        // Also restore illustrations for stories that already exist but have no artwork
+        data.stories.forEach(imported=>{
+          if(existingIds.has(imported.id) && imported.illustrations && Object.keys(imported.illustrations).length>0){
+            const existing=S.stories.find(s=>s.id===imported.id);
+            if(existing && (!existing.illustrations || Object.keys(existing.illustrations).length===0)){
+              existing.illustrations=imported.illustrations;
+            }
+          }
+        });
         S.stories=[...newStories,...S.stories];
         saveStories();
-        results.push('✅ '+newStories.length+' new stories imported ('+data.stories.length+' in file)');
+        const artCount=newStories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0).length;
+        const artNote=artCount>0?` (${artCount} with artwork)`:'';
+        results.push('✅ '+newStories.length+' new stories imported'+artNote+' ('+data.stories.length+' in file)');
       }
 
       // Restore XP & coins
