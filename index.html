@@ -322,7 +322,7 @@ select.inp{appearance:none;cursor:pointer;}
 <!-- ══════════ HOME ══════════ -->
 <div id="pg-home" class="scr on">
   <div class="tb">
-    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.4</span></div>
+    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.5</span></div>
     <div class="tb-r">
       <div class="pill" id="api-status-pill" onclick="go('parent')" title="API Status">⚡ <span id="xp-show">0</span> XP</div>
       <div class="pill" style="cursor:pointer;" onclick="openFeedback()">📝</div>
@@ -548,6 +548,18 @@ select.inp{appearance:none;cursor:pointer;}
       </button>
     </div>
 
+    <!-- Replace artwork bar — shown when story already has artwork -->
+    <div id="artwork-replace-bar" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(124,58,237,.12);border:1px solid rgba(167,139,250,.25);border-radius:var(--rr);padding:14px 16px;margin-bottom:10px;">
+        <div style="font-size:1.4rem;">🖼️</div>
+        <div style="flex:1;">
+          <div style="font-weight:900;font-size:.85rem;">This story has artwork</div>
+          <div style="font-size:.72rem;color:var(--dim);margin-top:2px;">Replace it with a new image anytime</div>
+        </div>
+      </div>
+      <button class="btn btn-v" onclick="showReplaceArtwork()" style="margin-bottom:8px;">🎨 Replace Artwork</button>
+    </div>
+
     <!-- Hidden file input -->
     <input type="file" id="art-file-inp" accept="image/*" style="display:none" onchange="injectArtFromFile(this)">
 
@@ -582,6 +594,8 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="ftab" onclick="filterLib(this,'ancient egypt')">🏺 Egypt</div>
   </div>
   <div class="lgrid" id="lib-grid"></div>
+  <!-- Hidden file input for quick-add artwork from library cards -->
+  <input type="file" id="lib-art-inp" accept="image/*" style="display:none" onchange="handleLibArtFile(this)">
 </div>
 
 <!-- ══════════ BADGES ══════════ -->
@@ -1365,6 +1379,20 @@ function applyArtwork(dataUrl){
   addXP(25);
 }
 
+// ── Replace artwork — resets state so user can pick a new image ──
+function showReplaceArtwork(){
+  // Clear illustrated flag so full artwork panel shows
+  if(activeStory){
+    activeStory.illustrated=false;
+  }
+  const step1=document.getElementById('artwork-step1');
+  const step2=document.getElementById('artwork-step2');
+  const replaceBar=document.getElementById('artwork-replace-bar');
+  if(step1) step1.style.display='block';
+  if(step2) step2.style.display='none';
+  if(replaceBar) replaceBar.style.display='none';
+}
+
 // ── Step 1: Copy story prompt to clipboard + open Gemini ──
 // ── Shared artwork prompt builder ──
 // Builds a rich, specific illustration prompt from the story's actual metadata
@@ -1621,7 +1649,17 @@ function renderReaderPage(){
   // 4. Show/hide artwork section below reader
   const picWrap=document.getElementById('picbook-wrap');
   if(picWrap){
-    picWrap.style.display=activeStory.illustrated===true?'none':'block';
+    picWrap.style.display='block';
+    // If already illustrated, swap to the replace-artwork mini panel
+    const step1=document.getElementById('artwork-step1');
+    const replaceBtn=document.getElementById('artwork-replace-bar');
+    if(activeStory.illustrated===true){
+      if(step1) step1.style.display='none';
+      if(replaceBtn) replaceBtn.style.display='block';
+    } else {
+      if(step1) step1.style.display='block';
+      if(replaceBtn) replaceBtn.style.display='none';
+    }
   }
 
   // ── Voice label ──
@@ -2148,11 +2186,17 @@ function renderLib(){
     const coverHtml=coverImg
       ?`<div style="position:relative;"><img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.5);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`
       :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0&&!isLocked?'<div class="lnew">NEW</div>':''}${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.4);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`;
+
+    // Edit chips — all hidden when locked, shown when unlocked
+    const editChips=isLocked?'':`
+      <span style="font-size:.62rem;background:rgba(14,165,233,.15);border:1px solid rgba(125,211,252,.25);border-radius:var(--pill);padding:2px 8px;color:var(--sky2);font-weight:900;cursor:pointer;" title="${coverImg?'Replace artwork':'Add artwork'}" onclick="event.stopPropagation();quickAddArt('${s.id}')">${coverImg?'🖼️ Art':'🖼️ Add'}</span>
+      <span style="font-size:.62rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:2px 8px;color:#f87171;font-weight:900;cursor:pointer;" onclick="event.stopPropagation();deleteStory('${s.id}')">🗑️</span>`;
+
     d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">
       <span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span>
       <span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span>
       <span style="font-size:.62rem;${lockStyle}border-radius:var(--pill);padding:2px 8px;font-weight:900;cursor:pointer;" title="${lockTitle}" onclick="event.stopPropagation();toggleLockStory('${s.id}')">${lockIcon}</span>
-      ${!isLocked?`<span style="font-size:.62rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:2px 8px;color:#f87171;font-weight:900;cursor:pointer;" onclick="event.stopPropagation();deleteStory('${s.id}')">🗑️</span>`:''}
+      ${editChips}
     </div></div></div>`;
     grid.appendChild(d);
   });
@@ -2168,7 +2212,34 @@ function toggleLockStory(id){
   s.locked=!s.locked;
   saveStories();
   renderLib();
-  toast(s.locked?'🔒 Story locked — delete button hidden':'🔓 Story unlocked');
+  toast(s.locked?'🔒 Story locked — edit buttons hidden':'🔓 Story unlocked');
+}
+
+// Quick-add artwork directly from the library card — no need to open the reader
+function quickAddArt(id){
+  const s=S.stories.find(x=>x.id===id);
+  if(!s){toast('⚠️ Story not found');return;}
+  if(s.locked){toast('🔒 Unlock this story first');return;}
+  // Set as active story so applyArtwork targets it
+  activeStory=s;
+  const inp=document.getElementById('lib-art-inp');
+  if(inp){inp.dataset.storyId=id;inp.click();}
+}
+
+function handleLibArtFile(input){
+  const id=input.dataset.storyId;
+  const s=S.stories.find(x=>x.id===id);
+  if(!s||!input.files[0]){input.value='';return;}
+  activeStory=s;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    applyArtwork(e.target.result);
+    input.value='';
+    renderLib();       // refresh covers immediately
+    renderStoryStrip(); // refresh home strip too
+    toast('🖼️ Artwork saved to '+s.title+'!');
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 
 function deleteStory(id){
@@ -2258,14 +2329,14 @@ function renderParent(){
         const raw=localStorage.getItem('sm_illus_'+s.id);
         if(raw){
           illustratedCount++;
-          // Compact format stores one image — actual export size = image × pages
+          // Compact format — export stores one image per story, not per page
           const parsed=JSON.parse(raw);
-          const imgSize=parsed.img?parsed.img.length:raw.length;
-          const pages=s.data?s.data.length:(parsed.pages||1);
-          totalBytes+=imgSize*pages;
+          totalBytes+=parsed.img?parsed.img.length:raw.length;
         } else if(s.illustrations&&Object.keys(s.illustrations).length>0){
           illustratedCount++;
-          Object.values(s.illustrations).forEach(v=>totalBytes+=v.length);
+          // Use first page only (all pages are the same image)
+          const first=Object.values(s.illustrations)[0];
+          if(first) totalBytes+=first.length;
         }
       }catch(e){}
     });
@@ -2336,17 +2407,19 @@ function exportAll(includeArtwork=false){
       if(raw){
         const parsed=JSON.parse(raw);
         if(parsed.img){
-          // Compact format — reconstruct full per-page mapping for export
-          const pageCount=story.data?story.data.length:(parsed.pages||1);
-          const illus={};
-          for(let i=0;i<pageCount;i++) illus['p'+i]=parsed.img;
-          return illus;
+          // Already compact {img, pages} — export as-is, tiny file size
+          return {img:parsed.img, pages:story.data?story.data.length:(parsed.pages||1)};
         }
-        return parsed; // legacy full format
+        // Legacy full format {p0,p1,...} — compact it before export
+        const vals=Object.values(parsed).filter(Boolean);
+        if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
       }
     }catch(e){}
-    // Fall back to in-memory (artwork added this session)
-    if(story.illustrations&&Object.keys(story.illustrations).length>0) return story.illustrations;
+    // Fall back to in-memory (artwork added this session, not yet persisted)
+    if(story.illustrations&&Object.keys(story.illustrations).length>0){
+      const vals=Object.values(story.illustrations).filter(Boolean);
+      if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
+    }
     return null;
   }
 
@@ -2370,7 +2443,7 @@ function exportAll(includeArtwork=false){
   const payload={
     exported: new Date().toISOString(),
     app: 'Story Magic',
-    version: '2.4',
+    version: '2.5',
     includesArtwork: includeArtwork,
     heroes: S.heroes,
     stories: storiesPayload,
@@ -2432,22 +2505,42 @@ function importAll(input){
         const existingIds=new Set(S.stories.map(s=>s.id));
 
         // New stories not in library: add them wholesale
+        // Handle both compact {img,pages} and legacy {p0,p1,...} export formats
         const newStories=data.stories
           .filter(s=>!existingIds.has(s.id))
           .map(s=>{
-            const story={...s, illustrations: s.illustrations||{}};
-            if(story.illustrations&&Object.keys(story.illustrations).length>0) story.illustrated=true;
+            const story={...s, illustrations: {}};
+            const compactImg=s.illustrations&&s.illustrations.img;
+            if(compactImg&&typeof compactImg==='string'){
+              // Compact format {img,pages} — reconstruct per-page mapping in memory
+              const pageCount=s.data?s.data.length:(s.illustrations.pages||s.pages||1);
+              for(let i=0;i<pageCount;i++) story.illustrations['p'+i]=compactImg;
+              story.illustrated=true;
+            } else if(s.illustrations&&Object.keys(s.illustrations).filter(k=>k.startsWith('p')).length>0){
+              // Legacy full format {p0,p1,...}
+              story.illustrations=s.illustrations;
+              story.illustrated=true;
+            }
             return story;
           });
 
         // Existing stories: update illustrations if the import has them
         data.stories.forEach(imported=>{
-          if(existingIds.has(imported.id) && imported.illustrations && Object.keys(imported.illustrations).length>0){
+          const compactImg=imported.illustrations&&imported.illustrations.img;
+          const hasCompact=compactImg&&typeof compactImg==='string';
+          const hasLegacy=imported.illustrations&&Object.keys(imported.illustrations).filter(k=>k.startsWith('p')).length>0;
+          if(existingIds.has(imported.id) && (hasCompact||hasLegacy)){
             const existing=S.stories.find(s=>s.id===imported.id);
             if(existing){
-              existing.illustrations=imported.illustrations;
+              if(hasCompact){
+                const pageCount=existing.data?existing.data.length:(imported.illustrations.pages||imported.pages||1);
+                existing.illustrations={};
+                for(let i=0;i<pageCount;i++) existing.illustrations['p'+i]=compactImg;
+              } else {
+                existing.illustrations=imported.illustrations;
+              }
               existing.illustrated=true;
-              saveIllustrations(existing); // persist to its own localStorage key
+              saveIllustrations(existing);
             }
           }
         });
@@ -2463,7 +2556,11 @@ function importAll(input){
 
         saveStories(); // saves story metadata (no illustrations — those are in their own keys)
 
-        const artCount=data.stories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0).length;
+        const artCount=data.stories.filter(s=>{
+          const hasCompact=s.illustrations&&s.illustrations.img;
+          const hasLegacy=s.illustrations&&Object.keys(s.illustrations).some(k=>k.startsWith('p'));
+          return hasCompact||hasLegacy;
+        }).length;
         const artNote=artCount>0?` including artwork for ${artCount} ${artCount===1?'story':'stories'}`:'';
         results.push(`✅ ${newStories.length} new stories added${artNote} (${data.stories.length} in file)`);
       }
