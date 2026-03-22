@@ -1780,63 +1780,31 @@ function getPreferredVoice(){
   return null;
 }
 
-let _boundaryWorking=false;
-// Mobile Chrome has deeply unreliable boundary event timing per-utterance.
-// Detect it specifically so we can route it to the timer-only path.
-// Desktop Chrome, Edge, Safari all work well with boundary events.
-const _isMobileChrome=(()=>{
-  const ua=navigator.userAgent;
-  return /Android|iPhone|iPad|iPod/i.test(ua)&&/Chrome\//.test(ua)&&!/Edg\/|OPR\/|Brave\/|SamsungBrowser\//.test(ua);
-})();
-
 function startBrowserTTS(text){
   if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.rate=speechRate;u.pitch=1.0;u.volume=1;
+  u.rate=speechRate;u.pitch=1.06;u.volume=1;
 
+  // Use user-chosen voice, or system default if none selected
   const voice=getPreferredVoice();
   if(voice) u.voice=voice;
 
-  // Reset per utterance — never carry state from previous page
-  _boundaryWorking=false;
-
-  if(_isMobileChrome){
-    // Mobile Chrome: boundary events are inconsistent per utterance — skip them.
-    // Use timer-based cursor exclusively; it stays in sync with speechRate.
-    u.onstart=()=>{
-      speechActive=true;
-      document.getElementById('ral-play-btn').textContent='⏸';
-      if(S.followAlong) animateWordCursor(text);
-    };
-  } else {
-    // All other browsers: use boundary events for accurate word sync.
-    // Pre-build position map once so onboundary lookups are O(n) not O(n²).
-    const wordMap=[];
+  u.onboundary=e=>{
+    if(e.name!=='word') return;
+    if(!S.followAlong) return;
+    wordEls.forEach(w=>w.classList.remove('spoken'));
+    // Find word index by character position
+    const parts=text.split(/(\s+)/);
     let pos=0,wi=0;
-    for(const tok of text.split(/(\s+)/)){
+    for(const tok of parts){
       if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
-      wordMap.push({start:pos,end:pos+tok.length,wi});
+      if(pos>=e.charIndex) break;
       pos+=tok.length;wi++;
     }
-    u.onboundary=e=>{
-      if(e.name!=='word'||!S.followAlong) return;
-      _boundaryWorking=true;
-      wordEls.forEach(w=>w.classList.remove('spoken'));
-      const entry=wordMap.find(m=>e.charIndex>=m.start&&e.charIndex<m.end)
-        ||wordMap.find(m=>e.charIndex<=m.start);
-      if(entry&&wordEls[entry.wi]) wordEls[entry.wi].classList.add('spoken');
-      document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
-    };
-    u.onstart=()=>{
-      speechActive=true;
-      document.getElementById('ral-play-btn').textContent='⏸';
-      // Fallback: if boundary events never fire (some mobile Safari), use timer
-      setTimeout(()=>{
-        if(!_boundaryWorking&&speechActive&&S.followAlong) animateWordCursor(text);
-      },600);
-    };
-  }
+    if(wordEls[wi]) wordEls[wi].classList.add('spoken');
+    document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
+  };
 
   u.onend=()=>{
     speechActive=false;
@@ -1846,8 +1814,9 @@ function startBrowserTTS(text){
   };
   u.onerror=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';};
   window.speechSynthesis.speak(u);
+  speechActive=true;
+  document.getElementById('ral-play-btn').textContent='⏸';
 }
-
 function speakWord(word){
   if(!word)return;
   const elKey=localStorage.getItem('el_key')||'';
