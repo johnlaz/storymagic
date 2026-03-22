@@ -657,8 +657,13 @@ select.inp{appearance:none;cursor:pointer;}
 
       <!-- Device voice note -->
       <div id="tts-browser-section">
-        <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r);padding:12px 14px;font-size:.78rem;line-height:1.55;color:var(--dim);">
-          💡 <strong style="color:var(--txt);">Tip:</strong> For the best free voice, use <strong style="color:var(--txt);">Safari on iPhone/iPad</strong> — it uses Siri's high-quality neural voices automatically.
+        <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r);padding:12px 14px;font-size:.78rem;line-height:1.55;color:var(--dim);margin-bottom:12px;">
+          💡 The app uses your <strong style="color:var(--txt);">system voice</strong> by default — change it in your device settings and it adapts automatically. Or pick a specific voice below.
+        </div>
+        <div style="margin-bottom:6px;">
+          <div class="lbl" style="margin-bottom:8px;">Choose a specific voice <em style="font-weight:700;color:var(--dim);">(optional — leave blank to use system default)</em></div>
+          <div class="voice-grid" id="browser-voice-grid" style="max-height:220px;overflow-y:auto;scrollbar-width:thin;"></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;font-size:.75rem;padding:8px;" onclick="clearBrowserVoice()">↩ Use System Default</button>
         </div>
       </div>
 
@@ -1759,46 +1764,80 @@ function updateFollowToggleBtn(){
 }
 
 // ── Browser TTS — robust cross-browser with boundary fallback ──
-let _boundaryWorking=false; // detected at runtime
+// ── Shared voice picker — returns the best voice to use ──
+// Respects system default unless user has explicitly chosen one in app settings
+function getPreferredVoice(){
+  const voices=window.speechSynthesis.getVoices();
+  if(!voices.length) return null;
+  // If user picked a specific voice in the parent area voice picker, use it
+  const savedName=localStorage.getItem('sm_browser_voice');
+  if(savedName){
+    const match=voices.find(v=>v.name===savedName);
+    if(match) return match;
+  }
+  // Otherwise return null — let the browser use its system default
+  // (explicitly setting no voice = system voice, which adapts to OS settings)
+  return null;
+}
+
+let _boundaryWorking=false;
+let _isChrome=/Chrome/.test(navigator.userAgent)&&!/Edg|OPR|Brave/.test(navigator.userAgent);
+
 function startBrowserTTS(text){
   if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.rate=speechRate;u.pitch=1.06;u.volume=1;
-  const voices=window.speechSynthesis.getVoices();
-  const preferred=voices.find(v=>/samantha|karen|victoria|zira|google us english|en-us/i.test(v.name))||voices.find(v=>v.lang==='en-US')||voices[0];
-  if(preferred)u.voice=preferred;
+  u.rate=speechRate;u.pitch=1.0;u.volume=1;
+
+  // Use system voice unless user picked one explicitly
+  const voice=getPreferredVoice();
+  if(voice) u.voice=voice;
+  // If voice is null, browser uses system default — this is intentional
+
+  // Pre-build word position map for fast boundary lookup
+  const wordMap=[]; // [{start, end, wi}]
+  let pos=0,wi=0;
+  for(const tok of text.split(/(\s+)/)){
+    if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
+    wordMap.push({start:pos,end:pos+tok.length,wi});
+    pos+=tok.length;wi++;
+  }
 
   _boundaryWorking=false;
-  let boundaryCount=0;
 
   u.onboundary=e=>{
     if(e.name!=='word')return;
     if(!S.followAlong)return;
     _boundaryWorking=true;
-    boundaryCount++;
-    wordEls.forEach(w=>w.classList.remove('spoken'));
-    // Find word index by character position
-    const textParts=text.split(/(\s+)/);
-    let pos=0,wi=0;
-    for(const tok of textParts){
-      if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
-      if(pos>=e.charIndex)break;
-      pos+=tok.length;wi++;
+
+    // Chrome fires boundary events slightly early — compensate with small delay
+    const highlight=()=>{
+      wordEls.forEach(w=>w.classList.remove('spoken'));
+      // Binary search for the word at this char position
+      const entry=wordMap.find(m=>e.charIndex>=m.start&&e.charIndex<m.end)
+        ||wordMap.find(m=>e.charIndex<=m.start); // fallback: next word
+      if(entry&&wordEls[entry.wi]) wordEls[entry.wi].classList.add('spoken');
+      document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
+    };
+
+    if(_isChrome){
+      // Chrome fires the event before the word starts — delay to match actual speech
+      setTimeout(highlight, 80);
+    } else {
+      highlight();
     }
-    if(wordEls[wi])wordEls[wi].classList.add('spoken');
-    document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
   };
 
   u.onstart=()=>{
     speechActive=true;
     document.getElementById('ral-play-btn').textContent='⏸';
-    // After 400ms check if boundary events fired; if not, start timer fallback
+    // Wait longer on Chrome (which does fire boundary events) before deciding to fall back
+    const fallbackDelay=_isChrome?1200:500;
     setTimeout(()=>{
       if(!_boundaryWorking && speechActive && S.followAlong){
         animateWordCursor(text);
       }
-    },400);
+    },fallbackDelay);
   };
 
   u.onend=()=>{
@@ -1809,6 +1848,34 @@ function startBrowserTTS(text){
   };
   u.onerror=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';};
   window.speechSynthesis.speak(u);
+}
+
+function speakWord(word){
+  if(!word)return;
+  const elKey=localStorage.getItem('el_key')||'';
+  if(elKey){
+    // ElevenLabs single-word via existing audio pipeline
+    fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','xi-api-key':elKey},
+      body:JSON.stringify({text:word,model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})
+    }).then(r=>{if(r.ok)return r.arrayBuffer();}).then(buf=>{if(buf)playAudioBuffer(buf);}).catch(()=>{});
+  } else {
+    // Use same voice as read-aloud for consistency
+    window.speechSynthesis?.cancel();
+    const u=new SpeechSynthesisUtterance(word);
+    u.rate=0.9;u.pitch=1.0;
+    const voice=getPreferredVoice();
+    if(voice) u.voice=voice;
+    window.speechSynthesis.speak(u);
+  }
+  // Flash highlight
+  wordEls.forEach(el=>{
+    if(el.textContent.replace(/[^a-zA-Z']/g,'')===word){
+      el.classList.add('hl');
+      setTimeout(()=>el.classList.remove('hl'),700);
+    }
+  });
 }
 
 function stopSpeech(){
@@ -1850,6 +1917,49 @@ const OPENAI_VOICES=[
   {id:'shimmer',label:'Shimmer',desc:'Bright & cheerful'},
 ];
 
+function renderBrowserVoicePicker(){
+  const g=document.getElementById('browser-voice-grid');
+  if(!g) return;
+  const voices=window.speechSynthesis.getVoices();
+  // Show English voices first, then others — filter out duplicates by name
+  const seen=new Set();
+  const sorted=voices.filter(v=>{
+    if(seen.has(v.name)) return false;
+    seen.add(v.name);
+    return true;
+  }).sort((a,b)=>{
+    const aEn=a.lang.startsWith('en');
+    const bEn=b.lang.startsWith('en');
+    if(aEn&&!bEn) return -1;
+    if(!aEn&&bEn) return 1;
+    return a.name.localeCompare(b.name);
+  });
+  if(sorted.length===0){
+    g.innerHTML='<div style="font-size:.75rem;color:var(--dim);padding:8px;">No voices available yet — try reopening this section.</div>';
+    return;
+  }
+  const saved=localStorage.getItem('sm_browser_voice')||'';
+  g.innerHTML='';
+  sorted.forEach(v=>{
+    const d=document.createElement('div');
+    d.className='vc'+(v.name===saved?' on':'');
+    d.onclick=()=>{
+      document.querySelectorAll('#browser-voice-grid .vc').forEach(c=>c.classList.remove('on'));
+      d.classList.add('on');
+      localStorage.setItem('sm_browser_voice',v.name);
+      toast('🗣️ Voice set: '+v.name.split(' ').slice(0,3).join(' '));
+    };
+    const isDefault=v.default?' (System Default)':'';
+    const lang=v.lang?` · ${v.lang}`:'';
+    d.innerHTML=`<div class="vc-name" style="font-size:.78rem;">${v.name}${isDefault}</div><div class="vc-desc">${v.localService?'On-device':'Online'}${lang}</div>`;
+    g.appendChild(d);
+  });
+}
+function clearBrowserVoice(){
+  localStorage.removeItem('sm_browser_voice');
+  document.querySelectorAll('#browser-voice-grid .vc').forEach(c=>c.classList.remove('on'));
+  toast('↩ Using system default voice');
+}
 function setVoiceEngine(engine){
   S.voiceEngine=engine;localStorage.setItem('sm_engine',engine);
   ['browser','elevenlabs','openai'].forEach(e=>{
@@ -2186,7 +2296,7 @@ function renderParent(){
   document.getElementById('tts-browser-section').style.display=eng==='browser'?'block':'none';
   document.getElementById('tts-el-section').style.display=eng==='elevenlabs'?'block':'none';
   document.getElementById('tts-openai-section').style.display=eng==='openai'?'block':'none';
-  renderElVoiceGrid();renderOAIVoiceGrid();
+  renderBrowserVoicePicker();renderElVoiceGrid();renderOAIVoiceGrid();
   renderPDFList();
   renderLib();
 }
@@ -2525,7 +2635,15 @@ function init(){
     S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
 
   window.speechSynthesis?.getVoices();
-  window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{});
+  // voiceschanged fires asynchronously in Chrome — store voices when ready
+  if(window.speechSynthesis){
+    const handleVoicesReady=()=>{
+      const voices=window.speechSynthesis.getVoices();
+      if(voices.length>0) renderBrowserVoicePicker();
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesReady);
+    handleVoicesReady(); // also try immediately (Safari loads synchronously)
+  }
   go('home');
 }
 if(document.readyState==='loading'){
