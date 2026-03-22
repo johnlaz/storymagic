@@ -1820,19 +1820,15 @@ function startBrowserTTS(text){
       document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
     };
 
-    if(_isChrome){
-      // Chrome fires the event before the word starts — delay to match actual speech
-      setTimeout(highlight, 80);
-    } else {
-      highlight();
-    }
+    // Fire immediately — Chrome's boundary events already arrive slightly late,
+    // adding any delay only makes it worse
+    highlight();
   };
 
   u.onstart=()=>{
     speechActive=true;
     document.getElementById('ral-play-btn').textContent='⏸';
-    // Wait longer on Chrome (which does fire boundary events) before deciding to fall back
-    const fallbackDelay=_isChrome?1200:500;
+    const fallbackDelay=_isChrome?800:500;
     setTimeout(()=>{
       if(!_boundaryWorking && speechActive && S.followAlong){
         animateWordCursor(text);
