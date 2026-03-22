@@ -2503,66 +2503,52 @@ function importAll(input){
       // Restore stories — merge imported, overwrite illustrations on matching IDs
       if(data.stories&&Array.isArray(data.stories)&&data.stories.length>0){
         const existingIds=new Set(S.stories.map(s=>s.id));
+        let artRestoredCount=0;
 
-        // New stories not in library: add them wholesale
-        // Handle both compact {img,pages} and legacy {p0,p1,...} export formats
+        // Extract the single image data URL from any illustration format
+        function extractImg(illusObj){
+          if(!illusObj) return null;
+          if(illusObj.img&&typeof illusObj.img==='string'&&illusObj.img.startsWith('data:')) return illusObj.img;
+          const pageVals=Object.entries(illusObj).filter(([k])=>k.startsWith('p')&&!isNaN(k.slice(1))).map(([,v])=>v);
+          if(pageVals.length>0&&typeof pageVals[0]==='string'&&pageVals[0].startsWith('data:')) return pageVals[0];
+          return null;
+        }
+
+        // Apply image to a story object in memory and persist to localStorage
+        function applyImportedArt(story,imgDataUrl){
+          if(!imgDataUrl) return false;
+          const pageCount=story.data?story.data.length:(story.pages||1);
+          story.illustrations={};
+          for(let i=0;i<pageCount;i++) story.illustrations['p'+i]=imgDataUrl;
+          story.illustrated=true;
+          saveIllustrations(story);
+          return true;
+        }
+
+        // New stories: add to library and restore artwork
         const newStories=data.stories
           .filter(s=>!existingIds.has(s.id))
           .map(s=>{
-            const story={...s, illustrations: {}};
-            const compactImg=s.illustrations&&s.illustrations.img;
-            if(compactImg&&typeof compactImg==='string'){
-              // Compact format {img,pages} — reconstruct per-page mapping in memory
-              const pageCount=s.data?s.data.length:(s.illustrations.pages||s.pages||1);
-              for(let i=0;i<pageCount;i++) story.illustrations['p'+i]=compactImg;
-              story.illustrated=true;
-            } else if(s.illustrations&&Object.keys(s.illustrations).filter(k=>k.startsWith('p')).length>0){
-              // Legacy full format {p0,p1,...}
-              story.illustrations=s.illustrations;
-              story.illustrated=true;
-            }
+            const story={...s,illustrations:{}};
+            const img=extractImg(s.illustrations);
+            if(img&&applyImportedArt(story,img)) artRestoredCount++;
             return story;
           });
 
-        // Existing stories: update illustrations if the import has them
+        // Existing stories: restore artwork only
         data.stories.forEach(imported=>{
-          const compactImg=imported.illustrations&&imported.illustrations.img;
-          const hasCompact=compactImg&&typeof compactImg==='string';
-          const hasLegacy=imported.illustrations&&Object.keys(imported.illustrations).filter(k=>k.startsWith('p')).length>0;
-          if(existingIds.has(imported.id) && (hasCompact||hasLegacy)){
-            const existing=S.stories.find(s=>s.id===imported.id);
-            if(existing){
-              if(hasCompact){
-                const pageCount=existing.data?existing.data.length:(imported.illustrations.pages||imported.pages||1);
-                existing.illustrations={};
-                for(let i=0;i<pageCount;i++) existing.illustrations['p'+i]=compactImg;
-              } else {
-                existing.illustrations=imported.illustrations;
-              }
-              existing.illustrated=true;
-              saveIllustrations(existing);
-            }
-          }
+          if(!existingIds.has(imported.id)) return;
+          const img=extractImg(imported.illustrations);
+          if(!img) return;
+          const existing=S.stories.find(s=>s.id===imported.id);
+          if(existing&&applyImportedArt(existing,img)) artRestoredCount++;
         });
 
         S.stories=[...newStories,...S.stories];
+        saveStories();
 
-        // Persist artwork for all newly added illustrated stories
-        newStories.forEach(s=>{
-          if(s.illustrations && Object.keys(s.illustrations).length>0){
-            saveIllustrations(s);
-          }
-        });
-
-        saveStories(); // saves story metadata (no illustrations — those are in their own keys)
-
-        const artCount=data.stories.filter(s=>{
-          const hasCompact=s.illustrations&&s.illustrations.img;
-          const hasLegacy=s.illustrations&&Object.keys(s.illustrations).some(k=>k.startsWith('p'));
-          return hasCompact||hasLegacy;
-        }).length;
-        const artNote=artCount>0?` including artwork for ${artCount} ${artCount===1?'story':'stories'}`:'';
-        results.push(`✅ ${newStories.length} new stories added${artNote} (${data.stories.length} in file)`);
+        const artNote=artRestoredCount>0?` with artwork for ${artRestoredCount} ${artRestoredCount===1?'story':'stories'}`:'';
+        results.push(`✅ ${newStories.length} new stories imported${artNote} (${data.stories.length} in file)`);
       }
 
       // Restore XP & coins
