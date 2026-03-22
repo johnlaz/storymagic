@@ -322,7 +322,7 @@ select.inp{appearance:none;cursor:pointer;}
 <!-- ══════════ HOME ══════════ -->
 <div id="pg-home" class="scr on">
   <div class="tb">
-    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.3</span></div>
+    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.4</span></div>
     <div class="tb-r">
       <div class="pill" id="api-status-pill" onclick="go('parent')" title="API Status">⚡ <span id="xp-show">0</span> XP</div>
       <div class="pill" style="cursor:pointer;" onclick="openFeedback()">📝</div>
@@ -1781,7 +1781,13 @@ function getPreferredVoice(){
 }
 
 let _boundaryWorking=false;
-let _isChrome=/Chrome/.test(navigator.userAgent)&&!/Edg|OPR|Brave/.test(navigator.userAgent);
+// Mobile Chrome has deeply unreliable boundary event timing per-utterance.
+// Detect it specifically so we can route it to the timer-only path.
+// Desktop Chrome, Edge, Safari all work well with boundary events.
+const _isMobileChrome=(()=>{
+  const ua=navigator.userAgent;
+  return /Android|iPhone|iPad|iPod/i.test(ua)&&/Chrome\//.test(ua)&&!/Edg\/|OPR\/|Brave\/|SamsungBrowser\//.test(ua);
+})();
 
 function startBrowserTTS(text){
   if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
@@ -1789,52 +1795,48 @@ function startBrowserTTS(text){
   const u=new SpeechSynthesisUtterance(text);
   u.rate=speechRate;u.pitch=1.0;u.volume=1;
 
-  // Use system voice unless user picked one explicitly
   const voice=getPreferredVoice();
   if(voice) u.voice=voice;
-  // If voice is null, browser uses system default — this is intentional
 
-  // Pre-build word position map for fast boundary lookup
-  const wordMap=[]; // [{start, end, wi}]
-  let pos=0,wi=0;
-  for(const tok of text.split(/(\s+)/)){
-    if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
-    wordMap.push({start:pos,end:pos+tok.length,wi});
-    pos+=tok.length;wi++;
-  }
-
+  // Reset per utterance — never carry state from previous page
   _boundaryWorking=false;
 
-  u.onboundary=e=>{
-    if(e.name!=='word')return;
-    if(!S.followAlong)return;
-    _boundaryWorking=true;
-
-    // Chrome fires boundary events slightly early — compensate with small delay
-    const highlight=()=>{
+  if(_isMobileChrome){
+    // Mobile Chrome: boundary events are inconsistent per utterance — skip them.
+    // Use timer-based cursor exclusively; it stays in sync with speechRate.
+    u.onstart=()=>{
+      speechActive=true;
+      document.getElementById('ral-play-btn').textContent='⏸';
+      if(S.followAlong) animateWordCursor(text);
+    };
+  } else {
+    // All other browsers: use boundary events for accurate word sync.
+    // Pre-build position map once so onboundary lookups are O(n) not O(n²).
+    const wordMap=[];
+    let pos=0,wi=0;
+    for(const tok of text.split(/(\s+)/)){
+      if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
+      wordMap.push({start:pos,end:pos+tok.length,wi});
+      pos+=tok.length;wi++;
+    }
+    u.onboundary=e=>{
+      if(e.name!=='word'||!S.followAlong) return;
+      _boundaryWorking=true;
       wordEls.forEach(w=>w.classList.remove('spoken'));
-      // Binary search for the word at this char position
       const entry=wordMap.find(m=>e.charIndex>=m.start&&e.charIndex<m.end)
-        ||wordMap.find(m=>e.charIndex<=m.start); // fallback: next word
+        ||wordMap.find(m=>e.charIndex<=m.start);
       if(entry&&wordEls[entry.wi]) wordEls[entry.wi].classList.add('spoken');
       document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
     };
-
-    // Fire immediately — Chrome's boundary events already arrive slightly late,
-    // adding any delay only makes it worse
-    highlight();
-  };
-
-  u.onstart=()=>{
-    speechActive=true;
-    document.getElementById('ral-play-btn').textContent='⏸';
-    const fallbackDelay=_isChrome?800:500;
-    setTimeout(()=>{
-      if(!_boundaryWorking && speechActive && S.followAlong){
-        animateWordCursor(text);
-      }
-    },fallbackDelay);
-  };
+    u.onstart=()=>{
+      speechActive=true;
+      document.getElementById('ral-play-btn').textContent='⏸';
+      // Fallback: if boundary events never fire (some mobile Safari), use timer
+      setTimeout(()=>{
+        if(!_boundaryWorking&&speechActive&&S.followAlong) animateWordCursor(text);
+      },600);
+    };
+  }
 
   u.onend=()=>{
     speechActive=false;
@@ -2370,7 +2372,7 @@ function exportAll(includeArtwork=false){
   const payload={
     exported: new Date().toISOString(),
     app: 'Story Magic',
-    version: '2.3',
+    version: '2.4',
     includesArtwork: includeArtwork,
     heroes: S.heroes,
     stories: storiesPayload,
