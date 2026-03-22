@@ -917,23 +917,41 @@ function saveXP(){localStorage.setItem('sm_xp',S.xp);localStorage.setItem('sm_co
 // sm_illus_{id} = JSON string of {p0:'data:...', p1:'data:...', ...}
 function saveIllustrations(story){
   if(!story||!story.illustrations) return;
-  const keys=Object.keys(story.illustrations);
-  if(keys.length===0){
+  const vals=Object.values(story.illustrations).filter(Boolean);
+  if(vals.length===0){
     localStorage.removeItem('sm_illus_'+story.id);
     return;
   }
+  // All pages use the same image — store just one copy, not N copies
+  // Format: JSON {img: "data:...", pages: 6}
+  const payload=JSON.stringify({img:vals[0], pages:story.data?story.data.length:vals.length});
   try{
-    localStorage.setItem('sm_illus_'+story.id, JSON.stringify(story.illustrations));
+    localStorage.setItem('sm_illus_'+story.id, payload);
   }catch(e){
-    // localStorage quota — silently fail, artwork still in memory for this session
-    console.warn('Could not persist illustration for',story.id,e);
+    console.warn('Could not persist illustration for',story.id,'— localStorage quota exceeded');
+    // Try to free space by removing other illus keys for stories not currently in S.stories
+    pruneOrphanIllustrations();
+    try{ localStorage.setItem('sm_illus_'+story.id, payload); }catch(e2){}
   }
 }
 function loadIllustrations(story){
   if(!story) return;
   try{
     const raw=localStorage.getItem('sm_illus_'+story.id);
-    if(raw) story.illustrations=JSON.parse(raw);
+    if(!raw) return;
+    const parsed=JSON.parse(raw);
+    // Handle both new format {img, pages} and legacy format {p0, p1, ...}
+    if(parsed.img){
+      // New compact format — reconstruct per-page mapping
+      const pageCount=story.data?story.data.length:(parsed.pages||1);
+      story.illustrations={};
+      for(let i=0;i<pageCount;i++) story.illustrations['p'+i]=parsed.img;
+      story.illustrated=true;
+    } else {
+      // Legacy format — use as-is
+      story.illustrations=parsed;
+      if(Object.keys(parsed).length>0) story.illustrated=true;
+    }
   }catch(e){ /* corrupt entry — ignore */ }
 }
 function deleteIllustrations(storyId){
@@ -941,6 +959,16 @@ function deleteIllustrations(storyId){
 }
 function rehydrateAllIllustrations(){
   S.stories.forEach(s=>loadIllustrations(s));
+}
+function pruneOrphanIllustrations(){
+  // Remove any sm_illus_ keys for stories no longer in the library
+  const activeIds=new Set(S.stories.map(s=>s.id));
+  Object.keys(localStorage)
+    .filter(k=>k.startsWith('sm_illus_'))
+    .forEach(k=>{
+      const id=k.replace('sm_illus_','');
+      if(!activeIds.has(id)) localStorage.removeItem(k);
+    });
 }
 
 // ─── STREAK LOGIC ────────────────────────────────
@@ -2124,9 +2152,12 @@ function renderParent(){
         const raw=localStorage.getItem('sm_illus_'+s.id);
         if(raw){
           illustratedCount++;
-          totalBytes+=raw.length;
+          // Compact format stores one image — actual export size = image × pages
+          const parsed=JSON.parse(raw);
+          const imgSize=parsed.img?parsed.img.length:raw.length;
+          const pages=s.data?s.data.length:(parsed.pages||1);
+          totalBytes+=imgSize*pages;
         } else if(s.illustrations&&Object.keys(s.illustrations).length>0){
-          // In-memory fallback (artwork added this session, not yet in localStorage somehow)
           illustratedCount++;
           Object.values(s.illustrations).forEach(v=>totalBytes+=v.length);
         }
@@ -2138,7 +2169,7 @@ function renderParent(){
     } else {
       const kb=Math.round(totalBytes/1024);
       const sizeStr=kb>1024?(totalBytes/1048576).toFixed(1)+' MB':kb+' KB';
-      hint.textContent=`${illustratedCount} illustrated ${illustratedCount===1?'story':'stories'} · ~${sizeStr} artwork data`;
+      hint.textContent=`${illustratedCount} illustrated ${illustratedCount===1?'story':'stories'} · ~${sizeStr} in export`;
       hint.style.color='var(--v2)';
     }
   }
@@ -2193,14 +2224,23 @@ function requestPrint(){const e=document.getElementById('print-email').value.tri
 function exportAll(includeArtwork=false){
   // For each story, get illustrations from the dedicated sm_illus_ key (authoritative source)
   // rather than from S.stories in memory, which may not be rehydrated in all cases
-  function getStoredIllustrations(storyId){
+  function getStoredIllustrations(story){
     try{
-      const raw=localStorage.getItem('sm_illus_'+storyId);
-      if(raw) return JSON.parse(raw);
+      const raw=localStorage.getItem('sm_illus_'+story.id);
+      if(raw){
+        const parsed=JSON.parse(raw);
+        if(parsed.img){
+          // Compact format — reconstruct full per-page mapping for export
+          const pageCount=story.data?story.data.length:(parsed.pages||1);
+          const illus={};
+          for(let i=0;i<pageCount;i++) illus['p'+i]=parsed.img;
+          return illus;
+        }
+        return parsed; // legacy full format
+      }
     }catch(e){}
-    // Fall back to in-memory if localStorage key missing (e.g. artwork added this session)
-    const s=S.stories.find(x=>x.id===storyId);
-    if(s&&s.illustrations&&Object.keys(s.illustrations).length>0) return s.illustrations;
+    // Fall back to in-memory (artwork added this session)
+    if(story.illustrations&&Object.keys(story.illustrations).length>0) return story.illustrations;
     return null;
   }
 
@@ -2210,7 +2250,7 @@ function exportAll(includeArtwork=false){
       pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''
     };
     if(includeArtwork){
-      const illus=getStoredIllustrations(s.id);
+      const illus=getStoredIllustrations(s);
       if(illus) base.illustrations=illus;
     }
     return base;
@@ -2460,6 +2500,8 @@ function init(){
   S.stories.forEach(s=>{if(!s.data) s.data=demoPages(s.theme,[S.heroes[0]?.name||'Alex',S.heroes[1]?.name]);});
 
   // Rehydrate illustrations from their individual localStorage keys
+  // Also prune any orphan keys from deleted stories to free space
+  pruneOrphanIllustrations();
   rehydrateAllIllustrations();
 
   updateGroqStatus(localStorage.getItem('groq_key')||'');
