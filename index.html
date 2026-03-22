@@ -745,7 +745,39 @@ select.inp{appearance:none;cursor:pointer;}
 
 </div><!-- /app -->
 
-<!-- ══════════ FEEDBACK MODAL ══════════ -->
+<!-- ══════════ PASTE ASSIST OVERLAY ══════════ -->
+<div id="paste-assist" style="display:none;position:fixed;inset:0;z-index:160;background:rgba(8,5,26,.96);backdrop-filter:blur(18px);flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;">
+  <div style="font-size:3rem;margin-bottom:16px;" id="paste-assist-em">🎨</div>
+  <div style="font-family:'Baloo 2',cursive;font-size:1.3rem;font-weight:800;margin-bottom:8px;" id="paste-assist-title">Gemini is opening…</div>
+  <div style="font-size:.85rem;color:var(--dim);max-width:300px;line-height:1.6;margin-bottom:24px;" id="paste-assist-sub">Switch to the new tab and paste your prompt</div>
+
+  <!-- Countdown ring -->
+  <div style="position:relative;width:90px;height:90px;margin:0 auto 24px;">
+    <svg width="90" height="90" style="transform:rotate(-90deg);">
+      <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/>
+      <circle id="paste-ring" cx="45" cy="45" r="38" fill="none" stroke="url(#ringGrad)" stroke-width="6"
+        stroke-dasharray="239" stroke-dashoffset="0" stroke-linecap="round"
+        style="transition:stroke-dashoffset .95s linear;"/>
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#7C3AED"/>
+          <stop offset="100%" stop-color="#EC4899"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div id="paste-countdown" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Boogaloo',cursive;font-size:2rem;color:var(--txt);">5</div>
+  </div>
+
+  <div style="font-size:.78rem;color:var(--dim);margin-bottom:20px;" id="paste-step-label">Waiting for Gemini to load…</div>
+
+  <!-- Re-copy button -->
+  <button onclick="reCopyPrompt()" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--pill);padding:12px 22px;color:var(--txt);font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;cursor:pointer;margin-bottom:12px;width:100%;max-width:280px;">
+    📋 Re-copy Prompt
+  </button>
+  <button onclick="closePasteAssist()" style="background:none;border:none;color:var(--dim);font-size:.8rem;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;padding:8px;">
+    Dismiss
+  </button>
+</div>
 <div id="feedback-modal" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(8,5,26,.95);backdrop-filter:blur(16px);flex-direction:column;padding:28px 20px;overflow-y:auto;">
   <div style="max-width:440px;margin:0 auto;width:100%;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
@@ -874,12 +906,42 @@ const S={
 // ─── PERSISTENCE HELPERS ─────────────────────────
 function saveHeroes(){localStorage.setItem('sm_heroes',JSON.stringify(S.heroes));}
 function saveStories(){
-  // Save stories without base64 illustrations to avoid quota limits — illus saved separately
+  // Strip illustrations before saving — artwork stored separately per story to manage quota
   const slim=S.stories.map(s=>({...s,illustrations:{}}));
   try{localStorage.setItem('sm_stories',JSON.stringify(slim));}catch(e){console.warn('Stories too large for localStorage',e);}
 }
 function saveBadges(){localStorage.setItem('sm_badges',JSON.stringify(S.earnedBadges));}
 function saveXP(){localStorage.setItem('sm_xp',S.xp);localStorage.setItem('sm_coins',S.coins);}
+
+// Illustration persistence — each story's artwork stored in its own localStorage key
+// sm_illus_{id} = JSON string of {p0:'data:...', p1:'data:...', ...}
+function saveIllustrations(story){
+  if(!story||!story.illustrations) return;
+  const keys=Object.keys(story.illustrations);
+  if(keys.length===0){
+    localStorage.removeItem('sm_illus_'+story.id);
+    return;
+  }
+  try{
+    localStorage.setItem('sm_illus_'+story.id, JSON.stringify(story.illustrations));
+  }catch(e){
+    // localStorage quota — silently fail, artwork still in memory for this session
+    console.warn('Could not persist illustration for',story.id,e);
+  }
+}
+function loadIllustrations(story){
+  if(!story) return;
+  try{
+    const raw=localStorage.getItem('sm_illus_'+story.id);
+    if(raw) story.illustrations=JSON.parse(raw);
+  }catch(e){ /* corrupt entry — ignore */ }
+}
+function deleteIllustrations(storyId){
+  localStorage.removeItem('sm_illus_'+storyId);
+}
+function rehydrateAllIllustrations(){
+  S.stories.forEach(s=>loadIllustrations(s));
+}
 
 // ─── STREAK LOGIC ────────────────────────────────
 function getTodayKey(){return new Date().toISOString().slice(0,10);}
@@ -1264,6 +1326,7 @@ function applyArtwork(dataUrl){
   const total=activeStory.data.length;
   for(let i=0;i<total;i++) activeStory.illustrations[`p${i}`]=dataUrl;
   activeStory.illustrated=true;
+  saveIllustrations(activeStory); // persist artwork to its own localStorage key
   renderReaderPage();
   toast('🎉 Artwork saved! Your picture book is ready. +25 XP');
   addXP(25);
@@ -1357,18 +1420,73 @@ function getArtwork(){
   if(!activeStory) return;
   const prompt=buildArtworkPrompt();
   copyToClipboard(prompt);
-  window.open('https://gemini.google.com', '_blank');
+  const tab=window.open('https://gemini.google.com', '_blank');
   flipToArtStep2();
-  toast('✅ Rich prompt copied! In Gemini: paste and hit enter.', 7000);
+  openPasteAssist(prompt, tab, '🎨', 'Gemini is opening…', 'Switch to the new tab when ready, then paste your prompt and hit Enter.');
 }
 
 function getFullIllustration(){
   if(!activeStory) return;
   const prompt=buildArtworkPrompt();
   copyToClipboard(prompt);
-  window.open('https://gemini.google.com/gem/storybook', '_blank');
+  const tab=window.open('https://gemini.google.com/gem/storybook', '_blank');
   flipToArtStep2();
-  toast('✅ Rich prompt copied! In Storybook Illustrator: paste and generate!', 7000);
+  openPasteAssist(prompt, tab, '🖼️', 'Storybook Illustrator opening…', 'Switch to the new tab when ready, then paste your prompt and press Enter.');
+}
+
+// ── Paste-assist overlay ──
+let _pastePrompt='', _pasteTab=null, _pasteTimer=null;
+
+function openPasteAssist(prompt, tab, em, title, sub){
+  _pastePrompt=prompt;
+  _pasteTab=tab;
+
+  const overlay=document.getElementById('paste-assist');
+  document.getElementById('paste-assist-em').textContent=em;
+  document.getElementById('paste-assist-title').textContent=title;
+  document.getElementById('paste-assist-sub').textContent=sub;
+  overlay.style.display='flex';
+
+  // Countdown: 5 seconds for Gemini to load
+  let count=5;
+  const ring=document.getElementById('paste-ring');
+  const numEl=document.getElementById('paste-countdown');
+  const stepLabel=document.getElementById('paste-step-label');
+  const circumference=239;
+
+  ring.style.strokeDashoffset='0';
+  numEl.textContent=count;
+  stepLabel.textContent='Waiting for Gemini to load…';
+
+  clearInterval(_pasteTimer);
+  _pasteTimer=setInterval(()=>{
+    count--;
+    numEl.textContent=Math.max(0,count);
+    ring.style.strokeDashoffset=String(circumference*(1-(count/5)));
+
+    if(count===3) stepLabel.textContent='Almost ready — switch to that tab now…';
+    if(count===1) stepLabel.textContent='Ready! Switch to Gemini and paste ⌘V / Ctrl+V';
+
+    if(count<=0){
+      clearInterval(_pasteTimer);
+      numEl.textContent='✓';
+      ring.style.stroke='var(--mint)';
+      stepLabel.textContent='Prompt is in your clipboard — paste in Gemini and press Enter!';
+      // Attempt to re-focus the Gemini tab
+      try{ if(_pasteTab && !_pasteTab.closed) _pasteTab.focus(); }catch(e){}
+    }
+  }, 1000);
+}
+
+function reCopyPrompt(){
+  if(_pastePrompt) copyToClipboard(_pastePrompt);
+  toast('📋 Prompt re-copied! Now paste in Gemini.');
+  try{ if(_pasteTab && !_pasteTab.closed) _pasteTab.focus(); }catch(e){}
+}
+
+function closePasteAssist(){
+  clearInterval(_pasteTimer);
+  document.getElementById('paste-assist').style.display='none';
 }
 
 // ── Step 2: User selects downloaded image from device ──
@@ -1887,10 +2005,21 @@ function renderLib(){
   vis.forEach((s,i)=>{
     const d=document.createElement('div');d.className='lc';
     const coverImg=s.illustrations&&s.illustrations['p0'];
+    const isLocked=!!s.locked;
+    const lockIcon=isLocked?'🔒':'🔓';
+    const lockTitle=isLocked?'Locked — tap to unlock':'Unlocked — tap to lock';
+    const lockStyle=isLocked
+      ?'background:rgba(16,185,129,.18);border:1px solid rgba(110,231,183,.3);color:var(--mint2);'
+      :'background:rgba(255,255,255,.06);border:1px solid var(--bdr);color:var(--dim);';
     const coverHtml=coverImg
-      ?`<img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">`
-      :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0?'<div class="lnew">NEW</div>':''}</div>`;
-    d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:6px;"><span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span><span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span></div></div></div>`;
+      ?`<div style="position:relative;"><img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.5);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`
+      :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0&&!isLocked?'<div class="lnew">NEW</div>':''}${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.4);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`;
+    d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">
+      <span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span>
+      <span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span>
+      <span style="font-size:.62rem;${lockStyle}border-radius:var(--pill);padding:2px 8px;font-weight:900;cursor:pointer;" title="${lockTitle}" onclick="event.stopPropagation();toggleLockStory('${s.id}')">${lockIcon}</span>
+      ${!isLocked?`<span style="font-size:.62rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:2px 8px;color:#f87171;font-weight:900;cursor:pointer;" onclick="event.stopPropagation();deleteStory('${s.id}')">🗑️</span>`:''}
+    </div></div></div>`;
     grid.appendChild(d);
   });
   const plus=document.createElement('div');plus.className='lc';plus.onclick=()=>go('build');
@@ -1898,6 +2027,28 @@ function renderLib(){
   grid.appendChild(plus);
   document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
   const sel=document.getElementById('print-sel');if(sel)sel.innerHTML=S.stories.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
+}
+
+function toggleLockStory(id){
+  const s=S.stories.find(x=>x.id===id);if(!s)return;
+  s.locked=!s.locked;
+  saveStories();
+  renderLib();
+  toast(s.locked?'🔒 Story locked — delete button hidden':'🔓 Story unlocked');
+}
+
+function deleteStory(id){
+  const s=S.stories.find(x=>x.id===id);if(!s)return;
+  if(s.locked){toast('🔒 Unlock this story first to delete it');return;}
+  if(!confirm(`Delete "${s.title}"? This cannot be undone.`))return;
+  S.stories=S.stories.filter(x=>x.id!==id);
+  deleteIllustrations(id); // clean up artwork from localStorage too
+  if(activeStory&&activeStory.id===id){activeStory=null;}
+  saveStories();
+  renderLib();
+  renderStoryStrip();
+  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  toast('🗑️ Story deleted');
 }
 function filterLib(el,f){
   document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
@@ -1964,20 +2115,30 @@ function renderParent(){
   document.getElementById('ps-xp').textContent=S.xp;
   const pStreak=document.getElementById('ps-streak');if(pStreak)pStreak.textContent='🔥'+getStreak();
 
-  // Artwork export size hint
+  // Artwork export size hint — read from sm_illus_ keys (authoritative, not in-memory)
   const hint=document.getElementById('artwork-size-hint');
   if(hint){
-    const illustrated=S.stories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0);
-    if(illustrated.length===0){
+    let illustratedCount=0, totalBytes=0;
+    S.stories.forEach(s=>{
+      try{
+        const raw=localStorage.getItem('sm_illus_'+s.id);
+        if(raw){
+          illustratedCount++;
+          totalBytes+=raw.length;
+        } else if(s.illustrations&&Object.keys(s.illustrations).length>0){
+          // In-memory fallback (artwork added this session, not yet in localStorage somehow)
+          illustratedCount++;
+          Object.values(s.illustrations).forEach(v=>totalBytes+=v.length);
+        }
+      }catch(e){}
+    });
+    if(illustratedCount===0){
       hint.textContent='No artwork saved yet — add illustrations in the reader first.';
       hint.style.color='var(--dim)';
     } else {
-      let totalBytes=0;
-      illustrated.forEach(s=>Object.values(s.illustrations).forEach(v=>totalBytes+=v.length));
       const kb=Math.round(totalBytes/1024);
-      const mb=(totalBytes/1048576).toFixed(1);
-      const sizeStr=kb>1024?mb+' MB':kb+' KB';
-      hint.textContent=`${illustrated.length} illustrated ${illustrated.length===1?'story':'stories'} · ~${sizeStr} artwork data`;
+      const sizeStr=kb>1024?(totalBytes/1048576).toFixed(1)+' MB':kb+' KB';
+      hint.textContent=`${illustratedCount} illustrated ${illustratedCount===1?'story':'stories'} · ~${sizeStr} artwork data`;
       hint.style.color='var(--v2)';
     }
   }
@@ -2030,19 +2191,35 @@ function updateElStatus(k){const l=document.getElementById('el-led'),t=document.
 
 function requestPrint(){const e=document.getElementById('print-email').value.trim();if(!e||!e.includes('@')){toast('⚠️ Enter a valid parent email');return;}document.getElementById('pr-confirm').style.display='block';toast('📧 Checkout link sent to '+e+'!');}
 function exportAll(includeArtwork=false){
-  // Count illustrated stories and estimate size
-  const illustratedStories=S.stories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0);
+  // For each story, get illustrations from the dedicated sm_illus_ key (authoritative source)
+  // rather than from S.stories in memory, which may not be rehydrated in all cases
+  function getStoredIllustrations(storyId){
+    try{
+      const raw=localStorage.getItem('sm_illus_'+storyId);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    // Fall back to in-memory if localStorage key missing (e.g. artwork added this session)
+    const s=S.stories.find(x=>x.id===storyId);
+    if(s&&s.illustrations&&Object.keys(s.illustrations).length>0) return s.illustrations;
+    return null;
+  }
 
   const storiesPayload=S.stories.map(s=>{
     const base={
       id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,
       pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''
     };
-    if(includeArtwork && s.illustrations && Object.keys(s.illustrations).length>0){
-      base.illustrations=s.illustrations;
+    if(includeArtwork){
+      const illus=getStoredIllustrations(s.id);
+      if(illus) base.illustrations=illus;
     }
     return base;
   });
+
+  // Count illustrated stories for toast message
+  const artStoryCount=includeArtwork
+    ? storiesPayload.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0).length
+    : 0;
 
   const payload={
     exported: new Date().toISOString(),
@@ -2080,10 +2257,10 @@ function exportAll(includeArtwork=false){
   const suffix=includeArtwork?'-with-artwork':'';
   a.download='story-magic-backup'+suffix+'-'+new Date().toISOString().slice(0,10)+'.json';
   a.click();
-  const artNote=includeArtwork&&illustratedStories.length>0
-    ? ` (includes artwork from ${illustratedStories.length} ${illustratedStories.length===1?'story':'stories'})`
-    :'';
-  toast(`💾 Backup exported — ${kb}KB${artNote}`);
+  const artNote=includeArtwork&&artStoryCount>0
+    ? ` — artwork from ${artStoryCount} ${artStoryCount===1?'story':'stories'} included`
+    : includeArtwork ? ' — no artwork found (add illustrations in the reader first)' : '';
+  toast(`💾 Backup exported — ${kb<1024?kb+'KB':(kb/1024).toFixed(1)+'MB'}${artNote}`);
 }
 
 function importAll(input){
@@ -2104,26 +2281,45 @@ function importAll(input){
         results.push('✅ '+data.heroes.length+' heroes restored');
       }
 
-      // Restore stories — merge, don't overwrite
+      // Restore stories — merge imported, overwrite illustrations on matching IDs
       if(data.stories&&Array.isArray(data.stories)&&data.stories.length>0){
         const existingIds=new Set(S.stories.map(s=>s.id));
+
+        // New stories not in library: add them wholesale
         const newStories=data.stories
           .filter(s=>!existingIds.has(s.id))
-          .map(s=>({...s, illustrations: s.illustrations||{}}));
-        // Also restore illustrations for stories that already exist but have no artwork
+          .map(s=>{
+            const story={...s, illustrations: s.illustrations||{}};
+            if(story.illustrations&&Object.keys(story.illustrations).length>0) story.illustrated=true;
+            return story;
+          });
+
+        // Existing stories: update illustrations if the import has them
         data.stories.forEach(imported=>{
           if(existingIds.has(imported.id) && imported.illustrations && Object.keys(imported.illustrations).length>0){
             const existing=S.stories.find(s=>s.id===imported.id);
-            if(existing && (!existing.illustrations || Object.keys(existing.illustrations).length===0)){
+            if(existing){
               existing.illustrations=imported.illustrations;
+              existing.illustrated=true;
+              saveIllustrations(existing); // persist to its own localStorage key
             }
           }
         });
+
         S.stories=[...newStories,...S.stories];
-        saveStories();
-        const artCount=newStories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0).length;
-        const artNote=artCount>0?` (${artCount} with artwork)`:'';
-        results.push('✅ '+newStories.length+' new stories imported'+artNote+' ('+data.stories.length+' in file)');
+
+        // Persist artwork for all newly added illustrated stories
+        newStories.forEach(s=>{
+          if(s.illustrations && Object.keys(s.illustrations).length>0){
+            saveIllustrations(s);
+          }
+        });
+
+        saveStories(); // saves story metadata (no illustrations — those are in their own keys)
+
+        const artCount=data.stories.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0).length;
+        const artNote=artCount>0?` including artwork for ${artCount} ${artCount===1?'story':'stories'}`:'';
+        results.push(`✅ ${newStories.length} new stories added${artNote} (${data.stories.length} in file)`);
       }
 
       // Restore XP & coins
@@ -2262,6 +2458,9 @@ function updateGreeting(){
 function init(){
   // Demo pages for built-in stories that have no data
   S.stories.forEach(s=>{if(!s.data) s.data=demoPages(s.theme,[S.heroes[0]?.name||'Alex',S.heroes[1]?.name]);});
+
+  // Rehydrate illustrations from their individual localStorage keys
+  rehydrateAllIllustrations();
 
   updateGroqStatus(localStorage.getItem('groq_key')||'');
   updateElStatus(localStorage.getItem('el_key')||'');
