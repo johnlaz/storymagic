@@ -1780,30 +1780,60 @@ function getPreferredVoice(){
   return null;
 }
 
+let _boundaryWorking=false;
+let _isChrome=/Chrome/.test(navigator.userAgent)&&!/Edg|OPR|Brave/.test(navigator.userAgent);
+
 function startBrowserTTS(text){
   if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.rate=speechRate;u.pitch=1.06;u.volume=1;
+  u.rate=speechRate;u.pitch=1.0;u.volume=1;
 
-  // Use user-chosen voice, or system default if none selected
+  // Use system voice unless user picked one explicitly
   const voice=getPreferredVoice();
   if(voice) u.voice=voice;
+  // If voice is null, browser uses system default — this is intentional
+
+  // Pre-build word position map for fast boundary lookup
+  const wordMap=[]; // [{start, end, wi}]
+  let pos=0,wi=0;
+  for(const tok of text.split(/(\s+)/)){
+    if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
+    wordMap.push({start:pos,end:pos+tok.length,wi});
+    pos+=tok.length;wi++;
+  }
+
+  _boundaryWorking=false;
 
   u.onboundary=e=>{
-    if(e.name!=='word') return;
-    if(!S.followAlong) return;
-    wordEls.forEach(w=>w.classList.remove('spoken'));
-    // Find word index by character position
-    const parts=text.split(/(\s+)/);
-    let pos=0,wi=0;
-    for(const tok of parts){
-      if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
-      if(pos>=e.charIndex) break;
-      pos+=tok.length;wi++;
-    }
-    if(wordEls[wi]) wordEls[wi].classList.add('spoken');
-    document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
+    if(e.name!=='word')return;
+    if(!S.followAlong)return;
+    _boundaryWorking=true;
+
+    // Chrome fires boundary events slightly early — compensate with small delay
+    const highlight=()=>{
+      wordEls.forEach(w=>w.classList.remove('spoken'));
+      // Binary search for the word at this char position
+      const entry=wordMap.find(m=>e.charIndex>=m.start&&e.charIndex<m.end)
+        ||wordMap.find(m=>e.charIndex<=m.start); // fallback: next word
+      if(entry&&wordEls[entry.wi]) wordEls[entry.wi].classList.add('spoken');
+      document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
+    };
+
+    // Fire immediately — Chrome's boundary events already arrive slightly late,
+    // adding any delay only makes it worse
+    highlight();
+  };
+
+  u.onstart=()=>{
+    speechActive=true;
+    document.getElementById('ral-play-btn').textContent='⏸';
+    const fallbackDelay=_isChrome?800:500;
+    setTimeout(()=>{
+      if(!_boundaryWorking && speechActive && S.followAlong){
+        animateWordCursor(text);
+      }
+    },fallbackDelay);
   };
 
   u.onend=()=>{
@@ -1814,9 +1844,8 @@ function startBrowserTTS(text){
   };
   u.onerror=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';};
   window.speechSynthesis.speak(u);
-  speechActive=true;
-  document.getElementById('ral-play-btn').textContent='⏸';
 }
+
 function speakWord(word){
   if(!word)return;
   const elKey=localStorage.getItem('el_key')||'';
