@@ -322,16 +322,16 @@ select.inp{appearance:none;cursor:pointer;}
 <!-- ══════════ HOME ══════════ -->
 <div id="pg-home" class="scr on">
   <div class="tb">
-    <div class="logo">✨ Story Magic</div>
+    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.1</span></div>
     <div class="tb-r">
-      <div class="pill" onclick="go('badges')">⚡ <span id="xp-show">680</span> XP</div>
-      <div class="pill">🪙 <span id="coin-show">1,240</span></div>
+      <div class="pill" id="api-status-pill" onclick="go('parent')" title="API Status">⚡ <span id="xp-show">0</span> XP</div>
+      <div class="pill" style="cursor:pointer;" onclick="openFeedback()">📝</div>
     </div>
   </div>
   <div class="greeting">
-    <div class="g-hi">Good morning,</div>
-    <div class="g-name">Ready for <span>adventure?</span></div>
-    <div class="streak">🔥 7-day reading streak!</div>
+    <div class="g-hi">Good <span id="time-greeting">day</span>,</div>
+    <div class="g-name" id="g-name-line">Ready for <span>adventure?</span></div>
+    <div class="streak" id="streak-display">🔥 0-day streak</div>
   </div>
   <div class="quads">
     <div class="quad q-heroes" onclick="go('heroes')"><div class="q-ic">🛡️</div><div class="q-t">My Heroes</div><div class="q-s" id="hero-count-lbl">Build your squad</div></div>
@@ -380,16 +380,28 @@ select.inp{appearance:none;cursor:pointer;}
     <div style="width:36px;"></div>
   </div>
   <div class="build-body">
-    <div class="prog"><div class="pdot done"></div><div class="pdot cur" id="pd1"></div><div class="pdot" id="pd2"></div><div class="pdot" id="pd3"></div><div class="pdot" id="pd4"></div></div>
+    <div class="prog"><div class="pdot done"></div><div class="pdot cur" id="pd1"></div><div class="pdot" id="pd2"></div><div class="pdot" id="pd3"></div><div class="pdot" id="pd4"></div><div class="pdot" id="pd5"></div></div>
     <div id="step1">
       <div class="sq">🌍 Pick a World!</div><div class="ss">Where does the adventure happen?</div>
       <div class="cgrid">
-        <div class="ch" onclick="pick('world','Space','🚀',this)"><div class="ch-em">🚀</div><div class="ch-t">Outer Space</div><div class="ch-s">Stars & aliens</div></div>
-        <div class="ch" onclick="pick('world','Jungle','🌿',this)"><div class="ch-em">🌿</div><div class="ch-t">Magic Jungle</div><div class="ch-s">Ancient beasts</div></div>
-        <div class="ch" onclick="pick('world','Kingdom','🏰',this)"><div class="ch-em">🏰</div><div class="ch-t">Crystal Kingdom</div><div class="ch-s">Knights & dragons</div></div>
-        <div class="ch" onclick="pick('world','Ocean','🌊',this)"><div class="ch-em">🌊</div><div class="ch-t">Deep Ocean</div><div class="ch-s">Mermaids & ships</div></div>
-        <div class="ch" onclick="pick('world','Spooky Manor','👻',this)"><div class="ch-em">👻</div><div class="ch-t">Haunted Manor</div><div class="ch-s">Spooky but fun!</div></div>
+        <div class="ch" onclick="pick('world','Outer Space','🚀',this)"><div class="ch-em">🚀</div><div class="ch-t">Outer Space</div><div class="ch-s">Stars & aliens</div></div>
+        <div class="ch" onclick="pick('world','Magic Jungle','🌿',this)"><div class="ch-em">🌿</div><div class="ch-t">Magic Jungle</div><div class="ch-s">Ancient beasts</div></div>
+        <div class="ch" onclick="pick('world','Crystal Kingdom','🏰',this)"><div class="ch-em">🏰</div><div class="ch-t">Crystal Kingdom</div><div class="ch-s">Knights & dragons</div></div>
+        <div class="ch" onclick="pick('world','Deep Ocean','🌊',this)"><div class="ch-em">🌊</div><div class="ch-t">Deep Ocean</div><div class="ch-s">Mermaids & ships</div></div>
+        <div class="ch" onclick="pick('world','Haunted Manor','👻',this)"><div class="ch-em">👻</div><div class="ch-t">Haunted Manor</div><div class="ch-s">Spooky but fun!</div></div>
         <div class="ch" onclick="pick('world','Dino Land','🦕',this)"><div class="ch-em">🦕</div><div class="ch-t">Dino Land</div><div class="ch-s">Giant dinosaurs</div></div>
+        <div class="ch" onclick="pick('world','Cloud City','☁️',this)"><div class="ch-em">☁️</div><div class="ch-t">Cloud City</div><div class="ch-s">Sky islands & giants</div></div>
+        <div class="ch" onclick="pick('world','Ice Realm','❄️',this)"><div class="ch-em">❄️</div><div class="ch-t">Ice Realm</div><div class="ch-s">Blizzards & snow wolves</div></div>
+        <div class="ch" onclick="pick('world','Candy World','🍭',this)"><div class="ch-em">🍭</div><div class="ch-t">Candy World</div><div class="ch-s">Sweet & very silly!</div></div>
+        <div class="ch" onclick="pick('world','Underground Caves','💎',this)"><div class="ch-em">💎</div><div class="ch-t">Crystal Caves</div><div class="ch-s">Glowing gems & goblins</div></div>
+        <div class="ch" onclick="pick('world','Pirate Seas','🏴‍☠️',this)"><div class="ch-em">🏴‍☠️</div><div class="ch-t">Pirate Seas</div><div class="ch-s">Ships & sea monsters</div></div>
+        <div class="ch" onclick="pick('world','Robot City','🤖',this)"><div class="ch-em">🤖</div><div class="ch-t">Robot City</div><div class="ch-s">Gadgets & glitchy bots</div></div>
+        <div class="ch" onclick="pick('world','Enchanted Forest','🍄',this)"><div class="ch-em">🍄</div><div class="ch-t">Enchanted Forest</div><div class="ch-s">Fairies & talking trees</div></div>
+        <div class="ch" onclick="pick('world','Volcano Island','🌋',this)"><div class="ch-em">🌋</div><div class="ch-t">Volcano Island</div><div class="ch-s">Fire dragons & lava!</div></div>
+        <div class="ch" onclick="pick('world','Dream World','🌈',this)"><div class="ch-em">🌈</div><div class="ch-t">Dream World</div><div class="ch-s">Anything can happen</div></div>
+        <div class="ch" onclick="pick('world','Wild West','🤠',this)"><div class="ch-em">🤠</div><div class="ch-t">Wild West</div><div class="ch-s">Cowboys & mysteries</div></div>
+        <div class="ch" onclick="pick('world','Tiny Town','🐜',this)"><div class="ch-em">🐜</div><div class="ch-t">Tiny Town</div><div class="ch-s">Bug-sized adventures</div></div>
+        <div class="ch" onclick="pick('world','Ancient Egypt','🏺',this)"><div class="ch-em">🏺</div><div class="ch-t">Ancient Egypt</div><div class="ch-s">Pyramids & pharaohs</div></div>
       </div>
     </div>
     <div id="step2" style="display:none">
@@ -398,19 +410,62 @@ select.inp{appearance:none;cursor:pointer;}
         <div class="ch" onclick="pick('quest','rescue a friend trapped by the villain','💎',this)"><div class="ch-em">💎</div><div class="ch-t">Rescue a Friend</div><div class="ch-s">Save someone special</div></div>
         <div class="ch" onclick="pick('quest','find ancient hidden treasure','🗺️',this)"><div class="ch-em">🗺️</div><div class="ch-t">Find Treasure</div><div class="ch-s">Hunt for riches</div></div>
         <div class="ch" onclick="pick('quest','defeat the sneaky villain','🧌',this)"><div class="ch-em">🧌</div><div class="ch-t">Defeat a Villain</div><div class="ch-s">Stop the baddie</div></div>
-        <div class="ch" onclick="pick('quest','solve a mysterious puzzle','🔍',this)"><div class="ch-em">🔍</div><div class="ch-t">Solve a Mystery</div><div class="ch-s">Crack the clues</div></div>
+        <div class="ch" onclick="pick('quest','solve a mysterious puzzle nobody else could crack','🔍',this)"><div class="ch-em">🔍</div><div class="ch-t">Solve a Mystery</div><div class="ch-s">Crack the clues</div></div>
+        <div class="ch" onclick="pick('quest','fix a broken magical portal before time runs out','⏳',this)"><div class="ch-em">⏳</div><div class="ch-t">Race Against Time</div><div class="ch-s">Beat the clock!</div></div>
+        <div class="ch" onclick="pick('quest','protect a tiny creature being hunted by the villain','🐣',this)"><div class="ch-em">🐣</div><div class="ch-t">Guard the Creature</div><div class="ch-s">Keep it safe!</div></div>
+        <div class="ch" onclick="pick('quest','collect three magical items scattered across the world','🔮',this)"><div class="ch-em">🔮</div><div class="ch-t">Collect the Items</div><div class="ch-s">Three to find!</div></div>
+        <div class="ch" onclick="pick('quest','find the way home after getting lost in a strange land','🏡',this)"><div class="ch-em">🏡</div><div class="ch-t">Find Your Way Home</div><div class="ch-s">Lost & must return</div></div>
+        <div class="ch" onclick="pick('quest','wake up a sleeping giant who is the only one who can help','😴',this)"><div class="ch-em">😴</div><div class="ch-t">Wake the Giant</div><div class="ch-s">Rouse a sleeping hero</div></div>
+        <div class="ch" onclick="pick('quest','win a grand tournament to prove their worth','🏆',this)"><div class="ch-em">🏆</div><div class="ch-t">Win the Tournament</div><div class="ch-s">Compete & conquer</div></div>
+        <div class="ch" onclick="pick('quest','stop a volcano from erupting and destroying the village','🌋',this)"><div class="ch-em">🌋</div><div class="ch-t">Stop the Eruption</div><div class="ch-s">Save the village!</div></div>
+        <div class="ch" onclick="pick('quest','return a stolen magical artefact to its rightful owner','🎭',this)"><div class="ch-em">🎭</div><div class="ch-t">Return the Relic</div><div class="ch-s">Stolen & must be found</div></div>
+        <div class="ch" onclick="pick('quest','build something incredible before the villains can destroy it','🔧',this)"><div class="ch-em">🔧</div><div class="ch-t">Build It!</div><div class="ch-s">Create before it's too late</div></div>
+        <div class="ch" onclick="pick('quest','lift a mysterious curse that has frozen everyone in the land','🧊',this)"><div class="ch-em">🧊</div><div class="ch-t">Break the Curse</div><div class="ch-s">Unfreeze the world</div></div>
+        <div class="ch" onclick="pick('quest','deliver an urgent message across dangerous lands before sunrise','📜',this)"><div class="ch-em">📜</div><div class="ch-t">Deliver the Message</div><div class="ch-s">Speed is everything</div></div>
+        <div class="ch" onclick="pick('quest','earn the trust of a misunderstood creature everyone else fears','🐉',this)"><div class="ch-em">🐉</div><div class="ch-t">Tame the Beast</div><div class="ch-s">Friend, not foe</div></div>
       </div>
     </div>
     <div id="step3" style="display:none">
-      <div class="sq">🌀 Pick a Twist!</div><div class="ss">Every great story has a surprise!</div>
+      <div class="sq">🌀 Pick a Twist!</div><div class="ss">Every great story needs a surprise!</div>
       <div class="cgrid">
-        <div class="ch" onclick="pick('twist','a magical fairy helper appears','🧚',this)"><div class="ch-em">🧚</div><div class="ch-t">Magic Helper</div><div class="ch-s">A fairy arrives!</div></div>
-        <div class="ch" onclick="pick('twist','the villain becomes a friend','🤝',this)"><div class="ch-em">🤝</div><div class="ch-t">Villain Turns Good</div><div class="ch-s">Surprise friendship!</div></div>
-        <div class="ch" onclick="pick('twist','a secret power awakens inside the hero','⚡',this)"><div class="ch-em">⚡</div><div class="ch-t">Secret Power</div><div class="ch-s">Hidden ability!</div></div>
-        <div class="ch" onclick="pick('twist','time starts running backward','⏪',this)"><div class="ch-em">⏪</div><div class="ch-t">Time Reversal</div><div class="ch-s">Wild twist!</div></div>
+        <div class="ch" onclick="pick('twist','a magical fairy helper appears at just the right moment','🧚',this)"><div class="ch-em">🧚</div><div class="ch-t">Magic Helper</div><div class="ch-s">A fairy arrives!</div></div>
+        <div class="ch" onclick="pick('twist','the villain turns out to have been good all along — just misunderstood','🤝',this)"><div class="ch-em">🤝</div><div class="ch-t">Villain Turns Good</div><div class="ch-s">Surprise friendship!</div></div>
+        <div class="ch" onclick="pick('twist','a secret power awakens inside the hero at the last moment','⚡',this)"><div class="ch-em">⚡</div><div class="ch-t">Secret Power</div><div class="ch-s">Hidden ability!</div></div>
+        <div class="ch" onclick="pick('twist','time starts running backward and everything reverses','⏪',this)"><div class="ch-em">⏪</div><div class="ch-t">Time Reversal</div><div class="ch-s">Backwards madness!</div></div>
+        <div class="ch" onclick="pick('twist','a friendly animal joins the adventure and saves the day','🦊',this)"><div class="ch-em">🦊</div><div class="ch-t">Animal Ally</div><div class="ch-s">New furry friend!</div></div>
+        <div class="ch" onclick="pick('twist','everything turns out to be a dream — or does it?','💭',this)"><div class="ch-em">💭</div><div class="ch-t">Was It a Dream?</div><div class="ch-s">Real or imagined?</div></div>
+        <div class="ch" onclick="pick('twist','the heroes accidentally shrink down to the size of a mouse','🔬',this)"><div class="ch-em">🔬</div><div class="ch-t">Shrink!</div><div class="ch-s">Tiny heroes!</div></div>
+        <div class="ch" onclick="pick('twist','the real treasure was the friends they made along the way','💛',this)"><div class="ch-em">💛</div><div class="ch-t">True Treasure</div><div class="ch-s">It was friendship!</div></div>
+        <div class="ch" onclick="pick('twist','the heroes and villain accidentally swap bodies','🔄',this)"><div class="ch-em">🔄</div><div class="ch-t">Body Swap!</div><div class="ch-s">Who is who now?</div></div>
+        <div class="ch" onclick="pick('twist','it starts to rain the silliest things — fish, jelly beans, rubber ducks','🌧️',this)"><div class="ch-em">🌧️</div><div class="ch-t">Silly Rain</div><div class="ch-s">Chaos from the sky!</div></div>
+        <div class="ch" onclick="pick('twist','a mysterious portal opens and transports everyone somewhere unexpected','🌀',this)"><div class="ch-em">🌀</div><div class="ch-t">Portal Jump</div><div class="ch-s">Whoosh — gone!</div></div>
+        <div class="ch" onclick="pick('twist','the map comes to life and starts giving cheeky wrong directions','🗺️',this)"><div class="ch-em">🗺️</div><div class="ch-t">Cheeky Map</div><div class="ch-s">The map has ideas!</div></div>
+        <div class="ch" onclick="pick('twist','an identical double of the hero appears — but which one is real?','👯',this)"><div class="ch-em">👯</div><div class="ch-t">The Doppelgänger</div><div class="ch-s">Two of them!</div></div>
+        <div class="ch" onclick="pick('twist','gravity stops working and everything starts floating','🎈',this)"><div class="ch-em">🎈</div><div class="ch-t">No Gravity!</div><div class="ch-s">Float away!</div></div>
+        <div class="ch" onclick="pick('twist','the heroes discover the villain is actually a scared child in disguise','🎭',this)"><div class="ch-em">🎭</div><div class="ch-t">Mask Off</div><div class="ch-s">Not what they seemed</div></div>
+        <div class="ch" onclick="pick('twist','a tiny sidekick they ignored all along turns out to be the most powerful of all','🐭',this)"><div class="ch-em">🐭</div><div class="ch-t">Tiny Hero</div><div class="ch-s">Small but mighty!</div></div>
       </div>
     </div>
+    <!-- Step 4: Literary Style -->
     <div id="step4" style="display:none">
+      <div class="sq">✍️ Pick a Style!</div><div class="ss">How should the story feel?</div>
+      <div class="cgrid">
+        <div class="ch" onclick="pick('style','classic fun adventure style — exciting, vivid, and action-packed with a triumphant ending','📖',this)"><div class="ch-em">📖</div><div class="ch-t">Classic Adventure</div><div class="ch-s">Bold & exciting</div></div>
+        <div class="ch" onclick="pick('style','Dr. Seuss style — rhyming AABB couplets, bouncy rhythm, made-up nonsense words, joyfully silly and delightful','🎩',this)"><div class="ch-em">🎩</div><div class="ch-t">Dr. Seuss Style</div><div class="ch-s">Bouncy rhymes!</div></div>
+        <div class="ch" onclick="pick('style','Patrick Picklebottom style — wacky rhyming couplets full of absurd humour, each page ends with a funny punchline rhyme that makes kids giggle','🥒',this)"><div class="ch-em">🥒</div><div class="ch-t">Picklebottom Style</div><div class="ch-s">Punchline on every page</div></div>
+        <div class="ch" onclick="pick('style','gentle bedtime story style — calm, soothing, soft poetic language, slow pace, cosy and peaceful, perfect for drifting to sleep','🌙',this)"><div class="ch-em">🌙</div><div class="ch-t">Bedtime Story</div><div class="ch-s">Calm & dreamy</div></div>
+        <div class="ch" onclick="pick('style','comic book style — short punchy sentences, dramatic sound effects like POW! WHOOSH! KABOOM!, cliffhangers, fast-paced action','💥',this)"><div class="ch-em">💥</div><div class="ch-t">Comic Book</div><div class="ch-s">POW! KABOOM!</div></div>
+        <div class="ch" onclick="pick('style','classic fairy tale style — once upon a time, magical poetic language, rule of three, timeless moral lesson at the end','🌟',this)"><div class="ch-em">🌟</div><div class="ch-t">Fairy Tale</div><div class="ch-s">Once upon a time…</div></div>
+        <div class="ch" onclick="pick('style','laugh-out-loud comedy style — jokes, puns, absurd situations, the characters constantly getting into ridiculous trouble, very funny','😂',this)"><div class="ch-em">😂</div><div class="ch-t">Pure Comedy</div><div class="ch-s">Jokes on every page</div></div>
+        <div class="ch" onclick="pick('style','mystery detective style — clues, red herrings, dramatic reveals, the heroes piecing things together like detectives','🕵️',this)"><div class="ch-em">🕵️</div><div class="ch-t">Detective Story</div><div class="ch-s">Clues & reveals</div></div>
+        <div class="ch" onclick="pick('style','epic legend style — grand heroic language, poetic descriptions, spoken as if told around a campfire by a wise storyteller','🔥',this)"><div class="ch-em">🔥</div><div class="ch-t">Epic Legend</div><div class="ch-s">Grand & heroic</div></div>
+        <div class="ch" onclick="pick('style','diary entry style — written in first person as if the hero is writing in their secret diary, personal and funny and honest','📔',this)"><div class="ch-em">📔</div><div class="ch-t">Secret Diary</div><div class="ch-s">The hero's own words</div></div>
+        <div class="ch" onclick="pick('style','nature documentary style — narrated in a serious BBC wildlife documentary voice describing the heroes as if they are fascinating animals being observed','🎙️',this)"><div class="ch-em">🎙️</div><div class="ch-t">Nature Doc</div><div class="ch-s">David Attenborough vibes</div></div>
+        <div class="ch" onclick="pick('style','choose-your-own-adventure style — narrator speaks directly to the reader, building suspense, describing choices the heroes must make','🎲',this)"><div class="ch-em">🎲</div><div class="ch-t">You Choose!</div><div class="ch-s">Talk to the reader</div></div>
+      </div>
+    </div>
+    <!-- Step 5: Heroes & options -->
+    <div id="step5" style="display:none">
       <div class="sq">🦸 Pick Your Heroes!</div>
       <div class="ss">Who goes on this adventure? Select 1–4 heroes.</div>
       <div class="hero-sel-grid" id="hero-sel-grid"></div>
@@ -427,6 +482,7 @@ select.inp{appearance:none;cursor:pointer;}
         <option value="4">Short — 4 pages (~2 min)</option>
         <option value="6" selected>Medium — 6 pages (~3 min)</option>
         <option value="8">Long — 8 pages (~5 min)</option>
+        <option value="12">Epic — 12 pages (~8 min)</option>
       </select>
       <button class="btn btn-g" onclick="generateStory()">⚡ Generate Story with Groq!</button>
       <div id="groq-out"></div>
@@ -450,6 +506,7 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="ral-prog"><div class="ral-fill" id="ral-fill"></div></div>
     </div>
     <div class="ral-spd" id="ral-spd" onclick="cycleSpeed()">1×</div>
+    <div class="ral-voice-btn" id="follow-toggle" onclick="toggleFollowAlong()" title="Follow Along — highlight words as they're read">👁️</div>
   </div>
   <div class="page-wrap">
     <div class="page-lbl" id="page-lbl">Page 1 of 6</div>
@@ -503,13 +560,26 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="logo">📚 My Library</div>
     <div class="tb-r"><button class="btn btn-ghost btn-sm" onclick="exportAll()">💾 Export</button></div>
   </div>
-  <div class="frow">
+  <div class="frow" id="lib-filter-row">
     <div class="ftab on" onclick="filterLib(this,'all')">All</div>
-    <div class="ftab" onclick="filterLib(this,'space')">🚀 Space</div>
-    <div class="ftab" onclick="filterLib(this,'jungle')">🌿 Jungle</div>
-    <div class="ftab" onclick="filterLib(this,'kingdom')">🏰 Kingdom</div>
-    <div class="ftab" onclick="filterLib(this,'spooky manor')">👻 Spooky</div>
-    <div class="ftab" onclick="filterLib(this,'ocean')">🌊 Ocean</div>
+    <div class="ftab" onclick="filterLib(this,'outer space')">🚀 Space</div>
+    <div class="ftab" onclick="filterLib(this,'magic jungle')">🌿 Jungle</div>
+    <div class="ftab" onclick="filterLib(this,'crystal kingdom')">🏰 Kingdom</div>
+    <div class="ftab" onclick="filterLib(this,'haunted manor')">👻 Spooky</div>
+    <div class="ftab" onclick="filterLib(this,'deep ocean')">🌊 Ocean</div>
+    <div class="ftab" onclick="filterLib(this,'dino land')">🦕 Dinos</div>
+    <div class="ftab" onclick="filterLib(this,'cloud city')">☁️ Clouds</div>
+    <div class="ftab" onclick="filterLib(this,'ice realm')">❄️ Ice</div>
+    <div class="ftab" onclick="filterLib(this,'candy world')">🍭 Candy</div>
+    <div class="ftab" onclick="filterLib(this,'underground caves')">💎 Caves</div>
+    <div class="ftab" onclick="filterLib(this,'pirate seas')">🏴‍☠️ Pirates</div>
+    <div class="ftab" onclick="filterLib(this,'robot city')">🤖 Robots</div>
+    <div class="ftab" onclick="filterLib(this,'enchanted forest')">🍄 Forest</div>
+    <div class="ftab" onclick="filterLib(this,'volcano island')">🌋 Volcano</div>
+    <div class="ftab" onclick="filterLib(this,'dream world')">🌈 Dreams</div>
+    <div class="ftab" onclick="filterLib(this,'wild west')">🤠 Wild West</div>
+    <div class="ftab" onclick="filterLib(this,'tiny town')">🐜 Tiny</div>
+    <div class="ftab" onclick="filterLib(this,'ancient egypt')">🏺 Egypt</div>
   </div>
   <div class="lgrid" id="lib-grid"></div>
 </div>
@@ -522,9 +592,9 @@ select.inp{appearance:none;cursor:pointer;}
     <div style="width:36px;"></div>
   </div>
   <div class="xp-card">
-    <div class="xp-row"><span>⚡ Level <span id="xp-lv">5</span> Explorer</span><span class="xp-lv"><span id="xp-cur">680</span> / 1000 XP</span></div>
-    <div class="xp-bar"><div class="xp-fill" id="xpf" style="width:68%"></div></div>
-    <div class="xp-next">320 XP to Level 6 — Story Master 🌟</div>
+    <div class="xp-row"><span>⚡ Level <span id="xp-lv">1</span> Explorer</span><span class="xp-lv"><span id="xp-cur">0</span> XP</span></div>
+    <div class="xp-bar"><div class="xp-fill" id="xpf" style="width:0%"></div></div>
+    <div class="xp-next">500 XP to Level 2 — Adventurer 🌟</div>
   </div>
   <div class="bgrid" id="badge-grid"></div>
 </div>
@@ -539,7 +609,7 @@ select.inp{appearance:none;cursor:pointer;}
   <div class="par-body">
     <div class="stat3">
       <div class="sbox"><div class="snum" id="ps-stories" style="color:var(--v2)">5</div><div class="slbl">Stories</div></div>
-      <div class="sbox"><div class="snum" style="color:var(--gold2)">🔥7</div><div class="slbl">Streak</div></div>
+      <div class="sbox"><div class="snum" style="color:var(--gold2)" id="ps-streak">🔥0</div><div class="slbl">Streak</div></div>
       <div class="sbox"><div class="snum" style="color:var(--mint2)"><span id="ps-xp">680</span></div><div class="slbl">XP Earned</div></div>
     </div>
 
@@ -555,16 +625,22 @@ select.inp{appearance:none;cursor:pointer;}
       <button class="btn btn-m" onclick="saveProfile()">💾 Save Profile</button>
     </div>
 
-    <!-- Gemini Illustrations -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🍌 Nano Banana Illustrations</div></div>
-    <div class="api-wrap">
-      <div class="api-t">🔑 Google AI Studio Key <span style="font-size:.72rem;color:var(--mint2);font-weight:700;">(Nano Banana 2 = Free!)</span></div>
-      <div class="api-s">Generates beautiful full-colour cartoon illustrations using <strong>Nano Banana 2</strong> (gemini-2.5-flash-image). Free tier: ~500 images/day, no credit card. Get a key at <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> → Get API key. Free tier: 10 requests/minute, 500/day — resets midnight Pacific. If you see repeated 429 errors, your daily quota may be used up or you may need a fresh project at aistudio.google.com</div>
-      <div class="api-iw"><input class="inp" id="gem-key-inp" type="password" placeholder="AIzaSy…"><div class="api-eye" onclick="toggleEye('gem-key-inp')">👁️</div></div>
-      <div class="api-st"><div class="led off" id="gem-led"></div><span id="gem-st">No key — using scene art</span></div>
-      <div class="api-btns">
-        <button class="btn btn-v" onclick="saveGemKey()">💾 Save Key</button>
-        <button class="btn btn-ghost" onclick="testGemKey()">🧪 Test</button>
+    <!-- Artwork Tools (Parent/Advanced) -->
+    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎨 Artwork Tools</div></div>
+    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
+      <p style="font-size:.78rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Add artwork to the currently open story. Open a story in the reader first, then use one of these tools.</p>
+
+      <!-- Add Artwork by URL -->
+      <div style="margin-bottom:14px;">
+        <div style="font-weight:900;font-size:.85rem;margin-bottom:6px;">🔗 Add Artwork by URL</div>
+        <div style="font-size:.74rem;color:var(--dim);margin-bottom:8px;line-height:1.5;">Generate art anywhere (Gemini web, Midjourney, etc), copy the image URL, paste here.</div>
+        <div style="display:flex;gap:8px;">
+          <input id="par-art-url-inp" class="inp" type="url" placeholder="https://…image URL…" style="margin:0;flex:1;font-size:.78rem;padding:10px 12px;">
+          <button class="btn btn-ghost btn-sm" style="flex-shrink:0;padding:10px 14px;margin:0;" onclick="injectArtFromUrl()">✅ Save</button>
+        </div>
+      </div>
+      <div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:var(--r);padding:11px 13px;font-size:.76rem;color:var(--dim);line-height:1.5;">
+        💡 <strong style="color:var(--txt);">Tip:</strong> Use the <strong style="color:var(--txt);">🎨 Get Artwork</strong> or <strong style="color:var(--txt);">🖼️ Get Full Illustration</strong> buttons in the reader — they copy your story prompt automatically and open Gemini for you.
       </div>
     </div>
 
@@ -639,29 +715,6 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="pr-confirm" id="pr-confirm">✅ <strong>Email sent!</strong> Check your inbox for the secure Peecho checkout link.</div>
     </div>
 
-    <!-- Artwork Tools (Parent/Advanced) -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎨 Artwork Tools</div></div>
-    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
-      <p style="font-size:.78rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Advanced options for adding artwork to the currently open story. Open a story in the reader first, then use one of these tools.</p>
-
-      <!-- Auto-generate via API -->
-      <div style="margin-bottom:14px;">
-        <div style="font-weight:900;font-size:.85rem;margin-bottom:6px;">🤖 Auto-Generate via Gemini API</div>
-        <div style="font-size:.74rem;color:var(--dim);margin-bottom:8px;line-height:1.5;">Requires a Gemini API key above. Uses the free quota (500/day). If rate limited, try again later.</div>
-        <button id="par-gen-btn" class="btn btn-v btn-sm" style="width:100%;padding:12px;margin:0;" onclick="makePictureBook()">🎨 Generate Now</button>
-      </div>
-
-      <!-- Inject by URL -->
-      <div>
-        <div style="font-weight:900;font-size:.85rem;margin-bottom:6px;">🔗 Add Artwork by URL</div>
-        <div style="font-size:.74rem;color:var(--dim);margin-bottom:8px;line-height:1.5;">Generate art anywhere (Gemini web, Midjourney, etc), copy the image URL, paste here.</div>
-        <div style="display:flex;gap:8px;">
-          <input id="par-art-url-inp" class="inp" type="url" placeholder="https://…image URL…" style="margin:0;flex:1;font-size:.78rem;padding:10px 12px;">
-          <button class="btn btn-ghost btn-sm" style="flex-shrink:0;padding:10px 14px;margin:0;" onclick="injectArtFromUrl()">✅ Save</button>
-        </div>
-      </div>
-    </div>
-
     <div class="sec" style="padding:0 0 11px;"><div class="sec-t">📅 Memory Lane</div></div>
     <div id="memory-lane"></div>
     <div class="sec" style="padding:12px 0 11px;"><div class="sec-t">📄 Export Stories as PDF</div></div>
@@ -678,6 +731,20 @@ select.inp{appearance:none;cursor:pointer;}
 </div>
 
 </div><!-- /app -->
+
+<!-- ══════════ FEEDBACK MODAL ══════════ -->
+<div id="feedback-modal" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(8,5,26,.95);backdrop-filter:blur(16px);flex-direction:column;padding:28px 20px;overflow-y:auto;">
+  <div style="max-width:440px;margin:0 auto;width:100%;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-family:'Baloo 2',cursive;font-size:1.3rem;font-weight:800;">📝 Notes & Feedback</div>
+      <div onclick="closeFeedback()" style="width:36px;height:36px;border-radius:50%;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;">✕</div>
+    </div>
+    <p style="font-size:.8rem;color:var(--dim);margin-bottom:16px;line-height:1.5;">Log ideas, bug reports, or anything you want to remember. Notes are saved locally on this device.</p>
+    <textarea id="feedback-inp" class="inp" style="min-height:100px;resize:vertical;font-family:'Nunito',sans-serif;" placeholder="e.g. Bug: streak counter doesn't reset&#10;Idea: add a space theme with black holes&#10;Feature request: dark/light mode toggle…"></textarea>
+    <button class="btn btn-v" onclick="saveFeedback()" style="margin-bottom:10px;">💾 Save Note</button>
+    <div id="feedback-list" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+  </div>
+</div>
 
 <div class="bnav">
   <div class="ni on" id="ni-home" onclick="go('home')"><div class="ni-ic">🏠</div><div class="ni-lb">Home</div></div>
@@ -769,26 +836,82 @@ function getAv(id){return(AVATARS.find(a=>a.id===id)||AVATARS[0]).svg;}
 
 // ─── STATE ───────────────────────────────────────
 const S={
-  xp:680,coins:1240,
-  // Heroes: array of {id, name, avatarId, power}
+  xp:   parseInt(localStorage.getItem('sm_xp'))||0,
+  coins:parseInt(localStorage.getItem('sm_coins'))||0,
   heroes: JSON.parse(localStorage.getItem('sm_heroes')||'null') || [
     {id:'h1',name:'Alex',avatarId:'knight',power:'⚡ Super Speed'},
     {id:'h2',name:'Mia', avatarId:'wizard',power:'🔮 Magic Spells'},
   ],
-  stories:[
+  stories: JSON.parse(localStorage.getItem('sm_stories')||'null') || [
     {id:'s1',theme:'space',  em:'🚀',title:'Alex Saves the Starship',    pages:6,bg:'linear-gradient(135deg,#1e1b4b,#312e81)',data:null,illustrations:{}},
     {id:'s2',theme:'jungle', em:'🌿',title:'Secret of Dragonwood Forest', pages:6,bg:'linear-gradient(135deg,#14532d,#166534)',data:null,illustrations:{}},
     {id:'s3',theme:'kingdom',em:'🏰',title:'The Crystal Castle Quest',    pages:6,bg:'linear-gradient(135deg,#4a1942,#6b21a8)',data:null,illustrations:{}},
     {id:'s4',theme:'ocean',  em:'🐠',title:'The Sunken Treasure Kingdom', pages:6,bg:'linear-gradient(135deg,#0c4a6e,#075985)',data:null,illustrations:{}},
     {id:'s5',theme:'spooky manor',em:'👻',title:"The Haunted Manor Mystery",pages:6,bg:'linear-gradient(135deg,#1c1917,#292524)',data:null,illustrations:{}},
   ],
-  build:{world:'',worldEm:'',quest:'',twist:'',selectedHeroes:[]},
-  earnedBadges:['first-story','streak7','space','squad','wordwiz'],
+  build:{world:'',worldEm:'',quest:'',twist:'',style:'standard fun adventure style — exciting, vivid, and action-packed',selectedHeroes:[]},
+  earnedBadges: JSON.parse(localStorage.getItem('sm_badges')||'null') || ['first-story'],
   voiceEngine:'browser',
   voiceId: EL_VOICES[0].id,
   addingAvatarId:'knight',
   addingPower:'⚡ Super Speed',
+  followAlong: localStorage.getItem('sm_follow')==='true',
 };
+
+// ─── PERSISTENCE HELPERS ─────────────────────────
+function saveHeroes(){localStorage.setItem('sm_heroes',JSON.stringify(S.heroes));}
+function saveStories(){
+  // Save stories without base64 illustrations to avoid quota limits — illus saved separately
+  const slim=S.stories.map(s=>({...s,illustrations:{}}));
+  try{localStorage.setItem('sm_stories',JSON.stringify(slim));}catch(e){console.warn('Stories too large for localStorage',e);}
+}
+function saveBadges(){localStorage.setItem('sm_badges',JSON.stringify(S.earnedBadges));}
+function saveXP(){localStorage.setItem('sm_xp',S.xp);localStorage.setItem('sm_coins',S.coins);}
+
+// ─── STREAK LOGIC ────────────────────────────────
+function getTodayKey(){return new Date().toISOString().slice(0,10);}
+function recordActivity(){
+  const today=getTodayKey();
+  const last=localStorage.getItem('sm_last_active')||'';
+  const streakRaw=parseInt(localStorage.getItem('sm_streak'))||0;
+  if(last===today) return; // already counted today
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const yKey=yesterday.toISOString().slice(0,10);
+  const newStreak=(last===yKey)?streakRaw+1:1;
+  localStorage.setItem('sm_streak',newStreak);
+  localStorage.setItem('sm_last_active',today);
+  updateStreakDisplay();
+  // Award streak badge only if genuinely earned
+  if(newStreak>=7 && !S.earnedBadges.includes('streak7')){
+    S.earnedBadges.push('streak7');saveBadges();
+    toast('🔥 7-Day Reading Streak badge earned! +100 XP');addXP(100);
+  }
+}
+function getStreak(){return parseInt(localStorage.getItem('sm_streak'))||0;}
+function updateStreakDisplay(){
+  const streak=getStreak();
+  const el=document.getElementById('streak-display');
+  if(!el) return;
+  if(streak===0){el.textContent='📚 Start your streak today!';}
+  else if(streak===1){el.textContent='🔥 1-day streak — keep going!';}
+  else{el.textContent=`🔥 ${streak}-day reading streak!`;}
+  // Update parent area streak stat
+  const pStreak=document.getElementById('ps-streak');
+  if(pStreak) pStreak.textContent='🔥'+streak;
+}
+
+// ─── BADGE CHECK ─────────────────────────────────
+function checkBadges(){
+  const earned=(id)=>S.earnedBadges.includes(id);
+  const award=(id,msg,xp)=>{if(!earned(id)){S.earnedBadges.push(id);saveBadges();setTimeout(()=>{toast(msg);addXP(xp);},600);}};
+  if(S.stories.filter(s=>s.id.startsWith('gen-')).length>=1) award('first-story','📖 First Story badge earned! +50 XP',50);
+  if(S.heroes.length>=4) award('squad','👥 Squad Leader badge earned! +80 XP',80);
+  if(S.heroes.length>=1) award('hero-create','🛡️ Hero Creator badge earned! +60 XP',60);
+  if(S.stories.some(s=>s.theme==='space')) award('space','🚀 Space Explorer badge earned! +75 XP',75);
+  if(S.stories.some(s=>s.theme==='ocean')) award('ocean','🌊 Ocean Diver badge earned! +90 XP',90);
+  if(S.xp>=500) award('wordwiz','💬 Word Wizard badge earned! +80 XP',80);
+  if(S.xp>=2000) award('master','🏆 Story Master badge earned! +200 XP',200);
+}
 
 // generate demo pages
 const demoPages=(theme,heroNames)=>{
@@ -802,9 +925,6 @@ const demoPages=(theme,heroNames)=>{
     `The day was saved! ${all} proved that courage and friendship are the greatest powers of all. ⭐ THE END`,
   ];
 };
-S.stories.forEach(s=>{if(!s.data) s.data=demoPages(s.theme,[S.heroes[0]?.name||'Alex',S.heroes[1]?.name]);});
-
-function saveHeroes(){localStorage.setItem('sm_heroes',JSON.stringify(S.heroes));}
 
 // ─── NAVIGATION ─────────────────────────────────
 const PAGES=['home','heroes','build','reader','library','badges','parent'];
@@ -824,9 +944,10 @@ function go(id){
 // ─── XP ─────────────────────────────────────────
 function addXP(n){
   S.xp+=n;S.coins+=n;
-  document.getElementById('xp-show').textContent=S.xp;
-  document.getElementById('coin-show').textContent=S.coins.toLocaleString();
+  saveXP();
+  const xpEl=document.getElementById('xp-show');if(xpEl)xpEl.textContent=S.xp;
   const pxp=document.getElementById('ps-xp');if(pxp)pxp.textContent=S.xp;
+  updateApiStatusPill();
 }
 
 // ─── HERO LIBRARY SCREEN ────────────────────────
@@ -887,12 +1008,12 @@ function renderHeroLibrary(){
 function addHero(){
   const name=(document.getElementById('new-hero-name').value.trim());
   if(!name){toast('⚠️ Give your hero a name!');return;}
-  if(S.heroes.length>=4){toast('👥 Max 4 heroes in your squad!');return;}
+  if(S.heroes.length>=12){toast('👥 Max 12 heroes in your collection!');return;}
   const h={id:'h-'+Date.now(),name,avatarId:_selAvId,power:_selPower};
   S.heroes.push(h);
   saveHeroes();
   document.getElementById('new-hero-name').value='';
-  addXP(30);
+  addXP(30);checkBadges();
   toast('🛡️ '+name+' added to your squad! +30 XP');
   renderHeroLibrary();
   renderHeroStrip();
@@ -937,7 +1058,7 @@ function renderStoryStrip(){
 let buildStep=1;
 function initBuild(){
   buildStep=1;
-  S.build={world:'',worldEm:'',quest:'',twist:'',selectedHeroes:[]};
+  S.build={world:'',worldEm:'',quest:'',twist:'',style:'standard fun adventure style — exciting, vivid, and action-packed',selectedHeroes:[]};
   document.getElementById('groq-out').innerHTML='';
   document.getElementById('story-title-inp').value='';
   renderHeroSelector();
@@ -945,8 +1066,8 @@ function initBuild(){
 }
 
 function showStep(n){
-  [1,2,3,4].forEach(i=>{const el=document.getElementById('step'+i);if(el)el.style.display=i===n?'block':'none';});
-  ['pd1','pd2','pd3','pd4'].forEach((id,i)=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('cur','done');if(i+1<n)el.classList.add('done');else if(i+1===n)el.classList.add('cur');});
+  [1,2,3,4,5].forEach(i=>{const el=document.getElementById('step'+i);if(el)el.style.display=i===n?'block':'none';});
+  ['pd1','pd2','pd3','pd4','pd5'].forEach((id,i)=>{const el=document.getElementById(id);if(!el)return;el.classList.remove('cur','done');if(i+1<n)el.classList.add('done');else if(i+1===n)el.classList.add('cur');});
   buildStep=n;
 }
 
@@ -984,20 +1105,42 @@ function renderHeroSelector(){
 async function generateStory(){
   const selIds=S.build.selectedHeroes;
   const selHeroes=selIds.length>0?S.heroes.filter(h=>selIds.includes(h.id)):S.heroes.slice(0,1);
-  if(selHeroes.length===0){toast('⚠️ Create a hero first in My Heroes!');return;}
+  if(selHeroes.length===0){toast('\u26a0\ufe0f Create a hero first in My Heroes!');return;}
   const heroNames=selHeroes.map(h=>h.name);
   const heroDesc=selHeroes.map(h=>`${h.name} (${h.power})`).join(', ');
   const customTitle=document.getElementById('story-title-inp').value.trim();
   const extras=document.getElementById('story-extras-inp').value.trim();
   const pageCount=parseInt(document.getElementById('story-len').value)||6;
-  const world=S.build.world||'Space';
+  const world=S.build.world||'Outer Space';
   const quest=S.build.quest||'find the lost treasure';
   const twist=S.build.twist||'a secret power awakened';
+  const style=S.build.style||'classic fun adventure style \u2014 exciting, vivid, and action-packed';
+
+  // Age-aware depth: controls sentences per page, vocabulary level, and narrative complexity
+  const ageGroup=localStorage.getItem('par_age')||'7\u20139 years';
+  const ageMap={
+    '5\u20136 years':{
+      label:'ages 5\u20136',
+      pageRule:'Each page: exactly 2 short sentences. Max 2-syllable words wherever possible. Warm, gentle, rhythmic.',
+      depthNote:'Keep it simple and reassuring. Big clear emotions. Lots of sensory detail (colours, sounds, shapes). Repetition is good.',
+    },
+    '7\u20139 years':{
+      label:'ages 7\u20139',
+      pageRule:'Each page: 3\u20134 sentences. Mix punchy short sentences with one richer longer one. Adventurous but accessible vocabulary.',
+      depthNote:'Add some vivid description and personality. Heroes can feel nervous or excited. Build momentum across pages.',
+    },
+    '10\u201312 years':{
+      label:'ages 10\u201312',
+      pageRule:'Each page: 4\u20136 sentences. Rich expressive vocabulary. Atmosphere, tension, wit, and genuine stakes. Heroes may doubt themselves.',
+      depthNote:'Use metaphor, foreshadowing, and subtext. Give the villain a reason. Let the twist earn its moment. Leave the reader satisfied but wanting more.',
+    },
+  };
+  const age=ageMap[ageGroup]||ageMap['7\u20139 years'];
 
   const modal=document.getElementById('modal');
   const mEm=document.getElementById('modal-em'),mT=document.getElementById('modal-title'),mS=document.getElementById('modal-sub');
   modal.classList.add('on');
-  const steps=[['⚡','Asking Groq AI…','Llama 3.3 is warming up!'],['🌍','Building the world…','Painting '+world+' landscapes'],['📝','Writing the story…','Your heroes are getting their quests!'],['✨','Adding the twist…','A surprise is being woven in…'],['🌟','Final sparkles…','Almost ready!']];
+  const steps=[['\u26a1','Asking Groq AI\u2026','Llama 3.3 is warming up!'],['\ud83c\udf0d','Building the world\u2026','Painting '+world+' landscapes'],['\ud83d\udcdd','Writing the story\u2026','Your heroes are getting their quests!'],['✨','Adding the twist\u2026','A surprise is being woven in\u2026'],['🌟','Final sparkles\u2026','Almost ready!']];
 
   const key=localStorage.getItem('groq_key')||'';
   let pagesArr=[];
@@ -1006,28 +1149,32 @@ async function generateStory(){
     let si=0;mEm.textContent=steps[0][0];mT.textContent=steps[0][1];mS.textContent=steps[0][2];
     const intv=setInterval(()=>{si=Math.min(si+1,4);mEm.textContent=steps[si][0];mT.textContent=steps[si][1];mS.textContent=steps[si][2];},900);
     try{
-      const prompt=`You are a children's storybook author writing for ages 5-10.
+      const tensionPages=Math.max(3,pageCount-2);
+      const prompt=`You are a children's storybook author writing for ${age.label}.
 Write a story with EXACTLY ${pageCount} pages.
-World: ${world}
-Heroes: ${heroDesc} — they are all equal partners, each using their specific power
-Quest: ${quest}
-Twist: ${twist}
-${customTitle?'Title: '+customTitle:''}
-${extras?`Personal details to weave into the story naturally: ${extras}`:''}
 
-Rules:
-- Each page = exactly 2-3 short, simple sentences. Simple vocabulary.
-- ALL heroes must appear and contribute using their unique power.
-- Naturally weave in any personal details provided above — they should feel organic, not forced.
-- Be vivid, exciting, and positive.
-- End with triumph and a lesson about teamwork.
-- Output ONLY the pages, no preamble, no title.
+WORLD: ${world}
+HEROES: ${heroDesc} \u2014 equal partners, each using their specific power at a key moment
+QUEST: ${quest}
+TWIST: ${twist}
+WRITING STYLE: ${style}
+${customTitle?'TITLE: '+customTitle:''}
+${extras?'PERSONAL DETAILS (weave in naturally, never forced): '+extras:''}
+
+PAGE RULES:
+- ${age.pageRule}
+- ${age.depthNote}
+- ALL heroes must appear and each use their unique power.
+- The writing style is non-negotiable: if it rhymes, every single page rhymes. If it's a diary, every page is a diary entry. If it's comedy, every page has a laugh.
+- Build real tension in pages 3\u2013${tensionPages}. The twist should feel surprising but inevitable in hindsight.
+- Final page: triumphant, warm, and emotionally felt \u2014 not a stated moral, a felt one.
+- Output ONLY the page text. No title, no preamble, no commentary.
 
 Format EXACTLY:
 PAGE 1: [text]
 PAGE 2: [text]
 (continue for all ${pageCount} pages)`;
-      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:1400,messages:[{role:'user',content:prompt}]})});
+      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:Math.max(1600,pageCount*300),messages:[{role:'user',content:prompt}]})});
       if(!res.ok)throw new Error('HTTP '+res.status);
       const data=await res.json();const raw=data.choices?.[0]?.message?.content||'';
       const matches=raw.match(/PAGE \d+:\s*([\s\S]*?)(?=\nPAGE \d+:|$)/g);
@@ -1039,13 +1186,47 @@ PAGE 2: [text]
   }
   if(pagesArr.length===0)pagesArr=demoPages(world.toLowerCase(),heroNames);
 
-  const wk=(world||'space').toLowerCase();
-  const emMap={space:'🚀',jungle:'🌿',kingdom:'🏰',ocean:'🌊','spooky manor':'👻','dino land':'🦕'};
-  const bgMap={space:'linear-gradient(135deg,#1e1b4b,#312e81)',jungle:'linear-gradient(135deg,#14532d,#166534)',kingdom:'linear-gradient(135deg,#4a1942,#6b21a8)',ocean:'linear-gradient(135deg,#0c4a6e,#075985)','spooky manor':'linear-gradient(135deg,#1c1917,#292524)','dino land':'linear-gradient(135deg,#14532d,#3f6212)'};
+  const wk=(world||'outer space').toLowerCase();
+  const emMap={
+    'outer space':'🚀','magic jungle':'🌿','crystal kingdom':'🏰','deep ocean':'🌊',
+    'haunted manor':'👻','dino land':'🦕','cloud city':'☁️','ice realm':'❄️',
+    'candy world':'🍭','underground caves':'💎','pirate seas':'🏴‍☠️','robot city':'🤖',
+    'enchanted forest':'🍄','volcano island':'🌋','dream world':'🌈',
+    'wild west':'🤠','tiny town':'🐜','ancient egypt':'🏺',
+    // legacy keys
+    'space':'🚀','jungle':'🌿','kingdom':'🏰','ocean':'🌊','spooky manor':'👻',
+  };
+  const bgMap={
+    'outer space':'linear-gradient(135deg,#1e1b4b,#312e81)',
+    'magic jungle':'linear-gradient(135deg,#14532d,#166534)',
+    'crystal kingdom':'linear-gradient(135deg,#4a1942,#6b21a8)',
+    'deep ocean':'linear-gradient(135deg,#0c4a6e,#075985)',
+    'haunted manor':'linear-gradient(135deg,#1c1917,#292524)',
+    'dino land':'linear-gradient(135deg,#14532d,#3f6212)',
+    'cloud city':'linear-gradient(135deg,#0ea5e9,#6366f1)',
+    'ice realm':'linear-gradient(135deg,#0c4a6e,#164e63)',
+    'candy world':'linear-gradient(135deg,#db2777,#9333ea)',
+    'underground caves':'linear-gradient(135deg,#1c1917,#44403c)',
+    'pirate seas':'linear-gradient(135deg,#0c4a6e,#1e3a5f)',
+    'robot city':'linear-gradient(135deg,#0f766e,#1d4ed8)',
+    'enchanted forest':'linear-gradient(135deg,#3b0764,#166534)',
+    'volcano island':'linear-gradient(135deg,#7f1d1d,#c2410c)',
+    'dream world':'linear-gradient(135deg,#6d28d9,#db2777)',
+    'wild west':'linear-gradient(135deg,#78350f,#b45309)',
+    'tiny town':'linear-gradient(135deg,#065f46,#047857)',
+    'ancient egypt':'linear-gradient(135deg,#78350f,#d97706)',
+    // legacy
+    'space':'linear-gradient(135deg,#1e1b4b,#312e81)',
+    'jungle':'linear-gradient(135deg,#14532d,#166534)',
+    'kingdom':'linear-gradient(135deg,#4a1942,#6b21a8)',
+    'ocean':'linear-gradient(135deg,#0c4a6e,#075985)',
+    'spooky manor':'linear-gradient(135deg,#1c1917,#292524)',
+  };
   const ns={id:'gen-'+Date.now(),theme:wk,em:emMap[wk]||'✨',title:customTitle||(S.build.worldEm+' '+world+' Adventure'),pages:pagesArr.length,bg:bgMap[wk]||'linear-gradient(135deg,#2e1065,#4c1d95)',data:pagesArr,heroIds:selIds,extras,illustrations:{}};
   S.stories.unshift(ns);
+  saveStories();
   modal.classList.remove('on');
-  addXP(50);toast('🎉 Story created! +50 XP');
+  addXP(50);checkBadges();toast('🎉 Story created! +50 XP');
   document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
   renderStoryStrip();
   const out=document.getElementById('groq-out');
@@ -1053,6 +1234,7 @@ PAGE 2: [text]
   out.innerHTML=`<div class="groq-box"><div class="gb-hd"><div class="gb-led"></div><span class="gb-lbl">${key.startsWith('gsk_')?'Groq AI Generated ⚡':'Demo Story'}</span></div><div class="gb-txt">${prev}<br><br><em style="color:var(--dim)">…and ${pagesArr.length-2} more pages</em></div></div>
   <button class="btn btn-v" onclick="openReader('${ns.id}')">📖 Read My Story!</button>
   <button class="btn btn-ghost" onclick="go('library')">📚 Go to Library</button>`;
+
 }
 
 // ─── READER ──────────────────────────────────────
@@ -1075,103 +1257,105 @@ function applyArtwork(dataUrl){
 }
 
 // ── Step 1: Copy story prompt to clipboard + open Gemini ──
-function getArtwork(){
-  if(!activeStory) return;
+// ── Shared artwork prompt builder ──
+// Builds a rich, specific illustration prompt from the story's actual metadata
+function buildArtworkPrompt(){
+  if(!activeStory) return '';
 
-  const heroDescs=(activeStory.heroIds||[])
-    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
-    .filter(Boolean).join(', ')||'brave young adventurers';
+  // Heroes
+  const heroList=(activeStory.heroIds||[])
+    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+', a child hero with '+h.power:null;})
+    .filter(Boolean);
+  const heroDesc=heroList.length>0?heroList.join('; '):'a group of brave young adventurers';
 
-  const storyData=JSON.stringify({
-    title:activeStory.title,
-    theme:activeStory.theme,
-    heroes:heroDescs,
-    pages:activeStory.data
-  }, null, 2);
+  // World/setting atmosphere
+  const worldAtmosphereMap={
+    'outer space':'a vivid outer space setting with glowing nebulas, ringed planets, and starfields',
+    'magic jungle':'a lush magical jungle with giant glowing plants, ancient stone ruins, and exotic creatures',
+    'crystal kingdom':'a grand fantasy kingdom with soaring castles, crystal spires, and enchanted forests',
+    'deep ocean':'a beautiful underwater world with coral reefs, bioluminescent creatures, and sunken ships',
+    'haunted manor':'a spooky but fun haunted manor with glowing jack-o-lanterns, friendly ghosts, and secret passages',
+    'dino land':'a prehistoric landscape with towering dinosaurs, erupting volcanoes in the distance, and lush ferns',
+    'cloud city':'a magical city floating on clouds with rainbow bridges, sky islands, and enormous friendly cloud creatures',
+    'ice realm':'a spectacular frozen kingdom with ice caves, aurora borealis sky, and snow wolves',
+    'candy world':'a wonderfully absurd candy world with lollipop trees, chocolate rivers, and gingerbread mountains',
+    'underground caves':'glittering crystal caves deep underground with glowing gemstone walls and mysterious underground rivers',
+    'pirate seas':'a dramatic pirate adventure on sparkling seas with tall ships, sea monsters, and treasure-filled islands',
+    'robot city':'a colourful futuristic robot city with skyscrapers, flying vehicles, and friendly malfunctioning robots',
+    'enchanted forest':'a magical forest alive with glowing mushrooms, talking animals, ancient fairy rings, and dappled golden light',
+    'volcano island':'a dramatic tropical island with an active volcano, lava flows, fire dragons, and ancient temples',
+    'dream world':'a surreal and beautiful dream world where impossible things happen — floating islands, upside-down waterfalls, talking objects',
+    'wild west':'a sun-baked Wild West frontier town with dusty canyons, tumbleweeds, and mysterious desert magic',
+    'tiny town':'a miniature world seen from bug height — towering grass blades, enormous pebbles, and tiny hidden villages',
+    'ancient egypt':'ancient Egypt with towering pyramids, golden sand dunes, hieroglyph-covered temples, and desert magic',
+  };
+  const theme=(activeStory.theme||'').toLowerCase();
+  const setting=worldAtmosphereMap[theme]||('a magical world called '+activeStory.theme);
 
-  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
+  // Story moment — use the climax page (roughly 2/3 through)
+  const pages=activeStory.data||[];
+  const climaxIdx=Math.floor(pages.length*0.6);
+  const sceneLine=pages[climaxIdx]?pages[climaxIdx].slice(0,120):'';
+  const sceneHint=sceneLine?'The key scene: '+sceneLine:'';
 
-  // Bulletproof clipboard copy — works on all browsers including mobile
-  function copyToClipboard(text){
-    // Method 1: modern async clipboard API
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
-    } else {
-      fallbackCopy(text);
-    }
-  }
+  // Build the prompt
+  const prompt=
+`Illustration for a children's storybook. Vibrant full-colour digital art.
 
-  function fallbackCopy(text){
-    // Method 2: create a hidden textarea, select all, execCommand copy
-    const ta=document.createElement('textarea');
-    ta.value=text;
-    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    try{ document.execCommand('copy'); }catch(e){ console.warn('Copy failed',e); }
-    document.body.removeChild(ta);
-  }
+CHARACTERS: ${heroDesc}. Show them as the clear heroes — expressive faces, dynamic poses, full of energy and emotion.
 
-  copyToClipboard(prompt);
+SETTING: ${setting}.
 
-  // Open Gemini — prompt is already in clipboard, user just pastes and hits enter
-  window.open('https://gemini.google.com', '_blank');
+${sceneHint}
 
-  // Flip to step 2
-  document.getElementById('artwork-step1').style.display='none';
-  document.getElementById('artwork-step2').style.display='block';
+STORY TITLE: ${activeStory.title}
 
-  toast('✅ Prompt copied! In Gemini: tap the text box, paste (Ctrl+V or long-press → Paste), then hit enter.', 7000);
+VISUAL STYLE: Bright children's picture book illustration. Bold clean outlines. Vivid saturated colours. Flat cartoon style with soft shading. Warm and magical atmosphere. Safe and joyful — no scary elements.
+
+COMPOSITION: Heroes together in the foreground, mid-action. Setting fills the background with depth and detail. Cinematic but friendly.
+
+CRITICAL: Absolutely no text, words, letters, numbers, or symbols anywhere in the image. Pure illustration only.`;
+
+  return prompt;
 }
 
-// ── Get Full Illustration: same clipboard logic, opens Gemini Storybook Illustrator ──
-function getFullIllustration(){
-  if(!activeStory) return;
-
-  const heroDescs=(activeStory.heroIds||[])
-    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
-    .filter(Boolean).join(', ')||'brave young adventurers';
-
-  const storyData=JSON.stringify({
-    title:activeStory.title,
-    theme:activeStory.theme,
-    heroes:heroDescs,
-    pages:activeStory.data
-  }, null, 2);
-
-  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
-
-  // Bulletproof clipboard copy — same as getArtwork
-  function copyToClipboard(text){
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
-    } else {
-      fallbackCopy(text);
-    }
+// Shared clipboard utility
+function copyToClipboard(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(()=>clipboardFallback(text));
+  } else {
+    clipboardFallback(text);
   }
-
-  function fallbackCopy(text){
-    const ta=document.createElement('textarea');
-    ta.value=text;
-    ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    try{ document.execCommand('copy'); }catch(e){ console.warn('Copy failed',e); }
-    document.body.removeChild(ta);
-  }
-
-  copyToClipboard(prompt);
-
-  // Open Gemini Storybook Illustrator
-  window.open('https://gemini.google.com/gem/storybook', '_blank');
-
-  // Flip to step 2
+}
+function clipboardFallback(text){
+  const ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');}catch(e){console.warn('Copy failed',e);}
+  document.body.removeChild(ta);
+}
+function flipToArtStep2(){
   document.getElementById('artwork-step1').style.display='none';
   document.getElementById('artwork-step2').style.display='block';
+}
 
-  toast('✅ Prompt copied! In the Storybook Illustrator: paste (Ctrl+V or long-press → Paste) and generate!', 7000);
+function getArtwork(){
+  if(!activeStory) return;
+  const prompt=buildArtworkPrompt();
+  copyToClipboard(prompt);
+  window.open('https://gemini.google.com', '_blank');
+  flipToArtStep2();
+  toast('✅ Rich prompt copied! In Gemini: paste and hit enter.', 7000);
+}
+
+function getFullIllustration(){
+  if(!activeStory) return;
+  const prompt=buildArtworkPrompt();
+  copyToClipboard(prompt);
+  window.open('https://gemini.google.com/gem/storybook', '_blank');
+  flipToArtStep2();
+  toast('✅ Rich prompt copied! In Storybook Illustrator: paste and generate!', 7000);
 }
 
 // ── Step 2: User selects downloaded image from device ──
@@ -1186,49 +1370,6 @@ function injectArtFromFile(input){
   };
   reader.readAsDataURL(input.files[0]);
   toast('🖼️ Saving artwork to your story…');
-}
-
-// ── Parent Area: Auto-generate via API (for parents with API key) ──
-async function makePictureBook(){
-  if(!activeStory){ toast('⚠️ Open a story in the reader first'); return; }
-  const gemKey=localStorage.getItem('gem_key')||'';
-  if(!gemKey){ toast('⚠️ Add a Gemini API key in the section above first'); return; }
-  if(activeStory.illustrated){ toast('✨ This story is already illustrated'); return; }
-
-  const parBtn=document.getElementById('par-gen-btn');
-  if(parBtn){ parBtn.disabled=true; parBtn.textContent='🎨 Generating…'; }
-
-  const heroDescs=(activeStory.heroIds||[])
-    .map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name+' ('+h.power+')':null;})
-    .filter(Boolean).join(', ')||'brave young adventurers';
-  const storyData=JSON.stringify({title:activeStory.title,theme:activeStory.theme,heroes:heroDescs,pages:activeStory.data},null,2);
-  const prompt='Create an illustration for this short story. It will be artwork:\n'+storyData+'\n\nStyle: Bright children picture book cover art. Bold outlines, vivid saturated colours, flat cartoon style, cheerful and magical, safe for young children. Show the heroes together in an exciting scene. No text, no words, no letters in the image.';
-
-  try{
-    const res=await fetch(`${GEM_BASE}${GEM_MODEL}:generateContent?key=${gemKey}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})
-    });
-    if(res.status===429){
-      toast('⚠️ API rate limited — try again in a few minutes or use the URL inject below.');
-      if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; } return;
-    }
-    if(!res.ok){ toast('❌ API error '+res.status); if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; } return; }
-    const data=await res.json();
-    const parts=data.candidates?.[0]?.content?.parts||[];
-    for(const p of parts){
-      if(p.inlineData?.mimeType?.startsWith('image/')){
-        applyArtwork('data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data);
-        if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
-        return;
-      }
-    }
-    toast('⚠️ No image returned from API');
-    if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
-  }catch(e){
-    toast('❌ Error: '+e.message);
-    if(parBtn){ parBtn.disabled=false; parBtn.textContent='🎨 Generate Now'; }
-  }
 }
 
 // ── Parent Area: Inject artwork by URL ──
@@ -1265,6 +1406,7 @@ function injectArtFromFile(input){
 function openReader(id){
   const s=S.stories.find(x=>x.id===id);if(!s)return;
   activeStory=s;curPage=0;stopSpeech();
+  recordActivity();
   document.getElementById('r-title-tb').textContent=s.title;
   renderReaderPage();go('reader');
 }
@@ -1425,9 +1567,8 @@ function playAudioBuffer(buf,onEnd){
 }
 
 async function animateWordCursor(text){
-  // Estimate total word count and animate cursor at a natural reading pace
-  const words=text.split(/\s+/).filter(Boolean);
-  const wpm=speechRate*(text.length<200?130:140); // words per minute estimate
+  if(!S.followAlong) return; // only run when follow-along is enabled
+  const wpm=speechRate*(text.length<200?130:140);
   const msPerWord=(60000/wpm);
   let wi=0;
   while(speechActive && wi<wordEls.length){
@@ -1439,7 +1580,27 @@ async function animateWordCursor(text){
   wordEls.forEach(w=>w.classList.remove('spoken'));
 }
 
-// ── Browser TTS ──
+// ─── FOLLOW-ALONG TOGGLE ─────────────────────────
+function toggleFollowAlong(){
+  S.followAlong=!S.followAlong;
+  localStorage.setItem('sm_follow',S.followAlong);
+  const btn=document.getElementById('follow-toggle');
+  if(btn){
+    btn.style.background=S.followAlong?'rgba(245,158,11,.35)':'var(--card)';
+    btn.style.color=S.followAlong?'var(--gold2)':'var(--v2)';
+    btn.title=S.followAlong?'Follow Along ON — words highlighted as read':'Follow Along OFF';
+  }
+  toast(S.followAlong?'👁️ Follow Along ON — words will highlight as read':'👁️ Follow Along OFF');
+}
+function updateFollowToggleBtn(){
+  const btn=document.getElementById('follow-toggle');
+  if(!btn)return;
+  btn.style.background=S.followAlong?'rgba(245,158,11,.35)':'var(--card)';
+  btn.style.color=S.followAlong?'var(--gold2)':'var(--v2)';
+}
+
+// ── Browser TTS — robust cross-browser with boundary fallback ──
+let _boundaryWorking=false; // detected at runtime
 function startBrowserTTS(text){
   if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
   window.speechSynthesis.cancel();
@@ -1448,14 +1609,20 @@ function startBrowserTTS(text){
   const voices=window.speechSynthesis.getVoices();
   const preferred=voices.find(v=>/samantha|karen|victoria|zira|google us english|en-us/i.test(v.name))||voices.find(v=>v.lang==='en-US')||voices[0];
   if(preferred)u.voice=preferred;
-  let charCount=0;
+
+  _boundaryWorking=false;
+  let boundaryCount=0;
+
   u.onboundary=e=>{
     if(e.name!=='word')return;
+    if(!S.followAlong)return;
+    _boundaryWorking=true;
+    boundaryCount++;
     wordEls.forEach(w=>w.classList.remove('spoken'));
     // Find word index by character position
-    const textChars=text.split(/(\s+)/);
+    const textParts=text.split(/(\s+)/);
     let pos=0,wi=0;
-    for(const tok of textChars){
+    for(const tok of textParts){
       if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
       if(pos>=e.charIndex)break;
       pos+=tok.length;wi++;
@@ -1463,10 +1630,26 @@ function startBrowserTTS(text){
     if(wordEls[wi])wordEls[wi].classList.add('spoken');
     document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
   };
-  u.onend=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';document.getElementById('ral-fill').style.width='100%';wordEls.forEach(w=>w.classList.remove('spoken'));};
+
+  u.onstart=()=>{
+    speechActive=true;
+    document.getElementById('ral-play-btn').textContent='⏸';
+    // After 400ms check if boundary events fired; if not, start timer fallback
+    setTimeout(()=>{
+      if(!_boundaryWorking && speechActive && S.followAlong){
+        animateWordCursor(text);
+      }
+    },400);
+  };
+
+  u.onend=()=>{
+    speechActive=false;
+    document.getElementById('ral-play-btn').textContent='▶';
+    document.getElementById('ral-fill').style.width='100%';
+    wordEls.forEach(w=>w.classList.remove('spoken'));
+  };
   u.onerror=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';};
   window.speechSynthesis.speak(u);
-  speechActive=true;document.getElementById('ral-play-btn').textContent='⏸';
 }
 
 function stopSpeech(){
@@ -1494,84 +1677,9 @@ function changePage(dir){
 }
 function exportStory(){if(!activeStory)return;const b=new Blob([JSON.stringify({title:activeStory.title,theme:activeStory.theme,pages:activeStory.data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=activeStory.title.replace(/\s+/g,'-')+'.json';a.click();toast('💾 Story exported!');}
 
-// ─── GEMINI ILLUSTRATION GENERATION ─────────────
-// ─── NANO BANANA 2 ILLUSTRATION ENGINE ───────────
-// Uses a serial queue so requests never overlap — avoids 429 rate limits
-// ─── GEMINI IMAGE ENGINE ─────────────────────────
-// Try free-tier models in order. Both support image generation on AI Studio free tier.
-// Gemini image engine — gemini-2.5-flash-image is the only free image model (March 2026)
-const GEM_MODEL = 'gemini-2.5-flash-image';
-const GEM_BASE  = 'https://generativelanguage.googleapis.com/v1beta/models/';
-
-// Used by PDF export and test button (single attempt, caller handles errors)
-async function callGeminiImage(prompt, key){
-  try{
-    const res=await fetch(`${GEM_BASE}${GEM_MODEL}:generateContent?key=${key}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT']}})
-    });
-    if(!res.ok) return {error:'http_'+res.status};
-    const data=await res.json();
-    const parts=data.candidates?.[0]?.content?.parts||[];
-    for(const p of parts){
-      if(p.inlineData?.mimeType?.startsWith('image/')){
-        return {dataUrl:'data:'+p.inlineData.mimeType+';base64,'+p.inlineData.data};
-      }
-    }
-    return {error:'no_image'};
-  }catch(e){ return {error:e.message}; }
-}
-
-async function generateGeminiIllus(story, pageIdx){
-  const gemKey=localStorage.getItem('gem_key')||'';
-  if(!gemKey) return null;
-  const heroNames=(story.heroIds||[]).map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name:'';}).filter(Boolean).join(' and ');
-  const pageText=story.data[pageIdx]||'';
-  const prompt=`Bright children's cartoon illustration, bold black outlines, vivid saturated colors, flat design, cheerful and playful, safe for young children, like a modern animated cartoon storybook. Scene: ${pageText.slice(0,200)} Setting: ${story.theme}. Characters: ${heroNames||'young adventurers'}. No text, no words, no letters anywhere in the image. High quality digital cartoon art.`;
-  const result=await callGeminiImage(prompt, gemKey);
-  if(result.dataUrl) return result.dataUrl;
-  return null;
-}
-
-// Gemini key management
-function saveGemKey(){
-  const k=document.getElementById('gem-key-inp').value.trim();
-  if(!k){toast('⚠️ Enter a Gemini key');return;}
-  localStorage.setItem('gem_key',k);
-  updateGemStatus(k);
-  toast('✅ Gemini key saved! Nano Banana illustrations enabled 🎨');
-}
-async function testGemKey(){
-  const k=document.getElementById('gem-key-inp').value.trim();
-  if(!k){toast('⚠️ Enter a key first');return;}
-  toast('🎨 Testing Nano Banana…');
-  const result=await callGeminiImage('A simple cheerful cartoon star, bright yellow, on a white background. No text.', k);
-  if(result.dataUrl){
-    toast(`✅ Gemini works on ${result.model||'free tier'}! Illustrations ready 🎨`);
-    localStorage.setItem('gem_key',k);
-    updateGemStatus(k);
-  } else if(result.error==='exhausted'||result.error?.includes('429')||result.error?.includes('http_429')){
-    // Key is valid but rate limited — save it anyway
-    toast('⚠️ Key is valid but rate limited right now — it will work in the story reader');
-    localStorage.setItem('gem_key',k);
-    updateGemStatus(k);
-  } else {
-    toast('❌ Gemini error: '+result.error.slice(0,50));
-  }
-}
-function updateGemStatus(k){
-  const l=document.getElementById('gem-led'),t=document.getElementById('gem-st');
-  if(k&&k.length>10){
-    l.className='led on';
-    t.textContent='Nano Banana connected — AI illustrations ready 🎨';
-    t.style.color='var(--mint2)';
-  }else{
-    l.className='led off';
-    t.textContent='No key — using scene art';
-    t.style.color='var(--dim)';
-  }
-}
+// ─── ARTWORK HELPERS ─────────────────────────────
+// Gemini API stripped — artwork via clipboard→Gemini web link buttons only.
+// makePictureBook (auto-generate) removed. URL inject and file upload remain.
 
 // ─── VOICE ENGINE ─────────────────────────────────
 const OPENAI_VOICES=[
@@ -1668,23 +1776,6 @@ async function exportPDF(storyId){
   mEm.textContent='📄';mT.textContent='Building your PDF…';mS.textContent='Gathering illustrations and text';
   modal.classList.add('on');
 
-  const gemKey=localStorage.getItem('gem_key')||'';
-  // Pre-generate all illustrations we don't have yet
-  if(gemKey){
-    mS.textContent='Generating illustrations with Nano Banana 2…';
-    for(let i=0;i<story.data.length;i++){
-      const ilKey=`p${i}`;
-      if(!story.illustrations||!story.illustrations[ilKey]){
-        mS.textContent=`Illustrating page ${i+1} of ${story.data.length}…`;
-        const url=await generateGeminiIllus(story,i);
-        if(url){
-          if(!story.illustrations)story.illustrations={};
-          story.illustrations[ilKey]=url;
-        }
-      }
-    }
-  }
-
   mS.textContent='Building PDF layout…';
   await sleep(300);
 
@@ -1779,7 +1870,7 @@ function renderPDFList(){
 let libFilter='all';
 function renderLib(){
   const grid=document.getElementById('lib-grid');grid.innerHTML='';
-  const vis=libFilter==='all'?S.stories:S.stories.filter(s=>s.theme===libFilter);
+  const vis=S.stories.filter(s=>worldMatches(s.theme, libFilter));
   vis.forEach((s,i)=>{
     const d=document.createElement('div');d.className='lc';
     const coverImg=s.illustrations&&s.illustrations['p0'];
@@ -1795,10 +1886,40 @@ function renderLib(){
   document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
   const sel=document.getElementById('print-sel');if(sel)sel.innerHTML=S.stories.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
 }
-function filterLib(el,f){document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));el.classList.add('on');libFilter=f;renderLib();}
+function filterLib(el,f){
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  libFilter=f;
+  renderLib();
+}
+// Legacy world key aliases for filtering old stories
+const WORLD_ALIASES={
+  'outer space':['space','outer space'],
+  'magic jungle':['jungle','magic jungle'],
+  'crystal kingdom':['kingdom','crystal kingdom'],
+  'deep ocean':['ocean','deep ocean'],
+  'haunted manor':['spooky manor','haunted manor'],
+};
+function worldMatches(storyTheme, filter){
+  if(filter==='all') return true;
+  if(storyTheme===filter) return true;
+  const aliases=WORLD_ALIASES[filter];
+  if(aliases) return aliases.includes(storyTheme);
+  return false;
+}
 
 // ─── BADGES ──────────────────────────────────────
-const ALL_BADGES=[{id:'first-story',em:'📖',name:'First Story',xp:50},{id:'streak7',em:'🔥',name:'7-Day Streak',xp:100},{id:'space',em:'🚀',name:'Space Explorer',xp:75},{id:'squad',em:'👥',name:'Squad Leader',xp:80},{id:'wordwiz',em:'💬',name:'Word Wizard',xp:80},{id:'bookmaker',em:'🖨️',name:'Bookmaker',xp:120},{id:'ocean',em:'🌊',name:'Ocean Diver',xp:90},{id:'master',em:'🏆',name:'Story Master',xp:200},{id:'hero-create',em:'🛡️',name:'Hero Creator',xp:60}];
+const ALL_BADGES=[
+  {id:'first-story',em:'📖',name:'First Story',xp:50},
+  {id:'streak7',em:'🔥',name:'7-Day Streak',xp:100},
+  {id:'space',em:'🚀',name:'Space Explorer',xp:75},
+  {id:'squad',em:'👥',name:'Squad Leader',xp:80},
+  {id:'wordwiz',em:'💬',name:'Word Wizard',xp:80},
+  {id:'bookmaker',em:'🖨️',name:'Bookmaker',xp:120},
+  {id:'ocean',em:'🌊',name:'Ocean Diver',xp:90},
+  {id:'master',em:'🏆',name:'Story Master',xp:200},
+  {id:'hero-create',em:'🛡️',name:'Hero Creator',xp:60},
+];
 function renderBadges(){
   const grid=document.getElementById('badge-grid');grid.innerHTML='';
   ALL_BADGES.forEach(b=>{
@@ -1808,19 +1929,31 @@ function renderBadges(){
     d.innerHTML=`<div class="bem">${b.em}</div><div class="bnm">${b.name}</div><div class="bxp">+${b.xp} XP</div>`;
     grid.appendChild(d);
   });
-  document.getElementById('xp-cur').textContent=S.xp;
-  document.getElementById('xpf').style.width=Math.min(100,(S.xp/1000)*100)+'%';
+  // Level = every 500 XP
+  const lvl=Math.floor(S.xp/500)+1;
+  const pct=((S.xp%500)/500)*100;
+  const toNext=500-(S.xp%500);
+  const lvlNames=['Beginner','Explorer','Adventurer','Champion','Legend','Story Master','Grand Wizard'];
+  const lvlName=lvlNames[Math.min(lvl-1,lvlNames.length-1)];
+  const nextName=lvlNames[Math.min(lvl,lvlNames.length-1)];
+  const lvlEl=document.getElementById('xp-lv');if(lvlEl)lvlEl.textContent=lvl;
+  const curEl=document.getElementById('xp-cur');if(curEl)curEl.textContent=S.xp;
+  const fillEl=document.getElementById('xpf');if(fillEl)fillEl.style.width=pct+'%';
+  const nextEl=document.querySelector('.xp-next');if(nextEl)nextEl.textContent=toNext+' XP to Level '+(lvl+1)+' — '+nextName+' 🌟';
+  // Also update home XP pill
+  const xpEl=document.getElementById('xp-show');if(xpEl)xpEl.textContent=S.xp;
+  updateApiStatusPill();
 }
 
 // ─── PARENT ───────────────────────────────────────
 function renderParent(){
   document.getElementById('ps-stories').textContent=S.stories.length;
   document.getElementById('ps-xp').textContent=S.xp;
+  const pStreak=document.getElementById('ps-streak');if(pStreak)pStreak.textContent='🔥'+getStreak();
   const ml=document.getElementById('memory-lane');ml.innerHTML='';
   S.stories.slice(0,4).forEach(s=>{const d=document.createElement('div');d.className='ml-item';d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div><div class="ml-b">+50 XP</div>`;ml.appendChild(d);});
   const k=localStorage.getItem('groq_key')||'';if(k)document.getElementById('groq-inp').value=k;updateGroqStatus(k);
   const ek=localStorage.getItem('el_key')||'';if(ek)document.getElementById('el-key-inp').value=ek;updateElStatus(ek);
-  const gk=localStorage.getItem('gem_key')||'';if(gk)document.getElementById('gem-key-inp').value=gk;updateGemStatus(gk);
   const ok=localStorage.getItem('oai_key')||'';if(ok)document.getElementById('oai-key-inp').value=ok;updateOAIStatus(ok);
   const n=localStorage.getItem('par_name');if(n)document.getElementById('par-name').value=n;
   const e=localStorage.getItem('par_email');if(e){document.getElementById('par-email').value=e;document.getElementById('print-email').value=e;}
@@ -1866,27 +1999,33 @@ function updateElStatus(k){const l=document.getElementById('el-led'),t=document.
 
 function requestPrint(){const e=document.getElementById('print-email').value.trim();if(!e||!e.includes('@')){toast('⚠️ Enter a valid parent email');return;}document.getElementById('pr-confirm').style.display='block';toast('📧 Checkout link sent to '+e+'!');}
 function exportAll(){
-  // Include API keys so they restore on import
   const payload={
     exported: new Date().toISOString(),
-    version: '1.0',
+    app: 'Story Magic',
+    version: '2.1',
     heroes: S.heroes,
-    stories: S.stories.map(s=>({id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''})),
+    stories: S.stories.map(s=>({
+      id:s.id,title:s.title,theme:s.theme,em:s.em,bg:s.bg,
+      pages:s.pages,data:s.data,heroIds:s.heroIds||[],extras:s.extras||''
+    })),
     xp: S.xp,
+    coins: S.coins,
     badges: S.earnedBadges,
-    // API keys
+    readingStats:{
+      streak: getStreak(),
+      lastActive: localStorage.getItem('sm_last_active')||'',
+    },
     keys:{
       groq:  localStorage.getItem('groq_key')||'',
-      gemini:localStorage.getItem('gem_key')||'',
       el:    localStorage.getItem('el_key')||'',
       oai:   localStorage.getItem('oai_key')||'',
     },
-    // Preferences
     prefs:{
       voice_engine: localStorage.getItem('sm_engine')||'browser',
       voice_id:     localStorage.getItem('sm_voice')||'',
       child_name:   localStorage.getItem('par_name')||'',
       parent_email: localStorage.getItem('par_email')||'',
+      follow_along: localStorage.getItem('sm_follow')||'false',
     }
   };
   const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
@@ -1903,6 +2042,9 @@ function importAll(input){
   reader.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
+      if(!data.heroes && !data.stories && !data.keys){
+        throw new Error('Not a Story Magic backup file');
+      }
       const results=[];
 
       // Restore heroes
@@ -1912,48 +2054,73 @@ function importAll(input){
         results.push('✅ '+data.heroes.length+' heroes restored');
       }
 
-      // Restore stories
+      // Restore stories — merge, don't overwrite
       if(data.stories&&Array.isArray(data.stories)&&data.stories.length>0){
-        // Merge: add imported stories that don't already exist by id
         const existingIds=new Set(S.stories.map(s=>s.id));
         const newStories=data.stories
           .filter(s=>!existingIds.has(s.id))
           .map(s=>({...s,illustrations:{}}));
         S.stories=[...newStories,...S.stories];
-        results.push('✅ '+newStories.length+' stories imported');
+        saveStories();
+        results.push('✅ '+newStories.length+' new stories imported ('+data.stories.length+' in file)');
       }
 
-      // Restore XP
-      if(typeof data.xp==='number'){ S.xp=data.xp; addXP(0); results.push('✅ XP restored: '+data.xp); }
+      // Restore XP & coins
+      if(typeof data.xp==='number'){
+        S.xp=data.xp;
+        if(typeof data.coins==='number') S.coins=data.coins;
+        saveXP();
+        const xpEl=document.getElementById('xp-show');if(xpEl)xpEl.textContent=S.xp;
+        results.push('✅ XP restored: '+data.xp);
+      }
 
       // Restore badges
-      if(data.badges&&Array.isArray(data.badges)){ S.earnedBadges=data.badges; results.push('✅ Badges restored'); }
+      if(data.badges&&Array.isArray(data.badges)){
+        S.earnedBadges=data.badges;
+        saveBadges();
+        results.push('✅ Badges restored');
+      }
+
+      // Restore reading stats / streak
+      if(data.readingStats){
+        if(data.readingStats.streak){
+          localStorage.setItem('sm_streak',data.readingStats.streak);
+          results.push('✅ Reading streak restored: '+data.readingStats.streak+' days');
+        }
+        if(data.readingStats.lastActive){
+          localStorage.setItem('sm_last_active',data.readingStats.lastActive);
+        }
+        updateStreakDisplay();
+      }
 
       // Restore API keys
       if(data.keys){
-        if(data.keys.groq)  { localStorage.setItem('groq_key', data.keys.groq);   updateGroqStatus(data.keys.groq); results.push('✅ Groq key restored'); }
-        if(data.keys.gemini){ localStorage.setItem('gem_key',  data.keys.gemini);  updateGemStatus(data.keys.gemini); results.push('✅ Gemini key restored'); }
-        if(data.keys.el)    { localStorage.setItem('el_key',   data.keys.el);      updateElStatus(data.keys.el); results.push('✅ ElevenLabs key restored'); }
-        if(data.keys.oai)   { localStorage.setItem('oai_key',  data.keys.oai);     updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
+        if(data.keys.groq)  { localStorage.setItem('groq_key', data.keys.groq);  updateGroqStatus(data.keys.groq); results.push('✅ Groq key restored'); }
+        if(data.keys.el)    { localStorage.setItem('el_key',   data.keys.el);    updateElStatus(data.keys.el);   results.push('✅ ElevenLabs key restored'); }
+        if(data.keys.oai)   { localStorage.setItem('oai_key',  data.keys.oai);   updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
+        // Legacy gemini key — just discard silently
       }
 
       // Restore preferences
       if(data.prefs){
         if(data.prefs.voice_engine){ localStorage.setItem('sm_engine', data.prefs.voice_engine); S.voiceEngine=data.prefs.voice_engine; }
         if(data.prefs.voice_id)    { localStorage.setItem('sm_voice',  data.prefs.voice_id);     S.voiceId=data.prefs.voice_id; }
-        if(data.prefs.child_name)  { localStorage.setItem('par_name',  data.prefs.child_name);   document.getElementById('g-name')?document.getElementById('g-name').textContent=data.prefs.child_name:null; }
+        if(data.prefs.child_name)  { localStorage.setItem('par_name',  data.prefs.child_name); }
         if(data.prefs.parent_email){ localStorage.setItem('par_email', data.prefs.parent_email); }
+        if(data.prefs.follow_along){ localStorage.setItem('sm_follow', data.prefs.follow_along); S.followAlong=data.prefs.follow_along==='true'; }
         if(data.prefs.voice_engine||data.prefs.child_name) results.push('✅ Preferences restored');
       }
 
       // Re-render UI
       renderHeroStrip(); renderStoryStrip(); renderLib();
+      updateStreakDisplay();
       document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
 
-      // Show results
       const el=document.getElementById('import-result');
       el.style.display='block';
-      el.innerHTML='<strong>Import complete!</strong><br>'+results.join('<br>');
+      el.style.background='rgba(16,185,129,.1)';
+      el.style.borderColor='rgba(16,185,129,.25)';
+      el.innerHTML='<strong>✅ Import complete!</strong><br>'+results.join('<br>');
       toast('✅ Restore complete! '+results.length+' items recovered.');
 
     }catch(err){
@@ -1964,19 +2131,97 @@ function importAll(input){
       el.innerHTML='❌ Could not read file: '+err.message;
       toast('❌ Import failed — is this a Story Magic backup file?');
     }
-    input.value=''; // reset so same file can be re-imported
+    input.value='';
   };
   reader.readAsText(input.files[0]);
 }
 
+// ─── API STATUS PILL ─────────────────────────────
+function updateApiStatusPill(){
+  const pill=document.getElementById('api-status-pill');
+  if(!pill)return;
+  const groqOk=localStorage.getItem('groq_key')?.startsWith('gsk_');
+  const elOk=!!(localStorage.getItem('el_key'));
+  const dot=groqOk?'🟢':'🔴';
+  pill.innerHTML=`${dot} <span id="xp-show">${S.xp}</span> XP`;
+  pill.title=groqOk?'Groq connected ✅':'No Groq key — tap to add';
+}
+
+// ─── FEEDBACK ────────────────────────────────────
+function openFeedback(){
+  const modal=document.getElementById('feedback-modal');
+  modal.style.display='flex';
+  renderFeedbackList();
+}
+function closeFeedback(){
+  document.getElementById('feedback-modal').style.display='none';
+}
+function saveFeedback(){
+  const inp=document.getElementById('feedback-inp');
+  const text=(inp.value||'').trim();
+  if(!text){toast('⚠️ Write something first!');return;}
+  const notes=JSON.parse(localStorage.getItem('sm_notes')||'[]');
+  notes.unshift({text,ts:new Date().toISOString()});
+  localStorage.setItem('sm_notes',JSON.stringify(notes.slice(0,50)));
+  inp.value='';
+  toast('📝 Note saved!');
+  renderFeedbackList();
+}
+function renderFeedbackList(){
+  const list=document.getElementById('feedback-list');if(!list)return;
+  const notes=JSON.parse(localStorage.getItem('sm_notes')||'[]');
+  if(notes.length===0){list.innerHTML='<div style="font-size:.78rem;color:var(--dim);text-align:center;padding:12px;">No notes yet — add your first one above!</div>';return;}
+  list.innerHTML=notes.map((n,i)=>`
+    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;position:relative;">
+      <div style="font-size:.8rem;line-height:1.55;white-space:pre-wrap;">${n.text.replace(/</g,'&lt;')}</div>
+      <div style="font-size:.66rem;color:var(--dim);margin-top:6px;">${new Date(n.ts).toLocaleString()}</div>
+      <div onclick="deleteFeedback(${i})" style="position:absolute;top:8px;right:8px;cursor:pointer;opacity:.5;font-size:.75rem;">✕</div>
+    </div>`).join('');
+}
+function deleteFeedback(i){
+  const notes=JSON.parse(localStorage.getItem('sm_notes')||'[]');
+  notes.splice(i,1);
+  localStorage.setItem('sm_notes',JSON.stringify(notes));
+  renderFeedbackList();
+}
+
+// ─── GREETING ────────────────────────────────────
+function updateGreeting(){
+  const h=new Date().getHours();
+  const greet=h<12?'morning':h<17?'afternoon':'evening';
+  const el=document.getElementById('time-greeting');if(el)el.textContent=greet;
+  const name=localStorage.getItem('par_name')||'';
+  const nameLine=document.getElementById('g-name-line');
+  if(nameLine&&name){
+    nameLine.innerHTML=`Hi <span style="background:linear-gradient(135deg,var(--gold2),var(--fire));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${name}</span>! Ready for adventure?`;
+  }
+}
+
 // ─── INIT ────────────────────────────────────────
 function init(){
+  // Demo pages for built-in stories that have no data
+  S.stories.forEach(s=>{if(!s.data) s.data=demoPages(s.theme,[S.heroes[0]?.name||'Alex',S.heroes[1]?.name]);});
+
   updateGroqStatus(localStorage.getItem('groq_key')||'');
   updateElStatus(localStorage.getItem('el_key')||'');
-  updateGemStatus(localStorage.getItem('gem_key')||'');
+  updateOAIStatus(localStorage.getItem('oai_key')||'');
   S.voiceEngine=localStorage.getItem('sm_engine')||'browser';
   S.voiceId=localStorage.getItem('sm_voice')||EL_VOICES[0].id;
+  S.followAlong=localStorage.getItem('sm_follow')==='true';
+
+  // Sync XP display
+  const xpEl=document.getElementById('xp-show');if(xpEl)xpEl.textContent=S.xp;
+
+  updateApiStatusPill();
+  updateStreakDisplay();
+  updateGreeting();
+  updateFollowToggleBtn();
+
   renderHeroStrip();renderStoryStrip();
+  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  document.getElementById('hero-count-lbl').textContent=
+    S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
+
   window.speechSynthesis?.getVoices();
   window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{});
   go('home');
