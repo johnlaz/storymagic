@@ -695,9 +695,9 @@ select.inp{appearance:none;cursor:pointer;}
         <div class="api-s">Free tier: 10,000 characters/month. Get a key at <a href="https://elevenlabs.io" target="_blank">elevenlabs.io</a></div>
         <div class="api-iw"><input class="inp" id="el-key-inp" type="password" placeholder="sk_…"><div class="api-eye" onclick="toggleEye('el-key-inp')">👁️</div></div>
         <div class="api-st"><div class="led off" id="el-led"></div><span id="el-st">No key</span></div>
-        <div class="api-btns"><button class="btn btn-v" onclick="saveElKey()">💾 Save</button><button class="btn btn-ghost" onclick="testElKey()">🧪 Test</button></div>
+        <div class="api-btns"><button class="btn btn-v" onclick="saveElKey()">💾 Save</button><button class="btn btn-ghost" onclick="testElKey()">🧪 Test</button><button class="btn btn-ghost" onclick="fetchAndRefreshElVoices()">🔄 Fetch Voices</button></div>
         <div style="margin-top:14px;">
-          <div class="lbl" style="margin-bottom:8px;">ElevenLabs Voice</div>
+          <div class="lbl" style="margin-bottom:4px;">ElevenLabs Voice <span id="el-voice-count" style="font-weight:700;color:var(--dim);font-size:.72rem;"></span></div>
           <div class="voice-grid" id="el-voice-grid"></div>
         </div>
       </div>
@@ -884,16 +884,40 @@ const POWERS=[
 
 // ─── ELEVENLABS VOICES ──────────────────────────
 // These are real ElevenLabs voice IDs from their public library
-const EL_VOICES=[
-  {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',  desc:'Warm & friendly female',  em:'👩'},
-  {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',  desc:'Clear & expressive female', em:'👩‍🦰'},
-  {id:'AZnzlk1XvdvUeBnXmlld',name:'Domi',   desc:'Energetic & fun female',   em:'🧑‍🎤'},
-  {id:'ErXwobaYiN019PkySvjV',name:'Antoni',  desc:'Warm male narrator',       em:'👨'},
-  {id:'VR6AewLTigWG4xSOukaG',name:'Arnold',  desc:'Deep & authoritative',     em:'👴'},
-  {id:'pNInz4obpvDQy73RuJsM',name:'Adam',   desc:'Calm & reassuring male',   em:'👨‍💼'},
-  {id:'yoZ06aMxZJJ28mfd3POQ',name:'Sam',    desc:'Bright & cheerful',        em:'🧒'},
-  {id:'jBpfuIE2acCO8z3wKNLl',name:'Ethan',  desc:'Young & adventurous',      em:'👦'},
+// EL_VOICES populated dynamically from the user's account — not hardcoded
+// Fallback list used only if API fetch fails
+const EL_VOICES_FALLBACK=[
+  {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',   desc:'Warm & friendly',    em:'👩'},
+  {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',  desc:'Clear & expressive', em:'👩‍🦰'},
+  {id:'ErXwobaYiN019PkySvjV',name:'Antoni',  desc:'Warm narrator',      em:'👨'},
+  {id:'pNInz4obpvDQy73RuJsM',name:'Adam',   desc:'Calm & reassuring',  em:'👨‍💼'},
+  {id:'yoZ06aMxZJJ28mfd3POQ',name:'Sam',    desc:'Bright & cheerful',  em:'🧒'},
 ];
+let EL_VOICES=JSON.parse(localStorage.getItem('el_voices_cache')||'null')||EL_VOICES_FALLBACK;
+
+async function fetchElVoices(key){
+  try{
+    const res=await fetch('https://api.elevenlabs.io/v1/voices',{
+      headers:{'xi-api-key':key}
+    });
+    if(!res.ok) return false;
+    const data=await res.json();
+    if(!data.voices||!data.voices.length) return false;
+    EL_VOICES=data.voices.map(v=>({
+      id:v.voice_id,
+      name:v.name,
+      desc:v.labels?(Object.values(v.labels).slice(0,2).join(', '))||'':'',
+      em:'🎤'
+    })).sort((a,b)=>a.name.localeCompare(b.name));
+    localStorage.setItem('el_voices_cache',JSON.stringify(EL_VOICES));
+    // Auto-select first voice if current voiceId isn't in this account's list
+    if(EL_VOICES.length>0&&!EL_VOICES.find(v=>v.id===S.voiceId)){
+      S.voiceId=EL_VOICES[0].id;
+      localStorage.setItem('sm_voice',S.voiceId);
+    }
+    return true;
+  }catch(e){ return false; }
+}
 
 // ─── ILLUSTRATIONS ──────────────────────────────
 const ILLUS={
@@ -1917,6 +1941,12 @@ async function startElevenLabs(text,key){
   stopSpeech();
   speechActive=true;
   document.getElementById('ral-play-btn').textContent='⏸';
+  // Guard: if voiceId isn't in fetched voice list, use first available
+  const voiceList=JSON.parse(localStorage.getItem('el_voices_cache')||'null');
+  if(voiceList&&voiceList.length>0&&!voiceList.find(v=>v.id===S.voiceId)){
+    S.voiceId=voiceList[0].id;
+    localStorage.setItem('sm_voice',S.voiceId);
+  }
   try{
     const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{
       method:'POST',
@@ -1937,9 +1967,11 @@ async function startElevenLabs(text,key){
     animateWordCursor(text);
   }catch(e){
     console.warn('ElevenLabs error:',e);
-    toast('⚠️ ElevenLabs error — switching to device voice');
-    localStorage.removeItem('el_key');
-    document.getElementById('el-led').className='led off';
+    if(e.message.includes('401')){
+      toast('⚠️ ElevenLabs 401 — check your key or re-select a voice in Parent Area');
+    } else {
+      toast('⚠️ ElevenLabs error — switching to device voice');
+    }
     startBrowserTTS(text);
   }
 }
@@ -2189,12 +2221,27 @@ function renderOAIVoiceGrid(){
 }
 function renderElVoiceGrid(){
   const g=document.getElementById('el-voice-grid');if(!g)return;g.innerHTML='';
+  const countEl=document.getElementById('el-voice-count');
+  if(countEl) countEl.textContent=EL_VOICES.length?'('+EL_VOICES.length+' voices)':'';
+  if(EL_VOICES.length===0){
+    g.innerHTML='<div style="font-size:.75rem;color:var(--dim);padding:8px;">No voices loaded — tap 🔄 Fetch Voices with your key entered.</div>';
+    return;
+  }
   EL_VOICES.forEach(v=>{
     const d=document.createElement('div');d.className='vc'+(v.id===S.voiceId?' on':'');
     d.onclick=()=>{document.querySelectorAll('#el-voice-grid .vc').forEach(c=>c.classList.remove('on'));d.classList.add('on');S.voiceId=v.id;localStorage.setItem('sm_voice',v.id);toast('🎤 Voice: '+v.name);};
-    d.innerHTML=`<div class="vc-name">${v.em} ${v.name}</div><div class="vc-desc">${v.desc}</div>`;
+    d.innerHTML='<div class="vc-name">'+(v.em||'🎤')+' '+v.name+'</div><div class="vc-desc">'+(v.desc||'')+'</div>';
     g.appendChild(d);
   });
+}
+
+async function fetchAndRefreshElVoices(){
+  const k=localStorage.getItem('el_key')||document.getElementById('el-key-inp').value.trim();
+  if(!k){toast('⚠️ Enter and save your ElevenLabs key first');return;}
+  toast('🔄 Fetching your voices…');
+  const ok=await fetchElVoices(k);
+  if(ok){renderElVoiceGrid();toast('✅ '+EL_VOICES.length+' voices loaded from your account');}
+  else{toast('❌ Could not fetch voices — check your key');}
 }
 
 // OpenAI TTS
@@ -2519,43 +2566,59 @@ async function testGroqKey(){const k=document.getElementById('groq-inp').value.t
 function updateGroqStatus(k){const l=document.getElementById('api-led'),t=document.getElementById('api-st-txt');if(k&&k.startsWith('gsk_')){l.className='led on';t.textContent='Groq connected — AI stories ready ⚡';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — demo stories used';t.style.color='var(--dim)';}}
 
 // ElevenLabs
-function saveElKey(){const k=document.getElementById('el-key-inp').value.trim();if(!k){toast('⚠️ Enter an ElevenLabs key');return;}localStorage.setItem('el_key',k);updateElStatus(k);toast('✅ ElevenLabs key saved! Lifelike narration enabled 🎙️');}
+async function saveElKey(){
+  const k=document.getElementById('el-key-inp').value.trim();
+  if(!k){toast('⚠️ Enter an ElevenLabs key');return;}
+  localStorage.setItem('el_key',k);
+  updateElStatus(k);
+  toast('🎙️ Fetching your voices…');
+  const ok=await fetchElVoices(k);
+  if(ok){
+    renderElVoiceGrid();
+    toast('✅ ElevenLabs connected — '+EL_VOICES.length+' voices loaded 🎙️');
+  } else {
+    // Fetch may fail on file:// due to CORS — key is saved, voices load on GitHub Pages
+    toast('✅ Key saved! Tap 🔄 Fetch Voices to load your voice list.');
+  }
+}
 async function testElKey(){
   const k=document.getElementById('el-key-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}
   toast('🧪 Testing ElevenLabs…');
   try{
-    const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{method:'POST',headers:{'Content-Type':'application/json','xi-api-key':k},body:JSON.stringify({text:'Hello! Story Magic narration is working perfectly!',model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})});
+    const res=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':k}});
     if(!res.ok)throw new Error('HTTP '+res.status);
-    const buf=await res.arrayBuffer();
-    if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    _audioCtx.decodeAudioData(buf,decoded=>{const s=_audioCtx.createBufferSource();s.buffer=decoded;s.connect(_audioCtx.destination);s.start(0);});
-    toast('✅ ElevenLabs works! Lifelike voice enabled 🎙️');
-    localStorage.setItem('el_key',k);updateElStatus(k);
+    const data=await res.json();
+    EL_VOICES=data.voices.map(v=>({id:v.voice_id,name:v.name,desc:v.labels?Object.values(v.labels).slice(0,2).join(', '):'',em:'🎤'})).sort((a,b)=>a.name.localeCompare(b.name));
+    localStorage.setItem('el_voices_cache',JSON.stringify(EL_VOICES));
+    localStorage.setItem('el_key',k);updateElStatus(k);renderElVoiceGrid();
+    toast('✅ ElevenLabs works — '+EL_VOICES.length+' voices available 🎙️');
   }catch(e){toast('❌ ElevenLabs error: '+e.message.slice(0,40));}
 }
 function updateElStatus(k){const l=document.getElementById('el-led'),t=document.getElementById('el-st');if(k&&k.length>8){l.className='led on';t.textContent='ElevenLabs connected — lifelike narration ready 🎙️';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — using device voice';t.style.color='var(--dim)';}}
 
 function requestPrint(){const e=document.getElementById('print-email').value.trim();if(!e||!e.includes('@')){toast('⚠️ Enter a valid parent email');return;}document.getElementById('pr-confirm').style.display='block';toast('📧 Checkout link sent to '+e+'!');}
 function exportAll(includeArtwork=false){
-  // For each story, get illustrations from the dedicated sm_illus_ key (authoritative source)
-  // rather than from S.stories in memory, which may not be rehydrated in all cases
+  // Read illustration from localStorage compact key — export as compact {img,pages}
+  // Never expand to {p0,p1,...} — that multiplies file size by page count
   function getStoredIllustrations(story){
     try{
       const raw=localStorage.getItem('sm_illus_'+story.id);
       if(raw){
         const parsed=JSON.parse(raw);
         if(parsed.img){
-          // Compact format — reconstruct full per-page mapping for export
-          const pageCount=story.data?story.data.length:(parsed.pages||1);
-          const illus={};
-          for(let i=0;i<pageCount;i++) illus['p'+i]=parsed.img;
-          return illus;
+          // Already compact — export as-is
+          return {img:parsed.img, pages:story.data?story.data.length:(parsed.pages||1)};
         }
-        return parsed; // legacy full format
+        // Legacy full format in localStorage — compact it on the way out
+        const vals=Object.values(parsed).filter(v=>typeof v==='string'&&v.startsWith('data:'));
+        if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
       }
     }catch(e){}
-    // Fall back to in-memory (artwork added this session)
-    if(story.illustrations&&Object.keys(story.illustrations).length>0) return story.illustrations;
+    // Fall back to in-memory (artwork added this session, not yet persisted)
+    if(story.illustrations){
+      const vals=Object.values(story.illustrations).filter(v=>typeof v==='string'&&v.startsWith('data:'));
+      if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
+    }
     return null;
   }
 
@@ -2571,9 +2634,9 @@ function exportAll(includeArtwork=false){
     return base;
   });
 
-  // Count illustrated stories for toast message
+  // Count illustrated stories for toast
   const artStoryCount=includeArtwork
-    ? storiesPayload.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0).length
+    ? storiesPayload.filter(s=>s.illustrations&&(s.illustrations.img||Object.values(s.illustrations).some(v=>typeof v==='string'&&v.startsWith('data:')))).length
     : 0;
 
   const payload={
@@ -2719,9 +2782,14 @@ function importAll(input){
       // Restore API keys
       if(data.keys){
         if(data.keys.groq)  { localStorage.setItem('groq_key', data.keys.groq);  updateGroqStatus(data.keys.groq); results.push('✅ Groq key restored'); }
-        if(data.keys.el)    { localStorage.setItem('el_key',   data.keys.el);    updateElStatus(data.keys.el);   results.push('✅ ElevenLabs key restored'); }
+        if(data.keys.el)    {
+          localStorage.setItem('el_key', data.keys.el);
+          updateElStatus(data.keys.el);
+          results.push('✅ ElevenLabs key restored');
+          // Re-fetch voices for the restored key so voice picker is current
+          fetchElVoices(data.keys.el).then(ok=>{ if(ok) renderElVoiceGrid(); });
+        }
         if(data.keys.oai)   { localStorage.setItem('oai_key',  data.keys.oai);   updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
-        // Legacy gemini key — just discard silently
       }
 
       // Restore preferences
@@ -2734,8 +2802,8 @@ function importAll(input){
         if(data.prefs.voice_engine||data.prefs.child_name) results.push('✅ Preferences restored');
       }
 
-      // Re-render UI
-      renderHeroStrip(); renderStoryStrip(); renderLib();
+      // Re-render UI — including Parent Area so key inputs repopulate
+      renderHeroStrip(); renderStoryStrip(); renderLib(); renderParent();
       updateStreakDisplay();
       document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
 
