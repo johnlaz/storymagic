@@ -507,6 +507,7 @@ select.inp{appearance:none;cursor:pointer;}
     </div>
     <div class="ral-spd" id="ral-spd" onclick="cycleSpeed()">1×</div>
     <div class="ral-voice-btn" id="follow-toggle" onclick="toggleFollowAlong()" title="Follow Along — highlight words as they're read">👁️</div>
+    <div class="ral-voice-btn" id="view-toggle-btn" onclick="toggleScrollView()" title="Scroll view — read all pages at once">📜</div>
   </div>
   <div class="page-wrap">
     <div class="page-lbl" id="page-lbl">Page 1 of 6</div>
@@ -938,16 +939,24 @@ function saveIllustrations(story){
     localStorage.removeItem('sm_illus_'+story.id);
     return;
   }
-  // All pages use the same image — store just one copy, not N copies
-  // Format: JSON {img: "data:...", pages: 6}
+  const key='sm_illus_'+story.id;
+  // Store single image — compact format
   const payload=JSON.stringify({img:vals[0], pages:story.data?story.data.length:vals.length});
   try{
-    localStorage.setItem('sm_illus_'+story.id, payload);
+    localStorage.setItem(key, payload);
+    // Verify the write actually stuck (some browsers silently fail)
+    const verify=localStorage.getItem(key);
+    if(!verify){
+      console.warn('saveIllustrations: write silently failed for',story.id);
+    }
   }catch(e){
-    console.warn('Could not persist illustration for',story.id,'— localStorage quota exceeded');
-    // Try to free space by removing other illus keys for stories not currently in S.stories
+    console.warn('saveIllustrations quota error for',story.id,e.message);
     pruneOrphanIllustrations();
-    try{ localStorage.setItem('sm_illus_'+story.id, payload); }catch(e2){}
+    try{
+      localStorage.setItem(key, payload);
+    }catch(e2){
+      console.warn('saveIllustrations failed after prune for',story.id);
+    }
   }
 }
 function loadIllustrations(story){
@@ -2560,6 +2569,12 @@ function importAll(input){
         S.stories=[...newStories,...S.stories];
         saveStories();
 
+        // Final sweep: re-save all illustrations after S.stories is fully updated
+        // This ensures any story that was in-memory but not yet persisted gets written
+        S.stories.forEach(s=>{
+          if(s.illustrations&&Object.keys(s.illustrations).length>0) saveIllustrations(s);
+        });
+
         const artNote=artRestoredCount>0?` with artwork for ${artRestoredCount} ${artRestoredCount===1?'story':'stories'}`:'';
         results.push(`✅ ${newStories.length} new stories imported${artNote} (${data.stories.length} in file)`);
       }
@@ -2714,8 +2729,8 @@ function init(){
 
   // Rehydrate illustrations from their individual localStorage keys
   // Also prune any orphan keys from deleted stories to free space
-  pruneOrphanIllustrations();
   rehydrateAllIllustrations();
+  pruneOrphanIllustrations();
 
   updateGroqStatus(localStorage.getItem('groq_key')||'');
   updateElStatus(localStorage.getItem('el_key')||'');
