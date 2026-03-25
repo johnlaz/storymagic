@@ -322,7 +322,7 @@ select.inp{appearance:none;cursor:pointer;}
 <!-- ══════════ HOME ══════════ -->
 <div id="pg-home" class="scr on">
   <div class="tb">
-    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.5</span></div>
+    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.7</span></div>
     <div class="tb-r">
       <div class="pill" id="api-status-pill" onclick="go('parent')" title="API Status">⚡ <span id="xp-show">0</span> XP</div>
       <div class="pill" style="cursor:pointer;" onclick="openFeedback()">📝</div>
@@ -548,22 +548,20 @@ select.inp{appearance:none;cursor:pointer;}
       </button>
     </div>
 
-    <!-- Replace artwork bar — shown when story already has artwork -->
-    <div id="artwork-replace-bar" style="display:none;">
-      <div style="display:flex;align-items:center;gap:10px;background:rgba(124,58,237,.12);border:1px solid rgba(167,139,250,.25);border-radius:var(--rr);padding:14px 16px;margin-bottom:10px;">
-        <div style="font-size:1.4rem;">🖼️</div>
-        <div style="flex:1;">
-          <div style="font-weight:900;font-size:.85rem;">This story has artwork</div>
-          <div style="font-size:.72rem;color:var(--dim);margin-top:2px;">Replace it with a new image anytime</div>
-        </div>
-      </div>
-      <button class="btn btn-v" onclick="showReplaceArtwork()" style="margin-bottom:8px;">🎨 Replace Artwork</button>
-    </div>
-
     <!-- Hidden file input -->
     <input type="file" id="art-file-inp" accept="image/*" style="display:none" onchange="injectArtFromFile(this)">
 
   </div>
+</div>
+
+<!-- ══════════ SCROLL VIEW ══════════ -->
+<div id="pg-scroll" class="scr">
+  <div class="tb">
+    <div class="back" onclick="closeScrollView()">←</div>
+    <div class="logo" style="font-size:1.1rem;flex:1;margin:0 8px;" id="scroll-title-tb">Reading…</div>
+    <div class="pill btn-sm" onclick="exportStory()">💾</div>
+  </div>
+  <div id="scroll-body" style="padding:0 18px 48px;"></div>
 </div>
 
 <!-- ══════════ LIBRARY ══════════ -->
@@ -594,8 +592,6 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="ftab" onclick="filterLib(this,'ancient egypt')">🏺 Egypt</div>
   </div>
   <div class="lgrid" id="lib-grid"></div>
-  <!-- Hidden file input for quick-add artwork from library cards -->
-  <input type="file" id="lib-art-inp" accept="image/*" style="display:none" onchange="handleLibArtFile(this)">
 </div>
 
 <!-- ══════════ BADGES ══════════ -->
@@ -828,6 +824,7 @@ select.inp{appearance:none;cursor:pointer;}
 
 <script>
 'use strict';
+const APP_VERSION='2.7';
 // ─── HELPERS ────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let _tt;
@@ -1049,7 +1046,7 @@ const demoPages=(theme,heroNames)=>{
 };
 
 // ─── NAVIGATION ─────────────────────────────────
-const PAGES=['home','heroes','build','reader','library','badges','parent'];
+const PAGES=['home','heroes','build','reader','scroll','library','badges','parent'];
 const NAVMAP={home:'ni-home',library:'ni-library',badges:'ni-badges',parent:'ni-parent'};
 function go(id){
   stopSpeech();
@@ -1364,6 +1361,85 @@ let activeStory=null, curPage=0;
 let speechActive=false, speechRate=1;
 let wordEls=[], elAudioEl=null;
 
+
+// ── Scroll view: read entire story on one page ──
+let _scrollViewOpen=false;
+
+function toggleScrollView(){
+  _scrollViewOpen ? closeScrollView() : openScrollView();
+}
+
+function openScrollView(){
+  if(!activeStory) return;
+  _scrollViewOpen=true;
+  stopSpeech();
+
+  document.getElementById('scroll-title-tb').textContent=activeStory.title;
+  const body=document.getElementById('scroll-body');
+  body.innerHTML='';
+
+  activeStory.data.forEach((text,i)=>{
+    const wrap=document.createElement('div');
+    wrap.style.cssText='margin-bottom:32px;';
+
+    // Illustration
+    const ilDiv=document.createElement('div');
+    ilDiv.style.cssText='border-radius:var(--rr);overflow:hidden;margin-bottom:14px;';
+    const ilKey='p'+i;
+    if(activeStory.illustrations&&activeStory.illustrations[ilKey]){
+      const img=document.createElement('img');
+      img.src=activeStory.illustrations[ilKey];
+      img.style.cssText='width:100%;display:block;border-radius:var(--rr);';
+      ilDiv.appendChild(img);
+    } else {
+      ilDiv.innerHTML=getIllus(activeStory.theme,i+1);
+    }
+    wrap.appendChild(ilDiv);
+
+    // Page label
+    const lbl=document.createElement('div');
+    lbl.style.cssText='font-size:.7rem;font-weight:900;color:var(--v2);margin-bottom:8px;';
+    lbl.textContent='Page '+(i+1)+' of '+activeStory.data.length;
+    wrap.appendChild(lbl);
+
+    // Text with tappable words
+    const textDiv=document.createElement('div');
+    textDiv.style.cssText='font-size:1.08rem;line-height:1.9;font-weight:700;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:20px;';
+    text.split(/(\s+)/).forEach(tok=>{
+      if(/^\s+$/.test(tok)){ textDiv.appendChild(document.createTextNode(tok)); }
+      else {
+        const sp=document.createElement('span');sp.className='word';sp.textContent=tok;
+        sp.onclick=()=>speakWord(tok.replace(/[^a-zA-Z']/g,''));
+        textDiv.appendChild(sp);
+      }
+    });
+    wrap.appendChild(textDiv);
+
+    if(i<activeStory.data.length-1){
+      const hr=document.createElement('div');
+      hr.style.cssText='height:1px;background:var(--bdr);margin-top:32px;';
+      wrap.appendChild(hr);
+    }
+    body.appendChild(wrap);
+  });
+
+  const btn=document.getElementById('view-toggle-btn');
+  if(btn){btn.textContent='📖';btn.title='Switch to page view';}
+
+  PAGES.forEach(p=>document.getElementById('pg-'+p)?.classList.remove('on'));
+  document.getElementById('pg-scroll').classList.add('on');
+  window.scrollTo(0,0);
+}
+
+function closeScrollView(){
+  _scrollViewOpen=false;
+  const btn=document.getElementById('view-toggle-btn');
+  if(btn){btn.textContent='📜';btn.title='Scroll view — read all pages at once';}
+  PAGES.forEach(p=>document.getElementById('pg-'+p)?.classList.remove('on'));
+  document.getElementById('pg-reader').classList.add('on');
+  window.scrollTo(0,0);
+}
+
 function readerBack(){stopSpeech();go('library');}
 
 // ── Apply artwork — shared by all paths ──
@@ -1377,20 +1453,6 @@ function applyArtwork(dataUrl){
   renderReaderPage();
   toast('🎉 Artwork saved! Your picture book is ready. +25 XP');
   addXP(25);
-}
-
-// ── Replace artwork — resets state so user can pick a new image ──
-function showReplaceArtwork(){
-  // Clear illustrated flag so full artwork panel shows
-  if(activeStory){
-    activeStory.illustrated=false;
-  }
-  const step1=document.getElementById('artwork-step1');
-  const step2=document.getElementById('artwork-step2');
-  const replaceBar=document.getElementById('artwork-replace-bar');
-  if(step1) step1.style.display='block';
-  if(step2) step2.style.display='none';
-  if(replaceBar) replaceBar.style.display='none';
 }
 
 // ── Step 1: Copy story prompt to clipboard + open Gemini ──
@@ -1599,6 +1661,7 @@ function openReader(id){
   const s=S.stories.find(x=>x.id===id);if(!s)return;
   activeStory=s;curPage=0;stopSpeech();
   recordActivity();
+  loadIllustrations(activeStory); // safety net — ensure artwork loaded from localStorage
   document.getElementById('r-title-tb').textContent=s.title;
   renderReaderPage();go('reader');
 }
@@ -1649,17 +1712,7 @@ function renderReaderPage(){
   // 4. Show/hide artwork section below reader
   const picWrap=document.getElementById('picbook-wrap');
   if(picWrap){
-    picWrap.style.display='block';
-    // If already illustrated, swap to the replace-artwork mini panel
-    const step1=document.getElementById('artwork-step1');
-    const replaceBtn=document.getElementById('artwork-replace-bar');
-    if(activeStory.illustrated===true){
-      if(step1) step1.style.display='none';
-      if(replaceBtn) replaceBtn.style.display='block';
-    } else {
-      if(step1) step1.style.display='block';
-      if(replaceBtn) replaceBtn.style.display='none';
-    }
+    picWrap.style.display=activeStory.illustrated===true?'none':'block';
   }
 
   // ── Voice label ──
@@ -2186,17 +2239,11 @@ function renderLib(){
     const coverHtml=coverImg
       ?`<div style="position:relative;"><img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.5);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`
       :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0&&!isLocked?'<div class="lnew">NEW</div>':''}${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.4);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`;
-
-    // Edit chips — all hidden when locked, shown when unlocked
-    const editChips=isLocked?'':`
-      <span style="font-size:.62rem;background:rgba(14,165,233,.15);border:1px solid rgba(125,211,252,.25);border-radius:var(--pill);padding:2px 8px;color:var(--sky2);font-weight:900;cursor:pointer;" title="${coverImg?'Replace artwork':'Add artwork'}" onclick="event.stopPropagation();quickAddArt('${s.id}')">${coverImg?'🖼️ Art':'🖼️ Add'}</span>
-      <span style="font-size:.62rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:2px 8px;color:#f87171;font-weight:900;cursor:pointer;" onclick="event.stopPropagation();deleteStory('${s.id}')">🗑️</span>`;
-
     d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">
       <span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span>
       <span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span>
       <span style="font-size:.62rem;${lockStyle}border-radius:var(--pill);padding:2px 8px;font-weight:900;cursor:pointer;" title="${lockTitle}" onclick="event.stopPropagation();toggleLockStory('${s.id}')">${lockIcon}</span>
-      ${editChips}
+      ${!isLocked?`<span style="font-size:.62rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:2px 8px;color:#f87171;font-weight:900;cursor:pointer;" onclick="event.stopPropagation();deleteStory('${s.id}')">🗑️</span>`:''}
     </div></div></div>`;
     grid.appendChild(d);
   });
@@ -2212,34 +2259,7 @@ function toggleLockStory(id){
   s.locked=!s.locked;
   saveStories();
   renderLib();
-  toast(s.locked?'🔒 Story locked — edit buttons hidden':'🔓 Story unlocked');
-}
-
-// Quick-add artwork directly from the library card — no need to open the reader
-function quickAddArt(id){
-  const s=S.stories.find(x=>x.id===id);
-  if(!s){toast('⚠️ Story not found');return;}
-  if(s.locked){toast('🔒 Unlock this story first');return;}
-  // Set as active story so applyArtwork targets it
-  activeStory=s;
-  const inp=document.getElementById('lib-art-inp');
-  if(inp){inp.dataset.storyId=id;inp.click();}
-}
-
-function handleLibArtFile(input){
-  const id=input.dataset.storyId;
-  const s=S.stories.find(x=>x.id===id);
-  if(!s||!input.files[0]){input.value='';return;}
-  activeStory=s;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    applyArtwork(e.target.result);
-    input.value='';
-    renderLib();       // refresh covers immediately
-    renderStoryStrip(); // refresh home strip too
-    toast('🖼️ Artwork saved to '+s.title+'!');
-  };
-  reader.readAsDataURL(input.files[0]);
+  toast(s.locked?'🔒 Story locked — delete button hidden':'🔓 Story unlocked');
 }
 
 function deleteStory(id){
@@ -2329,14 +2349,14 @@ function renderParent(){
         const raw=localStorage.getItem('sm_illus_'+s.id);
         if(raw){
           illustratedCount++;
-          // Compact format — export stores one image per story, not per page
+          // Compact format stores one image — actual export size = image × pages
           const parsed=JSON.parse(raw);
-          totalBytes+=parsed.img?parsed.img.length:raw.length;
+          const imgSize=parsed.img?parsed.img.length:raw.length;
+          const pages=s.data?s.data.length:(parsed.pages||1);
+          totalBytes+=imgSize*pages;
         } else if(s.illustrations&&Object.keys(s.illustrations).length>0){
           illustratedCount++;
-          // Use first page only (all pages are the same image)
-          const first=Object.values(s.illustrations)[0];
-          if(first) totalBytes+=first.length;
+          Object.values(s.illustrations).forEach(v=>totalBytes+=v.length);
         }
       }catch(e){}
     });
@@ -2407,19 +2427,17 @@ function exportAll(includeArtwork=false){
       if(raw){
         const parsed=JSON.parse(raw);
         if(parsed.img){
-          // Already compact {img, pages} — export as-is, tiny file size
-          return {img:parsed.img, pages:story.data?story.data.length:(parsed.pages||1)};
+          // Compact format — reconstruct full per-page mapping for export
+          const pageCount=story.data?story.data.length:(parsed.pages||1);
+          const illus={};
+          for(let i=0;i<pageCount;i++) illus['p'+i]=parsed.img;
+          return illus;
         }
-        // Legacy full format {p0,p1,...} — compact it before export
-        const vals=Object.values(parsed).filter(Boolean);
-        if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
+        return parsed; // legacy full format
       }
     }catch(e){}
-    // Fall back to in-memory (artwork added this session, not yet persisted)
-    if(story.illustrations&&Object.keys(story.illustrations).length>0){
-      const vals=Object.values(story.illustrations).filter(Boolean);
-      if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
-    }
+    // Fall back to in-memory (artwork added this session)
+    if(story.illustrations&&Object.keys(story.illustrations).length>0) return story.illustrations;
     return null;
   }
 
@@ -2443,7 +2461,7 @@ function exportAll(includeArtwork=false){
   const payload={
     exported: new Date().toISOString(),
     app: 'Story Magic',
-    version: '2.5',
+    version: '2.7',
     includesArtwork: includeArtwork,
     heroes: S.heroes,
     stories: storiesPayload,
@@ -2505,27 +2523,23 @@ function importAll(input){
         const existingIds=new Set(S.stories.map(s=>s.id));
         let artRestoredCount=0;
 
-        // Extract the single image data URL from any illustration format
         function extractImg(illusObj){
           if(!illusObj) return null;
           if(illusObj.img&&typeof illusObj.img==='string'&&illusObj.img.startsWith('data:')) return illusObj.img;
-          const pageVals=Object.entries(illusObj).filter(([k])=>k.startsWith('p')&&!isNaN(k.slice(1))).map(([,v])=>v);
-          if(pageVals.length>0&&typeof pageVals[0]==='string'&&pageVals[0].startsWith('data:')) return pageVals[0];
+          const pv=Object.entries(illusObj).filter(([k])=>k.startsWith('p')&&!isNaN(k.slice(1))).map(([,v])=>v);
+          if(pv.length>0&&typeof pv[0]==='string'&&pv[0].startsWith('data:')) return pv[0];
           return null;
         }
-
-        // Apply image to a story object in memory and persist to localStorage
         function applyImportedArt(story,imgDataUrl){
           if(!imgDataUrl) return false;
-          const pageCount=story.data?story.data.length:(story.pages||1);
+          const pc=story.data?story.data.length:(story.pages||1);
           story.illustrations={};
-          for(let i=0;i<pageCount;i++) story.illustrations['p'+i]=imgDataUrl;
+          for(let i=0;i<pc;i++) story.illustrations['p'+i]=imgDataUrl;
           story.illustrated=true;
           saveIllustrations(story);
           return true;
         }
 
-        // New stories: add to library and restore artwork
         const newStories=data.stories
           .filter(s=>!existingIds.has(s.id))
           .map(s=>{
@@ -2535,7 +2549,6 @@ function importAll(input){
             return story;
           });
 
-        // Existing stories: restore artwork only
         data.stories.forEach(imported=>{
           if(!existingIds.has(imported.id)) return;
           const img=extractImg(imported.illustrations);
@@ -2684,6 +2697,17 @@ function updateGreeting(){
 }
 
 // ─── INIT ────────────────────────────────────────
+function checkAppVersion(){
+  const stored=localStorage.getItem('sm_app_version');
+  if(stored&&stored!==APP_VERSION){
+    const banner=document.createElement('div');
+    banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999;background:linear-gradient(135deg,var(--fire),#b45309);color:#fff;padding:12px 16px;font-family:Nunito,sans-serif;font-size:.82rem;font-weight:900;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.4);';
+    banner.innerHTML='<span style="flex:1;">⚠️ Story Magic updated to v'+APP_VERSION+' — you may be running a cached old version. Please clear your browser cache and reload.</span><span onclick="this.parentElement.remove()" style="cursor:pointer;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 10px;">✕</span>';
+    document.body.appendChild(banner);
+  }
+  localStorage.setItem('sm_app_version',APP_VERSION);
+}
+
 function init(){
   // Demo pages for built-in stories that have no data
   S.stories.forEach(s=>{if(!s.data) s.data=demoPages(s.theme,[S.heroes[0]?.name||'Alex',S.heroes[1]?.name]);});
@@ -2713,6 +2737,7 @@ function init(){
   document.getElementById('hero-count-lbl').textContent=
     S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
 
+  checkAppVersion();
   window.speechSynthesis?.getVoices();
   // voiceschanged fires asynchronously in Chrome — store voices when ready
   if(window.speechSynthesis){
