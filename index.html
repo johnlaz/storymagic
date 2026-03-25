@@ -562,6 +562,17 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="logo" style="font-size:1.1rem;flex:1;margin:0 8px;" id="scroll-title-tb">Reading…</div>
     <div class="pill btn-sm" onclick="exportStory()">💾</div>
   </div>
+  <!-- Sticky audio bar — same as reader -->
+  <div class="ral-bar">
+    <div class="ral-play" id="scroll-play-btn" onclick="toggleScrollSpeech()">▶</div>
+    <div class="ral-info">
+      <div class="ral-t" id="scroll-chapter">Full Story</div>
+      <div class="ral-s">Tap ▶ to read aloud · Tap any word to hear it</div>
+      <div class="ral-prog"><div class="ral-fill" id="scroll-fill"></div></div>
+    </div>
+    <div class="ral-spd" id="scroll-spd" onclick="cycleScrollSpeed()">1×</div>
+    <div class="ral-voice-btn" id="scroll-follow-toggle" onclick="toggleFollowAlong()" title="Follow Along">👁️</div>
+  </div>
   <div id="scroll-body" style="padding:0 18px 48px;"></div>
 </div>
 
@@ -1378,10 +1389,16 @@ function toggleScrollView(){
   _scrollViewOpen ? closeScrollView() : openScrollView();
 }
 
+// scrollWordEls[pageIndex] = array of span elements for that page
+let scrollWordEls=[];
+let scrollReadPage=0; // which page is currently being read in scroll mode
+
 function openScrollView(){
   if(!activeStory) return;
   _scrollViewOpen=true;
   stopSpeech();
+  scrollWordEls=[];
+  scrollReadPage=0;
 
   document.getElementById('scroll-title-tb').textContent=activeStory.title;
   const body=document.getElementById('scroll-body');
@@ -1407,21 +1424,26 @@ function openScrollView(){
 
     // Page label
     const lbl=document.createElement('div');
+    lbl.setAttribute('id','scroll-page-lbl-'+i);
     lbl.style.cssText='font-size:.7rem;font-weight:900;color:var(--v2);margin-bottom:8px;';
     lbl.textContent='Page '+(i+1)+' of '+activeStory.data.length;
     wrap.appendChild(lbl);
 
-    // Text with tappable words
+    // Text with tappable words — collect into scrollWordEls[i]
     const textDiv=document.createElement('div');
+    textDiv.setAttribute('id','scroll-page-text-'+i);
     textDiv.style.cssText='font-size:1.08rem;line-height:1.9;font-weight:700;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:20px;';
+    const pageSpans=[];
     text.split(/(\s+)/).forEach(tok=>{
       if(/^\s+$/.test(tok)){ textDiv.appendChild(document.createTextNode(tok)); }
       else {
         const sp=document.createElement('span');sp.className='word';sp.textContent=tok;
         sp.onclick=()=>speakWord(tok.replace(/[^a-zA-Z']/g,''));
         textDiv.appendChild(sp);
+        pageSpans.push(sp);
       }
     });
+    scrollWordEls.push(pageSpans);
     wrap.appendChild(textDiv);
 
     if(i<activeStory.data.length-1){
@@ -1432,6 +1454,14 @@ function openScrollView(){
     body.appendChild(wrap);
   });
 
+  // Sync follow-along button state
+  updateFollowToggleBtn();
+  const sfb=document.getElementById('scroll-follow-toggle');
+  if(sfb){
+    sfb.style.background=S.followAlong?'rgba(245,158,11,.35)':'var(--card)';
+    sfb.style.color=S.followAlong?'var(--gold2)':'var(--v2)';
+  }
+
   const btn=document.getElementById('view-toggle-btn');
   if(btn){btn.textContent='📖';btn.title='Switch to page view';}
 
@@ -1440,8 +1470,122 @@ function openScrollView(){
   window.scrollTo(0,0);
 }
 
+// Toggle play/pause for scroll read-aloud
+function toggleScrollSpeech(){
+  if(speechActive){stopSpeech();return;}
+  startScrollRead(scrollReadPage);
+}
+
+// Read pages sequentially starting from pageIdx
+function startScrollRead(pageIdx){
+  if(!activeStory||pageIdx>=activeStory.data.length) return;
+  scrollReadPage=pageIdx;
+
+  // Point global wordEls at this page's spans for highlight/boundary to work
+  wordEls=scrollWordEls[pageIdx]||[];
+
+  // Scroll the page label into view smoothly
+  const lbl=document.getElementById('scroll-page-lbl-'+pageIdx);
+  if(lbl) lbl.scrollIntoView({behavior:'smooth',block:'start'});
+
+  // Update chapter label and progress
+  const total=activeStory.data.length;
+  const chapEl=document.getElementById('scroll-chapter');
+  if(chapEl) chapEl.textContent='Page '+(pageIdx+1)+' of '+total;
+
+  // Temporarily set curPage so startSpeech reads the right text
+  const savedCurPage=curPage;
+  curPage=pageIdx;
+
+  // Override onend to advance to next page instead of just stopping
+  const text=activeStory.data[pageIdx];
+  const engine=S.voiceEngine||'browser';
+  const elKey=localStorage.getItem('el_key')||'';
+  const oaiKey=localStorage.getItem('oai_key')||'';
+
+  function onPageEnd(){
+    speechActive=false;
+    wordEls.forEach(w=>w.classList.remove('spoken'));
+    const pct=((pageIdx+1)/total)*100;
+    const fillEl=document.getElementById('scroll-fill');
+    if(fillEl) fillEl.style.width=pct+'%';
+    const playBtn=document.getElementById('scroll-play-btn');
+    if(playBtn) playBtn.textContent='▶';
+    if(pageIdx+1<total){
+      // Brief pause then advance
+      setTimeout(()=>{ if(!speechActive) startScrollRead(pageIdx+1); },400);
+    } else {
+      scrollReadPage=0;
+      if(fillEl) fillEl.style.width='100%';
+    }
+  }
+
+  // Use browser TTS directly with custom onend
+  if(engine==='elevenlabs'&&elKey){
+    startElevenLabs(text,elKey).then(()=>{
+      // ElevenLabs sets its own onend — we need to chain
+      // Use a watcher since we can't easily intercept EL's onend
+      const check=setInterval(()=>{
+        if(!speechActive){clearInterval(check);onPageEnd();}
+      },200);
+    });
+  } else if(engine==='openai'&&oaiKey){
+    startOpenAITTS(text,oaiKey).then(()=>{
+      const check=setInterval(()=>{
+        if(!speechActive){clearInterval(check);onPageEnd();}
+      },200);
+    });
+  } else {
+    // Browser TTS — hook onend directly
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.rate=speechRate;u.pitch=1.06;u.volume=1;
+    const voice=getPreferredVoice();if(voice)u.voice=voice;
+
+    u.onboundary=e=>{
+      if(e.name!=='word'||!S.followAlong) return;
+      wordEls.forEach(w=>w.classList.remove('spoken'));
+      const parts=text.split(/(\s+)/);
+      let pos=0,wi=0;
+      for(const tok of parts){
+        if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
+        if(pos>=e.charIndex) break;
+        pos+=tok.length;wi++;
+      }
+      if(wordEls[wi]) wordEls[wi].classList.add('spoken');
+      // Progress bar shows position within whole story
+      const pageProgress=(pageIdx/total)+(e.charIndex/text.length/total);
+      const fillEl=document.getElementById('scroll-fill');
+      if(fillEl) fillEl.style.width=Math.min(100,pageProgress*100)+'%';
+    };
+    u.onstart=()=>{
+      speechActive=true;
+      const playBtn=document.getElementById('scroll-play-btn');
+      if(playBtn) playBtn.textContent='⏸';
+    };
+    u.onend=()=>{ speechActive=false; onPageEnd(); };
+    u.onerror=()=>{ speechActive=false; const playBtn=document.getElementById('scroll-play-btn');if(playBtn)playBtn.textContent='▶'; };
+    window.speechSynthesis.speak(u);
+    speechActive=true;
+    const playBtn=document.getElementById('scroll-play-btn');
+    if(playBtn) playBtn.textContent='⏸';
+  }
+  curPage=savedCurPage;
+}
+
+function cycleScrollSpeed(){
+  const speeds=[0.75,1,1.25,1.5];const labels=['0.75×','1×','1.25×','1.5×'];
+  const i=speeds.indexOf(speechRate);speechRate=speeds[(i+1)%speeds.length];
+  const el=document.getElementById('scroll-spd');if(el)el.textContent=labels[(i+1)%speeds.length];
+  // Also sync reader speed button
+  const rs=document.getElementById('ral-spd');if(rs)rs.textContent=labels[(i+1)%speeds.length];
+  if(speechActive){stopSpeech();startScrollRead(scrollReadPage);}
+}
+
 function closeScrollView(){
   _scrollViewOpen=false;
+  stopSpeech();
+  scrollReadPage=0;
   const btn=document.getElementById('view-toggle-btn');
   if(btn){btn.textContent='📜';btn.title='Scroll view — read all pages at once';}
   PAGES.forEach(p=>document.getElementById('pg-'+p)?.classList.remove('on'));
@@ -1848,12 +1992,12 @@ async function animateWordCursor(text){
 function toggleFollowAlong(){
   S.followAlong=!S.followAlong;
   localStorage.setItem('sm_follow',S.followAlong);
-  const btn=document.getElementById('follow-toggle');
-  if(btn){
+  // Sync both eye buttons (reader + scroll view)
+  [document.getElementById('follow-toggle'), document.getElementById('scroll-follow-toggle')].forEach(btn=>{
+    if(!btn) return;
     btn.style.background=S.followAlong?'rgba(245,158,11,.35)':'var(--card)';
     btn.style.color=S.followAlong?'var(--gold2)':'var(--v2)';
-    btn.title=S.followAlong?'Follow Along ON — words highlighted as read':'Follow Along OFF';
-  }
+  });
   toast(S.followAlong?'👁️ Follow Along ON — words will highlight as read':'👁️ Follow Along OFF');
 }
 function updateFollowToggleBtn(){
