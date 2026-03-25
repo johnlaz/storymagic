@@ -1544,16 +1544,8 @@ function startScrollRead(pageIdx){
 
     u.onboundary=e=>{
       if(e.name!=='word'||!S.followAlong) return;
-      wordEls.forEach(w=>w.classList.remove('spoken'));
-      const parts=text.split(/(\s+)/);
-      let pos=0,wi=0;
-      for(const tok of parts){
-        if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
-        if(pos>=e.charIndex) break;
-        pos+=tok.length;wi++;
-      }
-      if(wordEls[wi]) wordEls[wi].classList.add('spoken');
-      // Progress bar shows position within whole story
+      applyBoundaryHighlight(e, text, wordEls, null);
+      // Scroll view progress spans whole story
       const pageProgress=(pageIdx/total)+(e.charIndex/text.length/total);
       const fillEl=document.getElementById('scroll-fill');
       if(fillEl) fillEl.style.width=Math.min(100,pageProgress*100)+'%';
@@ -2024,61 +2016,32 @@ function getPreferredVoice(){
   return null;
 }
 
-let _boundaryWorking=false;
-let _isChrome=/Chrome/.test(navigator.userAgent)&&!/Edg|OPR|Brave/.test(navigator.userAgent);
+// ── Shared boundary highlight helper — used by reader and scroll view ──
+function applyBoundaryHighlight(e, text, targetWordEls, fillElId){
+  if(e.name!=='word'||!S.followAlong) return;
+  targetWordEls.forEach(w=>w.classList.remove('spoken'));
+  // Walk token-by-token to find word index at charIndex (v1 original approach)
+  const parts=text.split(/(\s+)/);
+  let pos=0, wi=0;
+  for(const tok of parts){
+    if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
+    if(pos>=e.charIndex) break;
+    pos+=tok.length;wi++;
+  }
+  if(targetWordEls[wi]) targetWordEls[wi].classList.add('spoken');
+  const fillEl=document.getElementById(fillElId);
+  if(fillEl) fillEl.style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
+}
 
 function startBrowserTTS(text){
   if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.rate=speechRate;u.pitch=1.0;u.volume=1;
-
-  // Use system voice unless user picked one explicitly
+  u.rate=speechRate;u.pitch=1.06;u.volume=1;
   const voice=getPreferredVoice();
   if(voice) u.voice=voice;
-  // If voice is null, browser uses system default — this is intentional
 
-  // Pre-build word position map for fast boundary lookup
-  const wordMap=[]; // [{start, end, wi}]
-  let pos=0,wi=0;
-  for(const tok of text.split(/(\s+)/)){
-    if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
-    wordMap.push({start:pos,end:pos+tok.length,wi});
-    pos+=tok.length;wi++;
-  }
-
-  _boundaryWorking=false;
-
-  u.onboundary=e=>{
-    if(e.name!=='word')return;
-    if(!S.followAlong)return;
-    _boundaryWorking=true;
-
-    // Chrome fires boundary events slightly early — compensate with small delay
-    const highlight=()=>{
-      wordEls.forEach(w=>w.classList.remove('spoken'));
-      // Binary search for the word at this char position
-      const entry=wordMap.find(m=>e.charIndex>=m.start&&e.charIndex<m.end)
-        ||wordMap.find(m=>e.charIndex<=m.start); // fallback: next word
-      if(entry&&wordEls[entry.wi]) wordEls[entry.wi].classList.add('spoken');
-      document.getElementById('ral-fill').style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
-    };
-
-    // Fire immediately — Chrome's boundary events already arrive slightly late,
-    // adding any delay only makes it worse
-    highlight();
-  };
-
-  u.onstart=()=>{
-    speechActive=true;
-    document.getElementById('ral-play-btn').textContent='⏸';
-    const fallbackDelay=_isChrome?800:500;
-    setTimeout(()=>{
-      if(!_boundaryWorking && speechActive && S.followAlong){
-        animateWordCursor(text);
-      }
-    },fallbackDelay);
-  };
+  u.onboundary=e=>applyBoundaryHighlight(e, text, wordEls, 'ral-fill');
 
   u.onend=()=>{
     speechActive=false;
@@ -2088,6 +2051,8 @@ function startBrowserTTS(text){
   };
   u.onerror=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';};
   window.speechSynthesis.speak(u);
+  speechActive=true;
+  document.getElementById('ral-play-btn').textContent='⏸';
 }
 
 function speakWord(word){
