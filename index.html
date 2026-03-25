@@ -322,7 +322,7 @@ select.inp{appearance:none;cursor:pointer;}
 <!-- ══════════ HOME ══════════ -->
 <div id="pg-home" class="scr on">
   <div class="tb">
-    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v2.7</span></div>
+    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v3.0</span></div>
     <div class="tb-r">
       <div class="pill" id="api-status-pill" onclick="go('parent')" title="API Status">⚡ <span id="xp-show">0</span> XP</div>
       <div class="pill" style="cursor:pointer;" onclick="openFeedback()">📝</div>
@@ -562,7 +562,6 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="logo" style="font-size:1.1rem;flex:1;margin:0 8px;" id="scroll-title-tb">Reading…</div>
     <div class="pill btn-sm" onclick="exportStory()">💾</div>
   </div>
-  <!-- Sticky audio bar — same as reader -->
   <div class="ral-bar">
     <div class="ral-play" id="scroll-play-btn" onclick="toggleScrollSpeech()">▶</div>
     <div class="ral-info">
@@ -604,6 +603,7 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="ftab" onclick="filterLib(this,'ancient egypt')">🏺 Egypt</div>
   </div>
   <div class="lgrid" id="lib-grid"></div>
+  <input type="file" id="lib-art-inp" accept="image/*" style="display:none" onchange="handleLibArtFile(this)">
 </div>
 
 <!-- ══════════ BADGES ══════════ -->
@@ -685,7 +685,10 @@ select.inp{appearance:none;cursor:pointer;}
         <div style="margin-bottom:6px;">
           <div class="lbl" style="margin-bottom:8px;">Choose a specific voice <em style="font-weight:700;color:var(--dim);">(optional — leave blank to use system default)</em></div>
           <div class="voice-grid" id="browser-voice-grid" style="max-height:220px;overflow-y:auto;scrollbar-width:thin;"></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:8px;font-size:.75rem;padding:8px;" onclick="clearBrowserVoice()">↩ Use System Default</button>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:8px;flex:1;" onclick="clearBrowserVoice()">↩ System Default</button>
+            <button class="btn btn-ghost btn-sm" style="font-size:.75rem;padding:8px;flex:1;" onclick="testBrowserVoice()">🧪 Test Voice</button>
+          </div>
         </div>
       </div>
 
@@ -697,7 +700,7 @@ select.inp{appearance:none;cursor:pointer;}
         <div class="api-st"><div class="led off" id="el-led"></div><span id="el-st">No key</span></div>
         <div class="api-btns"><button class="btn btn-v" onclick="saveElKey()">💾 Save</button><button class="btn btn-ghost" onclick="testElKey()">🧪 Test</button><button class="btn btn-ghost" onclick="fetchAndRefreshElVoices()">🔄 Fetch Voices</button></div>
         <div style="margin-top:14px;">
-          <div class="lbl" style="margin-bottom:4px;">ElevenLabs Voice <span id="el-voice-count" style="font-weight:700;color:var(--dim);font-size:.72rem;"></span></div>
+          <div class="lbl" style="margin-bottom:8px;">ElevenLabs Voice</div>
           <div class="voice-grid" id="el-voice-grid"></div>
         </div>
       </div>
@@ -836,7 +839,7 @@ select.inp{appearance:none;cursor:pointer;}
 
 <script>
 'use strict';
-const APP_VERSION='2.7';
+const APP_VERSION='3.0';
 // ─── HELPERS ────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let _tt;
@@ -884,39 +887,41 @@ const POWERS=[
 
 // ─── ELEVENLABS VOICES ──────────────────────────
 // These are real ElevenLabs voice IDs from their public library
-// EL_VOICES populated dynamically from the user's account — not hardcoded
-// Fallback list used only if API fetch fails
-const EL_VOICES_FALLBACK=[
-  {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',   desc:'Warm & friendly',    em:'👩'},
-  {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',  desc:'Clear & expressive', em:'👩‍🦰'},
-  {id:'ErXwobaYiN019PkySvjV',name:'Antoni',  desc:'Warm narrator',      em:'👨'},
-  {id:'pNInz4obpvDQy73RuJsM',name:'Adam',   desc:'Calm & reassuring',  em:'👨‍💼'},
-  {id:'yoZ06aMxZJJ28mfd3POQ',name:'Sam',    desc:'Bright & cheerful',  em:'🧒'},
+const EL_VOICES=[
+  {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',  desc:'Warm & friendly female',  em:'👩'},
+  {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',  desc:'Clear & expressive female', em:'👩‍🦰'},
+  {id:'AZnzlk1XvdvUeBnXmlld',name:'Domi',   desc:'Energetic & fun female',   em:'🧑‍🎤'},
+  {id:'ErXwobaYiN019PkySvjV',name:'Antoni',  desc:'Warm male narrator',       em:'👨'},
+  {id:'VR6AewLTigWG4xSOukaG',name:'Arnold',  desc:'Deep & authoritative',     em:'👴'},
+  {id:'pNInz4obpvDQy73RuJsM',name:'Adam',   desc:'Calm & reassuring male',   em:'👨‍💼'},
+  {id:'yoZ06aMxZJJ28mfd3POQ',name:'Sam',    desc:'Bright & cheerful',        em:'🧒'},
+  {id:'jBpfuIE2acCO8z3wKNLl',name:'Ethan',  desc:'Young & adventurous',      em:'👦'},
 ];
-let EL_VOICES=JSON.parse(localStorage.getItem('el_voices_cache')||'null')||EL_VOICES_FALLBACK;
 
+// Optionally fetch account voices — replaces default list
 async function fetchElVoices(key){
   try{
-    const res=await fetch('https://api.elevenlabs.io/v1/voices',{
-      headers:{'xi-api-key':key}
-    });
+    const res=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':key}});
     if(!res.ok) return false;
     const data=await res.json();
     if(!data.voices||!data.voices.length) return false;
-    EL_VOICES=data.voices.map(v=>({
-      id:v.voice_id,
-      name:v.name,
-      desc:v.labels?(Object.values(v.labels).slice(0,2).join(', '))||'':'',
+    EL_VOICES.length=0;
+    data.voices.forEach(v=>EL_VOICES.push({
+      id:v.voice_id,name:v.name,
+      desc:v.labels?Object.values(v.labels).filter(Boolean).slice(0,2).join(', '):'',
       em:'🎤'
-    })).sort((a,b)=>a.name.localeCompare(b.name));
-    localStorage.setItem('el_voices_cache',JSON.stringify(EL_VOICES));
-    // Auto-select first voice if current voiceId isn't in this account's list
-    if(EL_VOICES.length>0&&!EL_VOICES.find(v=>v.id===S.voiceId)){
-      S.voiceId=EL_VOICES[0].id;
-      localStorage.setItem('sm_voice',S.voiceId);
-    }
+    }));
+    EL_VOICES.sort((a,b)=>a.name.localeCompare(b.name));
     return true;
-  }catch(e){ return false; }
+  }catch(e){return false;}
+}
+async function fetchAndRefreshElVoices(){
+  const k=localStorage.getItem('el_key')||'';
+  if(!k){toast('⚠️ Save your ElevenLabs key first');return;}
+  toast('🔄 Fetching your voices…');
+  const ok=await fetchElVoices(k);
+  if(ok){renderElVoiceGrid();toast('✅ '+EL_VOICES.length+' voices loaded');}
+  else{toast('❌ Could not fetch — check your key');}
 }
 
 // ─── ILLUSTRATIONS ──────────────────────────────
@@ -974,24 +979,16 @@ function saveIllustrations(story){
     localStorage.removeItem('sm_illus_'+story.id);
     return;
   }
-  const key='sm_illus_'+story.id;
-  // Store single image — compact format
+  // All pages use the same image — store just one copy, not N copies
+  // Format: JSON {img: "data:...", pages: 6}
   const payload=JSON.stringify({img:vals[0], pages:story.data?story.data.length:vals.length});
   try{
-    localStorage.setItem(key, payload);
-    // Verify the write actually stuck (some browsers silently fail)
-    const verify=localStorage.getItem(key);
-    if(!verify){
-      console.warn('saveIllustrations: write silently failed for',story.id);
-    }
+    localStorage.setItem('sm_illus_'+story.id, payload);
   }catch(e){
-    console.warn('saveIllustrations quota error for',story.id,e.message);
+    console.warn('Could not persist illustration for',story.id,'— localStorage quota exceeded');
+    // Try to free space by removing other illus keys for stories not currently in S.stories
     pruneOrphanIllustrations();
-    try{
-      localStorage.setItem(key, payload);
-    }catch(e2){
-      console.warn('saveIllustrations failed after prune for',story.id);
-    }
+    try{ localStorage.setItem('sm_illus_'+story.id, payload); }catch(e2){}
   }
 }
 function loadIllustrations(story){
@@ -1406,202 +1403,112 @@ let speechActive=false, speechRate=1;
 let wordEls=[], elAudioEl=null;
 
 
-// ── Scroll view: read entire story on one page ──
-let _scrollViewOpen=false;
-
-function toggleScrollView(){
-  _scrollViewOpen ? closeScrollView() : openScrollView();
+function checkAppVersion(){
+  const stored=localStorage.getItem('sm_app_version');
+  if(stored&&stored!==APP_VERSION){
+    const banner=document.createElement('div');
+    banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999;background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;padding:12px 16px;font-family:Nunito,sans-serif;font-size:.82rem;font-weight:900;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.4);';
+    banner.innerHTML='<span style="flex:1;">⚠️ Story Magic updated to v'+APP_VERSION+' — please clear your browser cache and reload.</span><span onclick="this.parentElement.remove()" style="cursor:pointer;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 10px;">✕</span>';
+    document.body.appendChild(banner);
+  }
+  localStorage.setItem('sm_app_version',APP_VERSION);
 }
 
-// scrollWordEls[pageIndex] = array of span elements for that page
+let _scrollViewOpen=false;
 let scrollWordEls=[];
-let scrollReadPage=0; // which page is currently being read in scroll mode
+let scrollReadPage=0;
+
+function toggleScrollView(){_scrollViewOpen?closeScrollView():openScrollView();}
 
 function openScrollView(){
-  if(!activeStory) return;
+  if(!activeStory)return;
   _scrollViewOpen=true;
   stopSpeech();
-  scrollWordEls=[];
-  scrollReadPage=0;
-
+  scrollWordEls=[];scrollReadPage=0;
   document.getElementById('scroll-title-tb').textContent=activeStory.title;
   const body=document.getElementById('scroll-body');
   body.innerHTML='';
-
   activeStory.data.forEach((text,i)=>{
-    const wrap=document.createElement('div');
-    wrap.style.cssText='margin-bottom:32px;';
-
-    // Illustration
-    const ilDiv=document.createElement('div');
-    ilDiv.style.cssText='border-radius:var(--rr);overflow:hidden;margin-bottom:14px;';
+    const wrap=document.createElement('div');wrap.style.cssText='margin-bottom:32px;';
+    const ilDiv=document.createElement('div');ilDiv.style.cssText='border-radius:var(--rr);overflow:hidden;margin-bottom:14px;';
     const ilKey='p'+i;
     if(activeStory.illustrations&&activeStory.illustrations[ilKey]){
-      const img=document.createElement('img');
-      img.src=activeStory.illustrations[ilKey];
-      img.style.cssText='width:100%;display:block;border-radius:var(--rr);';
-      ilDiv.appendChild(img);
-    } else {
-      ilDiv.innerHTML=getIllus(activeStory.theme,i+1);
-    }
+      const img=document.createElement('img');img.src=activeStory.illustrations[ilKey];img.style.cssText='width:100%;display:block;border-radius:var(--rr);';ilDiv.appendChild(img);
+    }else{ilDiv.innerHTML=getIllus(activeStory.theme,i+1);}
     wrap.appendChild(ilDiv);
-
-    // Page label
-    const lbl=document.createElement('div');
-    lbl.setAttribute('id','scroll-page-lbl-'+i);
+    const lbl=document.createElement('div');lbl.setAttribute('id','scroll-page-lbl-'+i);
     lbl.style.cssText='font-size:.7rem;font-weight:900;color:var(--v2);margin-bottom:8px;';
-    lbl.textContent='Page '+(i+1)+' of '+activeStory.data.length;
-    wrap.appendChild(lbl);
-
-    // Text with tappable words — collect into scrollWordEls[i]
-    const textDiv=document.createElement('div');
-    textDiv.setAttribute('id','scroll-page-text-'+i);
+    lbl.textContent='Page '+(i+1)+' of '+activeStory.data.length;wrap.appendChild(lbl);
+    const textDiv=document.createElement('div');textDiv.setAttribute('id','scroll-page-text-'+i);
     textDiv.style.cssText='font-size:1.08rem;line-height:1.9;font-weight:700;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:20px;';
     const pageSpans=[];
     text.split(/(\s+)/).forEach(tok=>{
-      if(/^\s+$/.test(tok)){ textDiv.appendChild(document.createTextNode(tok)); }
-      else {
-        const sp=document.createElement('span');sp.className='word';sp.textContent=tok;
-        sp.onclick=()=>speakWord(tok.replace(/[^a-zA-Z']/g,''));
-        textDiv.appendChild(sp);
-        pageSpans.push(sp);
-      }
+      if(/^\s+$/.test(tok)){textDiv.appendChild(document.createTextNode(tok));}
+      else{const sp=document.createElement('span');sp.className='word';sp.textContent=tok;sp.onclick=()=>speakWord(tok.replace(/[^a-zA-Z']/g,''));textDiv.appendChild(sp);pageSpans.push(sp);}
     });
-    scrollWordEls.push(pageSpans);
-    wrap.appendChild(textDiv);
-
-    if(i<activeStory.data.length-1){
-      const hr=document.createElement('div');
-      hr.style.cssText='height:1px;background:var(--bdr);margin-top:32px;';
-      wrap.appendChild(hr);
-    }
+    scrollWordEls.push(pageSpans);wrap.appendChild(textDiv);
+    if(i<activeStory.data.length-1){const hr=document.createElement('div');hr.style.cssText='height:1px;background:var(--bdr);margin-top:32px;';wrap.appendChild(hr);}
     body.appendChild(wrap);
   });
-
-  // Sync follow-along button state
-  updateFollowToggleBtn();
   const sfb=document.getElementById('scroll-follow-toggle');
-  if(sfb){
-    sfb.style.background=S.followAlong?'rgba(245,158,11,.35)':'var(--card)';
-    sfb.style.color=S.followAlong?'var(--gold2)':'var(--v2)';
-  }
-
-  const btn=document.getElementById('view-toggle-btn');
-  if(btn){btn.textContent='📖';btn.title='Switch to page view';}
-
+  if(sfb){sfb.style.background=S.followAlong?'rgba(245,158,11,.35)':'var(--card)';sfb.style.color=S.followAlong?'var(--gold2)':'var(--v2)';}
+  const btn=document.getElementById('view-toggle-btn');if(btn){btn.textContent='📖';btn.title='Switch to page view';}
   PAGES.forEach(p=>document.getElementById('pg-'+p)?.classList.remove('on'));
   document.getElementById('pg-scroll').classList.add('on');
   window.scrollTo(0,0);
 }
 
-// Toggle play/pause for scroll read-aloud
-function toggleScrollSpeech(){
-  if(speechActive){stopSpeech();return;}
-  startScrollRead(scrollReadPage);
-}
+function toggleScrollSpeech(){if(speechActive){stopSpeech();return;}startScrollRead(scrollReadPage);}
 
-// Read pages sequentially starting from pageIdx
 function startScrollRead(pageIdx){
-  if(!activeStory||pageIdx>=activeStory.data.length) return;
+  if(!activeStory||pageIdx>=activeStory.data.length)return;
   scrollReadPage=pageIdx;
-
-  // Point global wordEls at this page's spans for highlight/boundary to work
   wordEls=scrollWordEls[pageIdx]||[];
-
-  // Scroll the page label into view smoothly
   const lbl=document.getElementById('scroll-page-lbl-'+pageIdx);
-  if(lbl) lbl.scrollIntoView({behavior:'smooth',block:'start'});
-
-  // Update chapter label and progress
+  if(lbl)lbl.scrollIntoView({behavior:'smooth',block:'start'});
   const total=activeStory.data.length;
   const chapEl=document.getElementById('scroll-chapter');
-  if(chapEl) chapEl.textContent='Page '+(pageIdx+1)+' of '+total;
-
-  // Temporarily set curPage so startSpeech reads the right text
-  const savedCurPage=curPage;
-  curPage=pageIdx;
-
-  // Override onend to advance to next page instead of just stopping
+  if(chapEl)chapEl.textContent='Page '+(pageIdx+1)+' of '+total;
   const text=activeStory.data[pageIdx];
-  const engine=S.voiceEngine||'browser';
   const elKey=localStorage.getItem('el_key')||'';
   const oaiKey=localStorage.getItem('oai_key')||'';
-
   function onPageEnd(){
     speechActive=false;
     wordEls.forEach(w=>w.classList.remove('spoken'));
     const pct=((pageIdx+1)/total)*100;
-    const fillEl=document.getElementById('scroll-fill');
-    if(fillEl) fillEl.style.width=pct+'%';
-    const playBtn=document.getElementById('scroll-play-btn');
-    if(playBtn) playBtn.textContent='▶';
-    if(pageIdx+1<total){
-      // Brief pause then advance
-      setTimeout(()=>{ if(!speechActive) startScrollRead(pageIdx+1); },400);
-    } else {
-      scrollReadPage=0;
-      if(fillEl) fillEl.style.width='100%';
-    }
+    const fillEl=document.getElementById('scroll-fill');if(fillEl)fillEl.style.width=pct+'%';
+    const playBtn=document.getElementById('scroll-play-btn');if(playBtn)playBtn.textContent='▶';
+    if(pageIdx+1<total){setTimeout(()=>{if(!speechActive)startScrollRead(pageIdx+1);},400);}
+    else{scrollReadPage=0;if(fillEl)fillEl.style.width='100%';}
   }
-
-  // Use browser TTS directly with custom onend
-  if(engine==='elevenlabs'&&elKey){
-    startElevenLabs(text,elKey).then(()=>{
-      // ElevenLabs sets its own onend — we need to chain
-      // Use a watcher since we can't easily intercept EL's onend
-      const check=setInterval(()=>{
-        if(!speechActive){clearInterval(check);onPageEnd();}
-      },200);
-    });
-  } else if(engine==='openai'&&oaiKey){
-    startOpenAITTS(text,oaiKey).then(()=>{
-      const check=setInterval(()=>{
-        if(!speechActive){clearInterval(check);onPageEnd();}
-      },200);
-    });
-  } else {
-    // Browser TTS — hook onend directly
+  if(S.voiceEngine==='elevenlabs'&&elKey){
+    startElevenLabs(text,elKey).then(()=>{const check=setInterval(()=>{if(!speechActive){clearInterval(check);onPageEnd();}},200);});
+  }else if(S.voiceEngine==='openai'&&oaiKey){
+    startOpenAITTS(text,oaiKey).then(()=>{const check=setInterval(()=>{if(!speechActive){clearInterval(check);onPageEnd();}},200);});
+  }else{
     window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.rate=speechRate;u.pitch=1.06;u.volume=1;
+    const u=new SpeechSynthesisUtterance(text);u.rate=speechRate;u.pitch=1.06;u.volume=1;
     const voice=getPreferredVoice();if(voice)u.voice=voice;
-
-    u.onboundary=e=>{
-      if(e.name!=='word'||!S.followAlong) return;
-      applyBoundaryHighlight(e, text, wordEls, null);
-      // Scroll view progress spans whole story
-      const pageProgress=(pageIdx/total)+(e.charIndex/text.length/total);
-      const fillEl=document.getElementById('scroll-fill');
-      if(fillEl) fillEl.style.width=Math.min(100,pageProgress*100)+'%';
-    };
-    u.onstart=()=>{
-      speechActive=true;
-      const playBtn=document.getElementById('scroll-play-btn');
-      if(playBtn) playBtn.textContent='⏸';
-    };
-    u.onend=()=>{ speechActive=false; onPageEnd(); };
-    u.onerror=()=>{ speechActive=false; const playBtn=document.getElementById('scroll-play-btn');if(playBtn)playBtn.textContent='▶'; };
-    window.speechSynthesis.speak(u);
-    speechActive=true;
-    const playBtn=document.getElementById('scroll-play-btn');
-    if(playBtn) playBtn.textContent='⏸';
+    u.onboundary=e=>applyBoundaryHighlight(e,text,wordEls,'scroll-fill-page');
+    u.onstart=()=>{speechActive=true;const pb=document.getElementById('scroll-play-btn');if(pb)pb.textContent='⏸';};
+    u.onend=()=>{speechActive=false;onPageEnd();};
+    u.onerror=()=>{speechActive=false;const pb=document.getElementById('scroll-play-btn');if(pb)pb.textContent='▶';};
+    window.speechSynthesis.speak(u);speechActive=true;
+    const pb=document.getElementById('scroll-play-btn');if(pb)pb.textContent='⏸';
   }
-  curPage=savedCurPage;
 }
 
 function cycleScrollSpeed(){
   const speeds=[0.75,1,1.25,1.5];const labels=['0.75×','1×','1.25×','1.5×'];
   const i=speeds.indexOf(speechRate);speechRate=speeds[(i+1)%speeds.length];
   const el=document.getElementById('scroll-spd');if(el)el.textContent=labels[(i+1)%speeds.length];
-  // Also sync reader speed button
   const rs=document.getElementById('ral-spd');if(rs)rs.textContent=labels[(i+1)%speeds.length];
   if(speechActive){stopSpeech();startScrollRead(scrollReadPage);}
 }
 
 function closeScrollView(){
   _scrollViewOpen=false;
-  stopSpeech();
-  scrollReadPage=0;
+  stopSpeech();scrollReadPage=0;
   const btn=document.getElementById('view-toggle-btn');
   if(btn){btn.textContent='📜';btn.title='Scroll view — read all pages at once';}
   PAGES.forEach(p=>document.getElementById('pg-'+p)?.classList.remove('on'));
@@ -1830,7 +1737,7 @@ function openReader(id){
   const s=S.stories.find(x=>x.id===id);if(!s)return;
   activeStory=s;curPage=0;stopSpeech();
   recordActivity();
-  loadIllustrations(activeStory); // safety net — ensure artwork loaded from localStorage
+  loadIllustrations(activeStory);
   document.getElementById('r-title-tb').textContent=s.title;
   renderReaderPage();go('reader');
 }
@@ -1906,18 +1813,31 @@ function renderReaderPage(){
 }
 
 async function speakWord(word){
-  if(!word)return;
-  window.speechSynthesis?.cancel();
+  if(!word) return;
+  const engine=S.voiceEngine||'browser';
   const elKey=localStorage.getItem('el_key')||'';
-  if(elKey){
-    // ElevenLabs single-word preview
+  // Only use ElevenLabs if EL engine is selected AND key exists
+  if(engine==='elevenlabs'&&elKey){
     try{
-      const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{method:'POST',headers:{'Content-Type':'application/json','xi-api-key':elKey},body:JSON.stringify({text:word,model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})});
-      if(res.ok){const buf=await res.arrayBuffer();playAudioBuffer(buf);}
+      const res=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+S.voiceId+'/stream',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','xi-api-key':elKey},
+        body:JSON.stringify({text:word,model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})
+      });
+      if(res.ok){
+        const buf=await res.arrayBuffer();
+        playAudioBuffer(buf);
+        wordEls.forEach(el=>{if(el.textContent.replace(/[^a-zA-Z']/g,'')===word){el.classList.add('hl');setTimeout(()=>el.classList.remove('hl'),700);}});
+        return;
+      }
     }catch(e){}
-  } else {
-    const u=new SpeechSynthesisUtterance(word);u.rate=0.9;u.pitch=1.1;window.speechSynthesis.speak(u);
+    // EL failed — fall through to browser TTS
   }
+  // Browser TTS — speaks the word using the selected device voice
+  const u=new SpeechSynthesisUtterance(word);
+  u.rate=0.9;u.pitch=1.0;
+  const voice=getPreferredVoice();if(voice) u.voice=voice;
+  window.speechSynthesis.speak(u);
   wordEls.forEach(el=>{if(el.textContent.replace(/[^a-zA-Z']/g,'')===word){el.classList.add('hl');setTimeout(()=>el.classList.remove('hl'),700);}});
 }
 
@@ -1927,48 +1847,52 @@ async function toggleSpeech(){
 }
 
 async function startSpeech(){
-  const elKey=localStorage.getItem('el_key')||'';
+  const engine=S.voiceEngine||'browser';
   const text=activeStory.data[curPage];
-  if(elKey){
-    await startElevenLabs(text,elKey);
-  } else {
-    startBrowserTTS(text);
+  if(engine==='elevenlabs'){
+    const k=localStorage.getItem('el_key')||'';
+    if(k){await startElevenLabs(text,k);return;}
   }
+  if(engine==='openai'){
+    const k=localStorage.getItem('oai_key')||'';
+    if(k){await startOpenAITTS(text,k);return;}
+  }
+  startBrowserTTS(text);
 }
 
 // ── ElevenLabs TTS ──
+let _elAbortController=null; // cancels in-flight ElevenLabs fetches
+
 async function startElevenLabs(text,key){
   stopSpeech();
+  _elAbortController=new AbortController();
   speechActive=true;
-  document.getElementById('ral-play-btn').textContent='⏸';
-  // Guard: if voiceId isn't in fetched voice list, use first available
-  const voiceList=JSON.parse(localStorage.getItem('el_voices_cache')||'null');
-  if(voiceList&&voiceList.length>0&&!voiceList.find(v=>v.id===S.voiceId)){
-    S.voiceId=voiceList[0].id;
-    localStorage.setItem('sm_voice',S.voiceId);
-  }
+  ['ral-play-btn','scroll-play-btn'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='⏸';});
   try{
-    const res=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{
+    const res=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+S.voiceId+'/stream',{
       method:'POST',
       headers:{'Content-Type':'application/json','xi-api-key':key},
-      body:JSON.stringify({text,model_id:'eleven_turbo_v2_5',voice_settings:{stability:.45,similarity_boost:.8,style:0.2,use_speaker_boost:true}})
+      body:JSON.stringify({text,model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}}),
+      signal:_elAbortController.signal
     });
     if(!res.ok)throw new Error('EL HTTP '+res.status);
     const buf=await res.arrayBuffer();
-    playAudioBuffer(buf, ()=>{
-      // on ended — animate word highlights
+    playAudioBuffer(buf,()=>{
       speechActive=false;
-      document.getElementById('ral-play-btn').textContent='▶';
-      document.getElementById('ral-fill').style.width='100%';
+      ['ral-play-btn','scroll-play-btn'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='▶';});
+      ['ral-fill','scroll-fill'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.width='100%';});
       wordEls.forEach(w=>w.classList.remove('spoken'));
     });
-    // Simulate word sync (ElevenLabs streaming word-level sync requires websockets)
-    // We animate a cursor through words proportionally to audio duration
     animateWordCursor(text);
   }catch(e){
+    if(e.name==='AbortError') return; // intentionally cancelled — no toast, no fallback
     console.warn('ElevenLabs error:',e);
-    if(e.message.includes('401')){
-      toast('⚠️ ElevenLabs 401 — check your key or re-select a voice in Parent Area');
+    speechActive=false;
+    ['ral-play-btn','scroll-play-btn'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='▶';});
+    if(e.message.includes('402')){
+      toast('⚠️ ElevenLabs quota used up for this month — switched to device voice');
+    } else if(e.message.includes('401')){
+      toast('⚠️ Voice 401 — try a different voice in Parent Area or tap 🔄 Fetch Voices');
     } else {
       toast('⚠️ ElevenLabs error — switching to device voice');
     }
@@ -2016,13 +1940,12 @@ async function animateWordCursor(text){
 function toggleFollowAlong(){
   S.followAlong=!S.followAlong;
   localStorage.setItem('sm_follow',S.followAlong);
-  // Sync both eye buttons (reader + scroll view)
-  [document.getElementById('follow-toggle'), document.getElementById('scroll-follow-toggle')].forEach(btn=>{
-    if(!btn) return;
+  ['follow-toggle','scroll-follow-toggle'].forEach(id=>{
+    const btn=document.getElementById(id);if(!btn)return;
     btn.style.background=S.followAlong?'rgba(245,158,11,.35)':'var(--card)';
     btn.style.color=S.followAlong?'var(--gold2)':'var(--v2)';
   });
-  toast(S.followAlong?'👁️ Follow Along ON — words will highlight as read':'👁️ Follow Along OFF');
+  toast(S.followAlong?'👁️ Follow Along ON':'👁️ Follow Along OFF');
 }
 function updateFollowToggleBtn(){
   const btn=document.getElementById('follow-toggle');
@@ -2048,32 +1971,44 @@ function getPreferredVoice(){
   return null;
 }
 
-// ── Shared boundary highlight helper — used by reader and scroll view ──
-function applyBoundaryHighlight(e, text, targetWordEls, fillElId){
+
+// Shared word-highlight helper used by reader and scroll view
+function applyBoundaryHighlight(e,text,targetWordEls,fillElId){
   if(e.name!=='word'||!S.followAlong) return;
   targetWordEls.forEach(w=>w.classList.remove('spoken'));
-  // Walk token-by-token to find word index at charIndex (v1 original approach)
   const parts=text.split(/(\s+)/);
-  let pos=0, wi=0;
+  let pos=0,wi=0;
   for(const tok of parts){
     if(/^\s+$/.test(tok)){pos+=tok.length;continue;}
-    if(pos>=e.charIndex) break;
+    if(pos>=e.charIndex)break;
     pos+=tok.length;wi++;
   }
-  if(targetWordEls[wi]) targetWordEls[wi].classList.add('spoken');
-  const fillEl=document.getElementById(fillElId);
-  if(fillEl) fillEl.style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';
+  if(targetWordEls[wi])targetWordEls[wi].classList.add('spoken');
+  if(fillElId){const el=document.getElementById(fillElId);if(el)el.style.width=Math.min(100,(e.charIndex/text.length)*100)+'%';}
 }
 
 function startBrowserTTS(text){
   if(!('speechSynthesis' in window)){toast('⚠️ Your browser does not support speech — try Chrome or Safari');return;}
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
-  u.rate=speechRate;u.pitch=1.06;u.volume=1;
+  u.rate=speechRate;u.pitch=1.0;u.volume=1;
+
+  // Use system voice unless user picked one explicitly
   const voice=getPreferredVoice();
   if(voice) u.voice=voice;
+  // If voice is null, browser uses system default — this is intentional
 
-  u.onboundary=e=>applyBoundaryHighlight(e, text, wordEls, 'ral-fill');
+  let _boundaryFired=false;
+  u.onboundary=e=>{_boundaryFired=true;applyBoundaryHighlight(e,text,wordEls,'ral-fill');};
+
+  u.onstart=()=>{
+    speechActive=true;
+    document.getElementById('ral-play-btn').textContent='⏸';
+    // Some voices (Google) never fire onboundary — fall back to timer after 600ms
+    setTimeout(()=>{
+      if(!_boundaryFired&&speechActive&&S.followAlong) animateWordCursor(text);
+    },600);
+  };
 
   u.onend=()=>{
     speechActive=false;
@@ -2083,39 +2018,11 @@ function startBrowserTTS(text){
   };
   u.onerror=()=>{speechActive=false;document.getElementById('ral-play-btn').textContent='▶';};
   window.speechSynthesis.speak(u);
-  speechActive=true;
-  document.getElementById('ral-play-btn').textContent='⏸';
-}
-
-function speakWord(word){
-  if(!word)return;
-  const elKey=localStorage.getItem('el_key')||'';
-  if(elKey){
-    // ElevenLabs single-word via existing audio pipeline
-    fetch(`https://api.elevenlabs.io/v1/text-to-speech/${S.voiceId}/stream`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','xi-api-key':elKey},
-      body:JSON.stringify({text:word,model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})
-    }).then(r=>{if(r.ok)return r.arrayBuffer();}).then(buf=>{if(buf)playAudioBuffer(buf);}).catch(()=>{});
-  } else {
-    // Use same voice as read-aloud for consistency
-    window.speechSynthesis?.cancel();
-    const u=new SpeechSynthesisUtterance(word);
-    u.rate=0.9;u.pitch=1.0;
-    const voice=getPreferredVoice();
-    if(voice) u.voice=voice;
-    window.speechSynthesis.speak(u);
-  }
-  // Flash highlight
-  wordEls.forEach(el=>{
-    if(el.textContent.replace(/[^a-zA-Z']/g,'')===word){
-      el.classList.add('hl');
-      setTimeout(()=>el.classList.remove('hl'),700);
-    }
-  });
 }
 
 function stopSpeech(){
+  // Cancel any in-flight ElevenLabs fetch immediately
+  if(_elAbortController){try{_elAbortController.abort();}catch(e){}_elAbortController=null;}
   window.speechSynthesis?.cancel();
   if(_audioSource){try{_audioSource.stop();}catch(e){}_audioSource=null;}
   speechActive=false;
@@ -2197,6 +2104,16 @@ function clearBrowserVoice(){
   document.querySelectorAll('#browser-voice-grid .vc').forEach(c=>c.classList.remove('on'));
   toast('↩ Using system default voice');
 }
+function testBrowserVoice(){
+  const voice=getPreferredVoice();
+  const name=voice?voice.name:'system default';
+  const u=new SpeechSynthesisUtterance('This is '+name+'. Story Magic sounds great!');
+  u.rate=0.95;u.pitch=1.0;
+  if(voice) u.voice=voice;
+  window.speechSynthesis.cancel(); // clear queue first for test
+  window.speechSynthesis.speak(u);
+  toast('🗣️ Testing: '+name.split(' ').slice(0,4).join(' '));
+}
 function setVoiceEngine(engine){
   S.voiceEngine=engine;localStorage.setItem('sm_engine',engine);
   ['browser','elevenlabs','openai'].forEach(e=>{
@@ -2221,27 +2138,12 @@ function renderOAIVoiceGrid(){
 }
 function renderElVoiceGrid(){
   const g=document.getElementById('el-voice-grid');if(!g)return;g.innerHTML='';
-  const countEl=document.getElementById('el-voice-count');
-  if(countEl) countEl.textContent=EL_VOICES.length?'('+EL_VOICES.length+' voices)':'';
-  if(EL_VOICES.length===0){
-    g.innerHTML='<div style="font-size:.75rem;color:var(--dim);padding:8px;">No voices loaded — tap 🔄 Fetch Voices with your key entered.</div>';
-    return;
-  }
   EL_VOICES.forEach(v=>{
     const d=document.createElement('div');d.className='vc'+(v.id===S.voiceId?' on':'');
     d.onclick=()=>{document.querySelectorAll('#el-voice-grid .vc').forEach(c=>c.classList.remove('on'));d.classList.add('on');S.voiceId=v.id;localStorage.setItem('sm_voice',v.id);toast('🎤 Voice: '+v.name);};
-    d.innerHTML='<div class="vc-name">'+(v.em||'🎤')+' '+v.name+'</div><div class="vc-desc">'+(v.desc||'')+'</div>';
+    d.innerHTML=`<div class="vc-name">${v.em} ${v.name}</div><div class="vc-desc">${v.desc}</div>`;
     g.appendChild(d);
   });
-}
-
-async function fetchAndRefreshElVoices(){
-  const k=localStorage.getItem('el_key')||document.getElementById('el-key-inp').value.trim();
-  if(!k){toast('⚠️ Enter and save your ElevenLabs key first');return;}
-  toast('🔄 Fetching your voices…');
-  const ok=await fetchElVoices(k);
-  if(ok){renderElVoiceGrid();toast('✅ '+EL_VOICES.length+' voices loaded from your account');}
-  else{toast('❌ Could not fetch voices — check your key');}
 }
 
 // OpenAI TTS
@@ -2389,6 +2291,23 @@ function renderPDFList(){
   });
 }
 let libFilter='all';
+// Quick-add artwork from library card
+function quickAddArt(id){
+  const s=S.stories.find(x=>x.id===id);if(!s||s.locked){toast('🔒 Unlock first');return;}
+  activeStory=s;
+  const inp=document.getElementById('lib-art-inp');
+  if(inp){inp.dataset.storyId=id;inp.click();}
+}
+function handleLibArtFile(input){
+  const id=input.dataset.storyId;
+  const s=S.stories.find(x=>x.id===id);
+  if(!s||!input.files[0]){input.value='';return;}
+  activeStory=s;
+  const reader=new FileReader();
+  reader.onload=e=>{applyArtwork(e.target.result);input.value='';renderLib();renderStoryStrip();toast('🖼️ Artwork saved!');};
+  reader.readAsDataURL(input.files[0]);
+}
+
 function renderLib(){
   const grid=document.getElementById('lib-grid');grid.innerHTML='';
   const vis=S.stories.filter(s=>worldMatches(s.theme, libFilter));
@@ -2404,11 +2323,14 @@ function renderLib(){
     const coverHtml=coverImg
       ?`<div style="position:relative;"><img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.5);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`
       :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0&&!isLocked?'<div class="lnew">NEW</div>':''}${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.4);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`;
+    const editChips=isLocked?'':`
+      <span style="font-size:.62rem;background:rgba(14,165,233,.15);border:1px solid rgba(125,211,252,.25);border-radius:var(--pill);padding:2px 8px;color:var(--sky2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();quickAddArt('${s.id}')">${coverImg?'🖼️ Art':'🖼️ Add'}</span>
+      <span style="font-size:.62rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:2px 8px;color:#f87171;font-weight:900;cursor:pointer;" onclick="event.stopPropagation();deleteStory('${s.id}')">🗑️</span>`;
     d.innerHTML=`<div onclick="openReader('${s.id}')" style="cursor:pointer">${coverHtml}<div class="li"><div class="lt">${s.title}</div><div class="lm">${s.pages} pages · ${s.theme}</div><div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap;">
       <span style="font-size:.62rem;background:rgba(124,58,237,.2);border:1px solid rgba(167,139,250,.2);border-radius:var(--pill);padding:2px 8px;color:var(--v2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();openReader('${s.id}')">▶ Read</span>
       <span style="font-size:.62rem;background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.3);border-radius:var(--pill);padding:2px 8px;color:var(--gold2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();exportPDF('${s.id}')">📄 PDF</span>
       <span style="font-size:.62rem;${lockStyle}border-radius:var(--pill);padding:2px 8px;font-weight:900;cursor:pointer;" title="${lockTitle}" onclick="event.stopPropagation();toggleLockStory('${s.id}')">${lockIcon}</span>
-      ${!isLocked?`<span style="font-size:.62rem;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:2px 8px;color:#f87171;font-weight:900;cursor:pointer;" onclick="event.stopPropagation();deleteStory('${s.id}')">🗑️</span>`:''}
+      ${editChips}
     </div></div></div>`;
     grid.appendChild(d);
   });
@@ -2566,58 +2488,43 @@ async function testGroqKey(){const k=document.getElementById('groq-inp').value.t
 function updateGroqStatus(k){const l=document.getElementById('api-led'),t=document.getElementById('api-st-txt');if(k&&k.startsWith('gsk_')){l.className='led on';t.textContent='Groq connected — AI stories ready ⚡';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — demo stories used';t.style.color='var(--dim)';}}
 
 // ElevenLabs
-async function saveElKey(){
-  const k=document.getElementById('el-key-inp').value.trim();
-  if(!k){toast('⚠️ Enter an ElevenLabs key');return;}
-  localStorage.setItem('el_key',k);
-  updateElStatus(k);
-  toast('🎙️ Fetching your voices…');
-  const ok=await fetchElVoices(k);
-  if(ok){
-    renderElVoiceGrid();
-    toast('✅ ElevenLabs connected — '+EL_VOICES.length+' voices loaded 🎙️');
-  } else {
-    // Fetch may fail on file:// due to CORS — key is saved, voices load on GitHub Pages
-    toast('✅ Key saved! Tap 🔄 Fetch Voices to load your voice list.');
-  }
-}
+function saveElKey(){const k=document.getElementById('el-key-inp').value.trim();if(!k){toast('⚠️ Enter an ElevenLabs key');return;}localStorage.setItem('el_key',k);updateElStatus(k);toast('✅ Key saved! Select a voice and tap Test 🎙️');}
 async function testElKey(){
   const k=document.getElementById('el-key-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}
-  toast('🧪 Testing ElevenLabs…');
+  toast('🧪 Testing with selected voice…');
   try{
-    const res=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':k}});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    EL_VOICES=data.voices.map(v=>({id:v.voice_id,name:v.name,desc:v.labels?Object.values(v.labels).slice(0,2).join(', '):'',em:'🎤'})).sort((a,b)=>a.name.localeCompare(b.name));
-    localStorage.setItem('el_voices_cache',JSON.stringify(EL_VOICES));
-    localStorage.setItem('el_key',k);updateElStatus(k);renderElVoiceGrid();
-    toast('✅ ElevenLabs works — '+EL_VOICES.length+' voices available 🎙️');
-  }catch(e){toast('❌ ElevenLabs error: '+e.message.slice(0,40));}
+    const res=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+S.voiceId+'/stream',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','xi-api-key':k},
+      body:JSON.stringify({text:'Story Magic narration is ready!',model_id:'eleven_turbo_v2',voice_settings:{stability:.5,similarity_boost:.75}})
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status+' — try a different voice');
+    const buf=await res.arrayBuffer();
+    if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    _audioCtx.decodeAudioData(buf,decoded=>{const s=_audioCtx.createBufferSource();s.buffer=decoded;s.connect(_audioCtx.destination);s.start(0);});
+    toast('✅ ElevenLabs works! 🎙️');
+    localStorage.setItem('el_key',k);updateElStatus(k);
+  }catch(e){toast('❌ '+e.message.slice(0,60));}
 }
 function updateElStatus(k){const l=document.getElementById('el-led'),t=document.getElementById('el-st');if(k&&k.length>8){l.className='led on';t.textContent='ElevenLabs connected — lifelike narration ready 🎙️';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — using device voice';t.style.color='var(--dim)';}}
 
 function requestPrint(){const e=document.getElementById('print-email').value.trim();if(!e||!e.includes('@')){toast('⚠️ Enter a valid parent email');return;}document.getElementById('pr-confirm').style.display='block';toast('📧 Checkout link sent to '+e+'!');}
 function exportAll(includeArtwork=false){
-  // Read illustration from localStorage compact key — export as compact {img,pages}
-  // Never expand to {p0,p1,...} — that multiplies file size by page count
+  // For each story, get illustrations from the dedicated sm_illus_ key (authoritative source)
+  // rather than from S.stories in memory, which may not be rehydrated in all cases
   function getStoredIllustrations(story){
     try{
       const raw=localStorage.getItem('sm_illus_'+story.id);
       if(raw){
         const parsed=JSON.parse(raw);
-        if(parsed.img){
-          // Already compact — export as-is
-          return {img:parsed.img, pages:story.data?story.data.length:(parsed.pages||1)};
-        }
-        // Legacy full format in localStorage — compact it on the way out
+        if(parsed.img) return {img:parsed.img,pages:story.data?story.data.length:(parsed.pages||1)};
         const vals=Object.values(parsed).filter(v=>typeof v==='string'&&v.startsWith('data:'));
-        if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
+        if(vals.length>0) return {img:vals[0],pages:story.data?story.data.length:vals.length};
       }
     }catch(e){}
-    // Fall back to in-memory (artwork added this session, not yet persisted)
     if(story.illustrations){
       const vals=Object.values(story.illustrations).filter(v=>typeof v==='string'&&v.startsWith('data:'));
-      if(vals.length>0) return {img:vals[0], pages:story.data?story.data.length:vals.length};
+      if(vals.length>0) return {img:vals[0],pages:story.data?story.data.length:vals.length};
     }
     return null;
   }
@@ -2634,15 +2541,15 @@ function exportAll(includeArtwork=false){
     return base;
   });
 
-  // Count illustrated stories for toast
+  // Count illustrated stories for toast message
   const artStoryCount=includeArtwork
-    ? storiesPayload.filter(s=>s.illustrations&&(s.illustrations.img||Object.values(s.illustrations).some(v=>typeof v==='string'&&v.startsWith('data:')))).length
+    ? storiesPayload.filter(s=>s.illustrations&&Object.keys(s.illustrations).length>0).length
     : 0;
 
   const payload={
     exported: new Date().toISOString(),
     app: 'Story Magic',
-    version: '2.7',
+    version: '3.0',
     includesArtwork: includeArtwork,
     heroes: S.heroes,
     stories: storiesPayload,
@@ -2681,6 +2588,39 @@ function exportAll(includeArtwork=false){
   toast(`💾 Backup exported — ${kb<1024?kb+'KB':(kb/1024).toFixed(1)+'MB'}${artNote}`);
 }
 
+// ── Import helpers ──
+function extractImg(o){
+  if(!o) return null;
+  if(o.img&&typeof o.img==='string'&&o.img.startsWith('data:')) return o.img;
+  const pv=Object.entries(o).filter(([k])=>k.startsWith('p')&&!isNaN(k.slice(1))).map(([,v])=>v);
+  if(pv.length>0&&typeof pv[0]==='string'&&pv[0].startsWith('data:')) return pv[0];
+  return null;
+}
+function compressIfNeeded(dataUrl,cb){
+  if(!dataUrl||dataUrl.length<400*1024){cb(dataUrl);return;}
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');
+    const MAX=1200;const scale=Math.min(1,MAX/Math.max(img.width,img.height));
+    c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    cb(c.toDataURL('image/jpeg',0.75));
+  };
+  img.onerror=()=>cb(dataUrl);
+  img.src=dataUrl;
+}
+function applyImportedArt(story,img,done){
+  if(!img){if(done)done(false);return;}
+  compressIfNeeded(img,compressed=>{
+    const pc=story.data?story.data.length:(story.pages||1);
+    story.illustrations={};
+    for(let i=0;i<pc;i++) story.illustrations['p'+i]=compressed;
+    story.illustrated=true;
+    saveIllustrations(story);
+    if(done)done(true);
+  });
+}
+
 function importAll(input){
   if(!input.files[0]) return;
   const reader=new FileReader();
@@ -2702,52 +2642,38 @@ function importAll(input){
       // Restore stories — merge imported, overwrite illustrations on matching IDs
       if(data.stories&&Array.isArray(data.stories)&&data.stories.length>0){
         const existingIds=new Set(S.stories.map(s=>s.id));
-        let artRestoredCount=0;
-
-        function extractImg(illusObj){
-          if(!illusObj) return null;
-          if(illusObj.img&&typeof illusObj.img==='string'&&illusObj.img.startsWith('data:')) return illusObj.img;
-          const pv=Object.entries(illusObj).filter(([k])=>k.startsWith('p')&&!isNaN(k.slice(1))).map(([,v])=>v);
-          if(pv.length>0&&typeof pv[0]==='string'&&pv[0].startsWith('data:')) return pv[0];
-          return null;
-        }
-        function applyImportedArt(story,imgDataUrl){
-          if(!imgDataUrl) return false;
-          const pc=story.data?story.data.length:(story.pages||1);
-          story.illustrations={};
-          for(let i=0;i<pc;i++) story.illustrations['p'+i]=imgDataUrl;
-          story.illustrated=true;
-          saveIllustrations(story);
-          return true;
-        }
-
         const newStories=data.stories
           .filter(s=>!existingIds.has(s.id))
-          .map(s=>{
-            const story={...s,illustrations:{}};
-            const img=extractImg(s.illustrations);
-            if(img&&applyImportedArt(story,img)) artRestoredCount++;
-            return story;
-          });
+          .map(s=>({...s,illustrations:{}}));
+
+        let artRestoredCount=0;
+        const artPromises=[];
+        const newStoriesData=data.stories.filter(s=>!existingIds.has(s.id));
+
+        newStoriesData.forEach((s,i)=>{
+          const img=extractImg(s.illustrations);
+          if(img) artPromises.push(new Promise(res=>{
+            applyImportedArt(newStories[i],img,ok=>{if(ok)artRestoredCount++;res();});
+          }));
+        });
 
         data.stories.forEach(imported=>{
           if(!existingIds.has(imported.id)) return;
           const img=extractImg(imported.illustrations);
           if(!img) return;
           const existing=S.stories.find(s=>s.id===imported.id);
-          if(existing&&applyImportedArt(existing,img)) artRestoredCount++;
+          if(existing) artPromises.push(new Promise(res=>{
+            applyImportedArt(existing,img,ok=>{if(ok)artRestoredCount++;res();});
+          }));
         });
 
         S.stories=[...newStories,...S.stories];
         saveStories();
 
-        // Final sweep: re-save all illustrations after S.stories is fully updated
-        // This ensures any story that was in-memory but not yet persisted gets written
-        S.stories.forEach(s=>{
-          if(s.illustrations&&Object.keys(s.illustrations).length>0) saveIllustrations(s);
-        });
+        // Compress + save artwork async, then re-render with covers
+        Promise.all(artPromises).then(()=>{renderStoryStrip();renderLib();});
 
-        const artNote=artRestoredCount>0?` with artwork for ${artRestoredCount} ${artRestoredCount===1?'story':'stories'}`:'';
+        const artNote=artRestoredCount>0?` with artwork for ${artRestoredCount} stories`:'';
         results.push(`✅ ${newStories.length} new stories imported${artNote} (${data.stories.length} in file)`);
       }
 
@@ -2782,13 +2708,7 @@ function importAll(input){
       // Restore API keys
       if(data.keys){
         if(data.keys.groq)  { localStorage.setItem('groq_key', data.keys.groq);  updateGroqStatus(data.keys.groq); results.push('✅ Groq key restored'); }
-        if(data.keys.el)    {
-          localStorage.setItem('el_key', data.keys.el);
-          updateElStatus(data.keys.el);
-          results.push('✅ ElevenLabs key restored');
-          // Re-fetch voices for the restored key so voice picker is current
-          fetchElVoices(data.keys.el).then(ok=>{ if(ok) renderElVoiceGrid(); });
-        }
+        if(data.keys.el)    { localStorage.setItem('el_key',   data.keys.el);    updateElStatus(data.keys.el);   results.push('✅ ElevenLabs key restored'); }
         if(data.keys.oai)   { localStorage.setItem('oai_key',  data.keys.oai);   updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
       }
 
@@ -2802,7 +2722,7 @@ function importAll(input){
         if(data.prefs.voice_engine||data.prefs.child_name) results.push('✅ Preferences restored');
       }
 
-      // Re-render UI — including Parent Area so key inputs repopulate
+      // Re-render UI — renderParent repopulates key fields immediately
       renderHeroStrip(); renderStoryStrip(); renderLib(); renderParent();
       updateStreakDisplay();
       document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
@@ -2889,17 +2809,6 @@ function updateGreeting(){
 }
 
 // ─── INIT ────────────────────────────────────────
-function checkAppVersion(){
-  const stored=localStorage.getItem('sm_app_version');
-  if(stored&&stored!==APP_VERSION){
-    const banner=document.createElement('div');
-    banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999;background:linear-gradient(135deg,var(--fire),#b45309);color:#fff;padding:12px 16px;font-family:Nunito,sans-serif;font-size:.82rem;font-weight:900;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.4);';
-    banner.innerHTML='<span style="flex:1;">⚠️ Story Magic updated to v'+APP_VERSION+' — you may be running a cached old version. Please clear your browser cache and reload.</span><span onclick="this.parentElement.remove()" style="cursor:pointer;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 10px;">✕</span>';
-    document.body.appendChild(banner);
-  }
-  localStorage.setItem('sm_app_version',APP_VERSION);
-}
-
 function init(){
   // Demo pages for built-in stories that have no data
   S.stories.forEach(s=>{if(!s.data) s.data=demoPages(s.theme,[S.heroes[0]?.name||'Alex',S.heroes[1]?.name]);});
@@ -2908,6 +2817,7 @@ function init(){
   // Also prune any orphan keys from deleted stories to free space
   rehydrateAllIllustrations();
   pruneOrphanIllustrations();
+  checkAppVersion();
 
   updateGroqStatus(localStorage.getItem('groq_key')||'');
   updateElStatus(localStorage.getItem('el_key')||'');
@@ -2929,7 +2839,6 @@ function init(){
   document.getElementById('hero-count-lbl').textContent=
     S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
 
-  checkAppVersion();
   window.speechSynthesis?.getVoices();
   // voiceschanged fires asynchronously in Chrome — store voices when ready
   if(window.speechSynthesis){
