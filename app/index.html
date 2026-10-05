@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Story Magic ✨</title>
 
 <!-- PWA -->
@@ -14,8 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="Story Magic">
 
 <!-- Favicons -->
-<link rel="icon" type="image/x-icon" href="./favicon.ico">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 
 <!-- SEO / Open Graph -->
 <meta name="description" content="Create magical personalised storybooks with AI illustrations and read-aloud narration.">
@@ -313,6 +313,15 @@ select.inp{appearance:none;cursor:pointer;}
 .ni.on .ni-lb{color:var(--v2);}
 .ncr{background:linear-gradient(135deg,var(--v),var(--rose));border-radius:50%;width:48px;height:48px;flex-shrink:0;margin-top:-10px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;box-shadow:0 4px 18px rgba(124,58,237,.5);cursor:pointer;transition:transform .15s;}
 .ncr:active{transform:scale(.86);}
+
+/* ── v3.1: reader "paper page", focus + motion + touch-input polish ── */
+.logo-mark{display:inline-block;}
+.page-body{background:linear-gradient(180deg,#FFF7E8,#FBEBD0);color:#2A1F3D;border:1px solid rgba(180,120,60,.4);box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 10px 28px rgba(0,0,0,.4);line-height:1.95;}
+.page-body .word:hover{background:rgba(124,58,237,.14);color:#5B21B6;}
+.page-body .word.hl{background:#FACC15;color:#1B1230;box-shadow:0 0 0 2px #FACC15;}
+[role="button"]:focus-visible,button:focus-visible,a:focus-visible,.inp:focus-visible{outline:2px solid var(--gold2);outline-offset:2px;}
+@media (pointer:coarse){input,select,textarea,.inp,.api-iw .inp{font-size:16px;}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important;}}
 </style>
 </head>
 <body>
@@ -322,7 +331,7 @@ select.inp{appearance:none;cursor:pointer;}
 <!-- ══════════ HOME ══════════ -->
 <div id="pg-home" class="scr on">
   <div class="tb">
-    <div class="logo">✨ Story Magic <span style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v3.0</span></div>
+    <div class="logo"><svg class="logo-mark" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true" focusable="false" style="vertical-align:-5px;margin-right:4px;-webkit-text-fill-color:initial"><defs><linearGradient id="smBk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F9A8D4"/><stop offset="1" stop-color="#FCD34D"/></linearGradient></defs><path d="M5 41 32 52 59 41V47L32 58 5 47Z" fill="#3B3F8F"/><path d="M7 25Q20 20 32 27V52Q20 45 7 47Z" fill="url(#smBk)"/><path d="M57 25Q44 20 32 27V52Q44 45 57 47Z" fill="url(#smBk)" fill-opacity=".92"/><path d="M32 27V52" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/><path d="M32 3Q32 10 39 10Q32 10 32 17Q32 10 25 10Q32 10 32 3Z" fill="#C4B5FD"/><path d="M14 12.8Q14 17 18.2 17Q14 17 14 21.2Q14 17 9.8 17Q14 17 14 12.8Z" fill="#A78BFA"/><path d="M51 10Q51 15 56 15Q51 15 51 20Q51 15 46 15Q51 15 51 10Z" fill="#C4B5FD"/><path d="M40 21.2Q40 24 42.8 24Q40 24 40 26.8Q40 24 37.2 24Q40 24 40 21.2Z" fill="#F9A8D4"/></svg> Story Magic <span id="ver-badge" style="font-size:.55rem;background:rgba(124,58,237,.3);border:1px solid rgba(167,139,250,.3);border-radius:var(--pill);padding:2px 7px;color:var(--v2);font-weight:900;vertical-align:middle;font-family:'Nunito',sans-serif;">v3.1</span></div>
     <div class="tb-r">
       <div class="pill" id="api-status-pill" onclick="go('parent')" title="API Status">⚡ <span id="xp-show">0</span> XP</div>
       <div class="pill" style="cursor:pointer;" onclick="openFeedback()">📝</div>
@@ -723,13 +732,19 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🧠 Groq AI (Story Generation)</div></div>
     <div class="api-wrap">
       <div class="api-t">🔑 Groq API Key</div>
-      <div class="api-s">Enables live AI story generation using Llama 3.3. Get a free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
+      <div class="api-s">Enables live AI story generation (default model: Llama 3.3 70B). Get a free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
       <div class="api-iw"><input class="inp" id="groq-inp" type="password" placeholder="gsk_xxxxxxxxxxxxxxxxxxxx"><div class="api-eye" onclick="toggleEye('groq-inp')">👁️</div></div>
       <div class="api-st"><div class="led off" id="api-led"></div><span id="api-st-txt">No key — demo stories used</span></div>
       <div class="api-btns">
         <button class="btn btn-v" onclick="saveGroqKey()">💾 Save Key</button>
         <button class="btn btn-ghost" onclick="testGroqKey()">🧪 Test</button>
       </div>
+      <div class="lbl" style="margin:6px 0;" id="groq-model-lbl">Model</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select class="inp" id="groq-model" aria-labelledby="groq-model-lbl" onchange="setGroqModel(this.value)" style="margin:0;flex:1;min-width:0;"></select>
+        <button class="btn btn-ghost" style="width:auto;margin:0;padding:12px 14px;font-size:.85rem;" onclick="refreshGroqModels()">🔄 Refresh</button>
+      </div>
+      <div class="api-s" id="groq-model-note" style="margin:6px 0 0;"></div>
     </div>
 
     <!-- Print -->
@@ -835,11 +850,11 @@ select.inp{appearance:none;cursor:pointer;}
   <div class="xf-s" id="modal-sub">Please wait</div>
   <div class="xf-dots"><div class="xf-d"></div><div class="xf-d"></div><div class="xf-d"></div></div>
 </div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 'use strict';
-const APP_VERSION='3.0';
+const APP_VERSION='3.1'; // keep in sync with CACHE in sw.js (story-magic-v3.1)
 // ─── HELPERS ────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let _tt;
@@ -1218,7 +1233,7 @@ function renderStoryStrip(){
     const d=document.createElement('div');d.className='scard';d.onclick=()=>openReader(s.id);
     const sCover=s.illustrations&&s.illustrations['p0'];
     d.innerHTML=sCover
-      ?`<div class="scov" style="background:${s.bg};padding:0;overflow:hidden;"><img src="${sCover}" style="width:100%;height:106px;object-fit:cover;display:block;"><div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`
+      ?`<div class="scov" style="background:${s.bg};padding:0;overflow:hidden;"><img src="${sCover}" alt="" style="width:100%;height:106px;object-fit:cover;display:block;"><div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`
       :`<div class="scov" style="background:${s.bg}">${s.em}<div class="sfade"></div></div><div class="si"><div class="st">${s.title}</div><div class="sm">${s.pages} pages</div><span class="sc">▶ Read</span></div>`;
     row.appendChild(d);
   });
@@ -1310,7 +1325,7 @@ async function generateStory(){
   const modal=document.getElementById('modal');
   const mEm=document.getElementById('modal-em'),mT=document.getElementById('modal-title'),mS=document.getElementById('modal-sub');
   modal.classList.add('on');
-  const steps=[['\u26a1','Asking Groq AI\u2026','Llama 3.3 is warming up!'],['\ud83c\udf0d','Building the world\u2026','Painting '+world+' landscapes'],['\ud83d\udcdd','Writing the story\u2026','Your heroes are getting their quests!'],['✨','Adding the twist\u2026','A surprise is being woven in\u2026'],['🌟','Final sparkles\u2026','Almost ready!']];
+  const steps=[['\u26a1','Asking Groq AI\u2026',groqModel()+' is warming up!'],['\ud83c\udf0d','Building the world\u2026','Painting '+world+' landscapes'],['\ud83d\udcdd','Writing the story\u2026','Your heroes are getting their quests!'],['✨','Adding the twist\u2026','A surprise is being woven in\u2026'],['🌟','Final sparkles\u2026','Almost ready!']];
 
   const key=localStorage.getItem('groq_key')||'';
   let pagesArr=[];
@@ -1344,7 +1359,7 @@ Format EXACTLY:
 PAGE 1: [text]
 PAGE 2: [text]
 (continue for all ${pageCount} pages)`;
-      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:Math.max(1600,pageCount*300),messages:[{role:'user',content:prompt}]})});
+      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:groqModel(),max_tokens:Math.max(1600,pageCount*300),messages:[{role:'user',content:prompt}]})});
       if(!res.ok)throw new Error('HTTP '+res.status);
       const data=await res.json();const raw=data.choices?.[0]?.message?.content||'';
       const matches=raw.match(/PAGE \d+:\s*([\s\S]*?)(?=\nPAGE \d+:|$)/g);
@@ -1418,7 +1433,7 @@ function checkAppVersion(){
   if(stored&&stored!==APP_VERSION){
     const banner=document.createElement('div');
     banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999;background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;padding:12px 16px;font-family:Nunito,sans-serif;font-size:.82rem;font-weight:900;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.4);';
-    banner.innerHTML='<span style="flex:1;">⚠️ Story Magic updated to v'+APP_VERSION+' — please clear your browser cache and reload.</span><span onclick="this.parentElement.remove()" style="cursor:pointer;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 10px;">✕</span>';
+    banner.innerHTML='<span style="flex:1;">✨ Story Magic updated to v'+APP_VERSION+'.</span><span onclick="this.parentElement.remove()" style="cursor:pointer;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 10px;">✕</span>';
     document.body.appendChild(banner);
   }
   localStorage.setItem('sm_app_version',APP_VERSION);
@@ -2331,7 +2346,7 @@ function renderLib(){
       ?'background:rgba(16,185,129,.18);border:1px solid rgba(110,231,183,.3);color:var(--mint2);'
       :'background:rgba(255,255,255,.06);border:1px solid var(--bdr);color:var(--dim);';
     const coverHtml=coverImg
-      ?`<div style="position:relative;"><img src="${coverImg}" style="width:100%;height:90px;object-fit:cover;display:block;">${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.5);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`
+      ?`<div style="position:relative;"><img src="${coverImg}" alt="" style="width:100%;height:90px;object-fit:cover;display:block;">${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.5);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`
       :`<div class="lcov" style="background:${s.bg}">${s.em}${i===0&&!isLocked?'<div class="lnew">NEW</div>':''}${isLocked?'<div style="position:absolute;top:5px;right:5px;font-size:.75rem;background:rgba(0,0,0,.4);border-radius:999px;padding:2px 6px;">🔒</div>':''}</div>`;
     const editChips=isLocked?'':`
       <span style="font-size:.62rem;background:rgba(14,165,233,.15);border:1px solid rgba(125,211,252,.25);border-radius:var(--pill);padding:2px 8px;color:var(--sky2);font-weight:900;cursor:pointer;" onclick="event.stopPropagation();quickAddArt('${s.id}')">${coverImg?'🖼️ Art':'🖼️ Add'}</span>
@@ -2469,7 +2484,7 @@ function renderParent(){
   }
   const ml=document.getElementById('memory-lane');ml.innerHTML='';
   S.stories.slice(0,4).forEach(s=>{const d=document.createElement('div');d.className='ml-item';d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div><div class="ml-b">+50 XP</div>`;ml.appendChild(d);});
-  const k=localStorage.getItem('groq_key')||'';if(k)document.getElementById('groq-inp').value=k;updateGroqStatus(k);
+  const k=localStorage.getItem('groq_key')||'';if(k)document.getElementById('groq-inp').value=k;updateGroqStatus(k);renderGroqModels();
   const ek=localStorage.getItem('el_key')||'';if(ek)document.getElementById('el-key-inp').value=ek;updateElStatus(ek);
   const ok=localStorage.getItem('oai_key')||'';if(ok)document.getElementById('oai-key-inp').value=ok;updateOAIStatus(ok);
   const n=localStorage.getItem('par_name');if(n)document.getElementById('par-name').value=n;
@@ -2493,8 +2508,44 @@ function saveProfile(){
 function toggleEye(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
 
 // Groq
-function saveGroqKey(){const k=document.getElementById('groq-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}if(!k.startsWith('gsk_')){toast('⚠️ Keys start with gsk_…');return;}localStorage.setItem('groq_key',k);updateGroqStatus(k);toast('✅ Groq key saved! AI stories now live ⚡');}
-async function testGroqKey(){const k=document.getElementById('groq-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}toast('🧪 Testing…');try{const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:10,messages:[{role:'user',content:'Say: OK'}]})});if(!r.ok)throw new Error('HTTP '+r.status);toast('✅ Groq works! ⚡');localStorage.setItem('groq_key',k);updateGroqStatus(k);}catch(e){toast('❌ '+e.message.slice(0,40));}}
+function saveGroqKey(){const k=document.getElementById('groq-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}if(!k.startsWith('gsk_')){toast('⚠️ Keys start with gsk_…');return;}localStorage.setItem('groq_key',k);updateGroqStatus(k);toast('✅ Groq key saved! AI stories now live ⚡');refreshGroqModels(true);}
+async function testGroqKey(){const k=document.getElementById('groq-inp').value.trim();if(!k){toast('⚠️ Enter a key');return;}toast('🧪 Testing…');try{const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},body:JSON.stringify({model:groqModel(),max_tokens:10,messages:[{role:'user',content:'Say: OK'}]})});if(!r.ok)throw new Error('HTTP '+r.status);toast('✅ Groq works! ⚡');localStorage.setItem('groq_key',k);updateGroqStatus(k);}catch(e){toast('❌ '+e.message.slice(0,40));}}
+
+// ── Groq model picker (update-only: default + saved selection are never replaced) ──
+const GROQ_DEFAULT_MODEL='llama-3.3-70b-versatile';
+function groqModel(){return localStorage.getItem('groq_model')||GROQ_DEFAULT_MODEL;}
+function groqFetchedModels(){try{const l=JSON.parse(localStorage.getItem('groq_models')||'[]');return Array.isArray(l)?l:[];}catch(e){return [];}}
+function isGroqChatModel(id){return !/whisper|tts|guard|embed|moderation|transcri|speech/i.test(id);}
+function renderGroqModels(){
+  const sel=document.getElementById('groq-model');if(!sel)return;
+  const fetched=groqFetchedModels(),cur=groqModel();
+  const ids=[...new Set([GROQ_DEFAULT_MODEL,...fetched,cur])];
+  sel.innerHTML='';
+  ids.forEach(id=>{const o=document.createElement('option');o.value=id;
+    o.textContent=id+((fetched.length&&!fetched.includes(id))?' (not in latest list)':'');sel.appendChild(o);});
+  sel.value=cur;
+  const note=document.getElementById('groq-model-note');
+  if(note){
+    if(fetched.length&&!fetched.includes(cur)){note.textContent='⚠️ Your selected model is not in Groq’s latest list. It is kept as-is; pick another if it stops working.';note.style.color='var(--gold2)';}
+    else{note.textContent=fetched.length?('Updated list: '+fetched.length+' chat models available.'):'Save your key or tap Refresh to load Groq’s current model list.';note.style.color='var(--dim)';}
+  }
+}
+function setGroqModel(id){if(!id)return;localStorage.setItem('groq_model',id);renderGroqModels();toast('✅ Model: '+id);}
+async function refreshGroqModels(silent){
+  const inp=document.getElementById('groq-inp');
+  const k=((inp&&inp.value.trim())||localStorage.getItem('groq_key')||'');
+  if(!k.startsWith('gsk_')){if(!silent)toast('⚠️ Save a Groq key first');return;}
+  try{
+    const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{'Authorization':'Bearer '+k}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    const ids=(j.data||[]).filter(m=>m&&m.id&&m.active!==false&&isGroqChatModel(m.id)).map(m=>m.id).sort();
+    if(!ids.length)throw new Error('No models returned');
+    localStorage.setItem('groq_models',JSON.stringify(ids));
+    renderGroqModels();
+    if(!silent)toast('✅ '+ids.length+' models loaded');
+  }catch(e){renderGroqModels();if(!silent)toast('❌ '+String(e.message||e).slice(0,40));}
+}
 function updateGroqStatus(k){const l=document.getElementById('api-led'),t=document.getElementById('api-st-txt');if(k&&k.startsWith('gsk_')){l.className='led on';t.textContent='Groq connected — AI stories ready ⚡';t.style.color='var(--mint2)';}else{l.className='led off';t.textContent='No key — demo stories used';t.style.color='var(--dim)';}}
 
 // ElevenLabs
@@ -2559,7 +2610,7 @@ function exportAll(includeArtwork=false){
   const payload={
     exported: new Date().toISOString(),
     app: 'Story Magic',
-    version: '3.0',
+    version: APP_VERSION,
     includesArtwork: includeArtwork,
     heroes: S.heroes,
     stories: storiesPayload,
@@ -2828,8 +2879,10 @@ function init(){
   rehydrateAllIllustrations();
   pruneOrphanIllustrations();
   checkAppVersion();
+  const vb=document.getElementById('ver-badge');if(vb)vb.textContent='v'+APP_VERSION;
 
   updateGroqStatus(localStorage.getItem('groq_key')||'');
+  renderGroqModels();
   updateElStatus(localStorage.getItem('el_key')||'');
   updateOAIStatus(localStorage.getItem('oai_key')||'');
   S.voiceEngine=localStorage.getItem('sm_engine')||'browser';
@@ -2869,11 +2922,54 @@ if(document.readyState==='loading'){
 
 // ─── SERVICE WORKER REGISTRATION ─────────────────
 if ('serviceWorker' in navigator) {
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return; // first install: nothing to refresh
+    showUpdateToast();
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
+      .then(reg => {
+        console.log('SW registered:', reg.scope);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+      })
       .catch(err => console.warn('SW failed:', err));
   });
+}
+
+// ─── ACCESSIBILITY: make clickable div/span controls keyboard-reachable ───
+(function(){
+  const NATIVE=/^(A|BUTTON|INPUT|SELECT|TEXTAREA|SUMMARY|LABEL)$/;
+  function enhance(el){
+    if(el.nodeType!==1)return;
+    const list=el.matches&&el.matches('[onclick]')?[el]:[];
+    el.querySelectorAll&&el.querySelectorAll('[onclick]').forEach(n=>list.push(n));
+    list.forEach(n=>{
+      if(NATIVE.test(n.tagName))return;
+      if(!n.hasAttribute('role'))n.setAttribute('role','button');
+      if(!n.hasAttribute('tabindex'))n.setAttribute('tabindex','0');
+    });
+  }
+  function start(){
+    enhance(document.body);
+    new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(enhance))).observe(document.body,{childList:true,subtree:true});
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Enter'&&e.key!==' ')return;
+      const t=e.target;
+      if(t&&t.getAttribute&&t.getAttribute('role')==='button'&&!NATIVE.test(t.tagName)){e.preventDefault();t.click();}
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+function showUpdateToast() {
+  if (document.getElementById('update-toast')) return;
+  const b = document.createElement('div');
+  b.id = 'update-toast'; b.setAttribute('role', 'status');
+  b.style.cssText = "position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;padding:10px 14px 10px 18px;border-radius:999px;font-family:'Nunito',sans-serif;font-weight:900;font-size:.82rem;z-index:310;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(124,58,237,.5);max-width:calc(100vw - 36px);";
+  b.innerHTML = '<span>✨ Update ready</span><button type="button" style="cursor:pointer;background:rgba(255,255,255,.25);color:#fff;border:0;border-radius:999px;padding:4px 12px;font:inherit;" id="update-go">Reload</button><button type="button" aria-label="Dismiss" style="cursor:pointer;background:transparent;color:#fff;border:0;font:inherit;" id="update-x">✕</button>';
+  document.body.appendChild(b);
+  document.getElementById('update-go').onclick = () => location.reload();
+  document.getElementById('update-x').onclick = () => b.remove();
 }
 
 // ─── PWA INSTALL PROMPT ──────────────────────────

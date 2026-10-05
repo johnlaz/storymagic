@@ -11,19 +11,52 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
-  "categories": ["education", "kids", "entertainment"],
-  "screenshots": [],
+  "categories": [
+    "education",
+    "kids",
+    "entertainment"
+  ],
+  "screenshots": [
+    {
+      "src": "shot-home.png",
+      "sizes": "720x1582",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home: pick your heroes and start a story"
+    },
+    {
+      "src": "shot-worlds.png",
+      "sizes": "720x1414",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Pick a world for the adventure"
+    },
+    {
+      "src": "shot-quest.png",
+      "sizes": "720x1560",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Choose the quest"
+    },
+    {
+      "src": "shot-styles.png",
+      "sizes": "720x1560",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Pick a story style"
+    }
+  ],
   "lang": "en"
 }
