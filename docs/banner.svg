@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300" role="img" aria-labelledby="t d">
+  <title id="t">Story Magic</title>
+  <desc id="d">Story Magic banner: an open storybook with sparkles and the tagline AI storybooks where your child is the hero.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B0764"/><stop offset="1" stop-color="#08051A"/></linearGradient>
+    <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F9A8D4"/><stop offset="1" stop-color="#FCD34D"/></linearGradient>
+    <linearGradient id="tx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C4B5FD"/><stop offset=".5" stop-color="#F9A8D4"/><stop offset="1" stop-color="#FCD34D"/></linearGradient>
+  </defs>
+  <rect width="1200" height="300" rx="24" fill="url(#bg)"/>
+  <g fill="#C4B5FD" fill-opacity=".55">
+    <circle cx="640" cy="40" r="2"/><circle cx="900" cy="70" r="2.4"/><circle cx="1010" cy="30" r="1.8"/><circle cx="1120" cy="90" r="2.2"/><circle cx="760" cy="250" r="2"/><circle cx="1060" cy="240" r="2.4"/><circle cx="560" cy="270" r="1.8"/>
+  </g>
+  <g transform="translate(70 28) scale(3.7)">
+    <path d="M5 41 32 52 59 41V47L32 58 5 47Z" fill="#3B3F8F"/>
+    <path d="M7 25Q20 20 32 27V52Q20 45 7 47Z" fill="url(#pg)"/>
+    <path d="M57 25Q44 20 32 27V52Q44 45 57 47Z" fill="url(#pg)" fill-opacity=".92"/>
+    <path d="M32 27V52" stroke="#fff" stroke-opacity=".55" stroke-width="1.4"/>
+    <path d="M32 3Q32 10 39 10Q32 10 32 17Q32 10 25 10Q32 10 32 3Z" fill="#C4B5FD"/>
+    <path d="M14 12.8Q14 17 18.2 17Q14 17 14 21.2Q14 17 9.8 17Q14 17 14 12.8Z" fill="#A78BFA"/>
+    <path d="M51 10Q51 15 56 15Q51 15 51 20Q51 15 46 15Q51 15 51 10Z" fill="#C4B5FD"/>
+  </g>
+  <text x="350" y="146" font-family="'Trebuchet MS','Segoe UI',Helvetica,Arial,sans-serif" font-size="84" font-weight="800" fill="url(#tx)">Story Magic</text>
+  <text x="354" y="200" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="30" font-weight="400" fill="#EDE9FF">AI storybooks where your child is the hero.</text>
+  <text x="354" y="242" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="22" fill="#C4B5FD">Free PWA  ·  No account  ·  Your data stays on your device</text>
+</svg>

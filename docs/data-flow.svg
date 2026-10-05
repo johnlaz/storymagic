@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" width="1200" height="520" role="img" aria-labelledby="t d">
+  <title id="t">Story Magic data flow</title>
+  <desc id="d">Your device stores heroes, stories, artwork and API keys locally. Story prompts go to Groq, narration text goes to ElevenLabs or OpenAI if enabled, and artwork is created by hand in Gemini and pasted back.</desc>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0L10 4 0 8Z" fill="#C4B5FD"/></marker>
+  </defs>
+  <style>
+    .h{font:700 24px 'Segoe UI',Helvetica,Arial,sans-serif;fill:#FFFFFF}
+    .s{font:400 18px 'Segoe UI',Helvetica,Arial,sans-serif;fill:#DDD6FE}
+    .l{font:600 17px 'Segoe UI',Helvetica,Arial,sans-serif;fill:#FCD34D}
+    .t{font:700 28px 'Trebuchet MS','Segoe UI',Helvetica,Arial,sans-serif;fill:#FFFFFF}
+  </style>
+  <rect width="1200" height="520" rx="24" fill="#12082B"/>
+  <text x="600" y="52" text-anchor="middle" class="t">Where your data goes</text>
+
+  <rect x="40" y="110" width="400" height="330" rx="20" fill="#2A1457" stroke="#A78BFA" stroke-width="2"/>
+  <text x="70" y="156" class="h">Your device</text>
+  <text x="70" y="200" class="s">Heroes and child profiles</text>
+  <text x="70" y="232" class="s">Stories and saved artwork</text>
+  <text x="70" y="264" class="s">XP, badges and settings</text>
+  <text x="70" y="296" class="s">Your API keys (localStorage)</text>
+  <text x="70" y="344" class="l">Nothing is uploaded to a</text>
+  <text x="70" y="370" class="l">Story Magic server. There isn't one.</text>
+  <text x="70" y="412" class="s">Export / import backups as JSON files</text>
+
+  <line x1="440" y1="170" x2="760" y2="170" stroke="#C4B5FD" stroke-width="3" marker-end="url(#ar)"/>
+  <line x1="440" y1="270" x2="760" y2="270" stroke="#C4B5FD" stroke-width="3" marker-end="url(#ar)"/>
+  <line x1="440" y1="370" x2="760" y2="370" stroke="#C4B5FD" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#ar)"/>
+  <text x="600" y="156" text-anchor="middle" class="l">story prompt</text>
+  <text x="600" y="256" text-anchor="middle" class="l">narration text (optional)</text>
+  <text x="600" y="356" text-anchor="middle" class="l">copy / paste by hand</text>
+
+  <rect x="760" y="120" width="400" height="100" rx="16" fill="#1E3A5F" stroke="#7DD3FC" stroke-width="2"/>
+  <text x="790" y="162" class="h">Groq</text>
+  <text x="790" y="194" class="s">Writes the story (your key)</text>
+
+  <rect x="760" y="226" width="400" height="100" rx="16" fill="#3B1F4F" stroke="#F9A8D4" stroke-width="2"/>
+  <text x="790" y="268" class="h">ElevenLabs or OpenAI</text>
+  <text x="790" y="300" class="s">Read-aloud voice, if you add a key</text>
+
+  <rect x="760" y="332" width="400" height="100" rx="16" fill="#3F2A12" stroke="#FCD34D" stroke-width="2"/>
+  <text x="790" y="374" class="h">Gemini (website)</text>
+  <text x="790" y="406" class="s">Make art, paste it into the book</text>
+
+  <text x="600" y="490" text-anchor="middle" class="s">Each provider only receives what you send it with your own key. Nothing is sent without a key.</text>
+</svg>
