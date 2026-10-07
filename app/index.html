@@ -532,6 +532,18 @@ select.inp{appearance:none;cursor:pointer;}
 
     <!-- Step 1: Get Artwork button -->
     <div id="artwork-step1">
+    <!-- In-app Gemini generation (shown only when the key passed the image-access test) -->
+    <div id="gem-gen-box" style="display:none;background:linear-gradient(135deg,rgba(14,165,233,.14),rgba(99,102,241,.12));border:1.5px solid rgba(99,102,241,.35);border-radius:var(--rr);padding:14px;margin-bottom:14px;">
+      <div style="font-family:'Baloo 2',cursive;font-weight:800;font-size:.98rem;margin-bottom:3px;">⚡ Make the art here</div>
+      <div style="font-size:.74rem;color:var(--dim);line-height:1.55;margin-bottom:10px;">Uses your Gemini key. Google bills each image to that key.</div>
+      <button class="btn btn-v" onclick="gemGenerate('cover')" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);">⚡ Cover art (1 image for every page)</button>
+      <button class="btn btn-g" onclick="gemGenerate('pages')">⚡ Art for every page</button>
+      <div id="gem-prog" style="display:none;margin-top:10px;" role="status" aria-live="polite">
+        <div id="gem-prog-txt" style="font-size:.76rem;color:var(--dim);margin-bottom:5px;"></div>
+        <div style="height:8px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;"><div id="gem-prog-bar" style="height:100%;width:0;background:linear-gradient(90deg,#0ea5e9,#a78bfa);transition:width .3s;"></div></div>
+      </div>
+    </div>
+
       <button class="btn btn-v" onclick="getArtwork()" style="font-size:1.1rem;padding:18px;">
         🎨 Get Artwork
       </button>
@@ -610,6 +622,10 @@ select.inp{appearance:none;cursor:pointer;}
     <div class="ftab" onclick="filterLib(this,'wild west')">🤠 Wild West</div>
     <div class="ftab" onclick="filterLib(this,'tiny town')">🐜 Tiny</div>
     <div class="ftab" onclick="filterLib(this,'ancient egypt')">🏺 Egypt</div>
+  </div>
+  <div id="sample-card" style="display:none;margin:0 18px 14px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(124,58,237,.35),rgba(236,72,153,.25));border:1px solid rgba(255,255,255,.18);align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px"><div style="font-weight:800;font-size:15px">📚 Sample library</div><div id="sample-card-txt" style="font-size:12.5px;opacity:.85;margin-top:2px"></div></div>
+    <button class="btn btn-g" id="sample-btn" onclick="addSampleLibrary()" style="white-space:nowrap;width:auto;padding:11px 18px;margin:0;font-size:.95rem">✨ Add sample library</button>
   </div>
   <div class="lgrid" id="lib-grid"></div>
   <input type="file" id="lib-art-inp" accept="image/*" style="display:none" onchange="handleLibArtFile(this)">
@@ -747,6 +763,24 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="api-s" id="groq-model-note" style="margin:6px 0 0;"></div>
     </div>
 
+    <!-- Gemini API (optional, paid key) -->
+    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎨 Gemini API (optional · paid key)</div></div>
+    <div class="api-wrap">
+      <div class="api-t">🔑 Gemini API Key</div>
+      <div class="api-s">Optional. With a paid Google key (billing enabled) the reader can generate illustrations for you in one tap. Without one, artwork keeps using the Gemini website flow. Get a key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>.</div>
+      <div class="api-iw"><input class="inp" id="gem-inp" type="password" placeholder="AIza…" aria-label="Gemini API key"><div class="api-eye" onclick="toggleEye('gem-inp')">👁️</div></div>
+      <div class="api-st"><div class="led off" id="gem-led"></div><span id="gem-st-txt">No key — using the Gemini website flow</span></div>
+      <div class="api-btns">
+        <button class="btn btn-v" onclick="saveGemKey()">💾 Save Key</button>
+        <button class="btn btn-ghost" onclick="testGemAccess()">🧪 Test image access</button>
+      </div>
+      <div class="lbl" style="margin:6px 0;" id="gem-model-lbl">Image model</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select class="inp" id="gem-model-sel" aria-labelledby="gem-model-lbl" onchange="setGemModel(this.value)" style="margin:0;flex:1;min-width:0;"></select>
+        <button class="btn btn-ghost" style="width:auto;margin:0;padding:12px 14px;font-size:.85rem;" onclick="refreshGemModels()">🔄 Refresh</button>
+      </div>
+    </div>
+
     <!-- Print -->
     <!-- Hidden until real print ordering exists (requestPrint() only simulates a send). -->
     <div class="sec" style="padding:0 0 11px;display:none;"><div class="sec-t">📦 Order a Printed Book</div></div>
@@ -855,7 +889,7 @@ select.inp{appearance:none;cursor:pointer;}
 
 <script>
 'use strict';
-const APP_VERSION='3.2'; // keep in sync with VERSION in sw.js
+const APP_VERSION='3.4'; // keep in sync with VERSION in sw.js
 // ─── HELPERS ────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let _tt;
@@ -956,11 +990,7 @@ function libCountText(){const real=S.stories.filter(x=>!String(x.id).startsWith(
 // Storage-full guard: tell the user instead of failing silently (stopgap until artwork moves to IndexedDB).
 (function(){const o=Storage.prototype.setItem;let last=0;Storage.prototype.setItem=function(k,v){try{return o.call(this,k,v);}catch(e){if(e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014)){const t=Date.now();if(t-last>8000){last=t;try{toast('⚠️ Device storage is full. Export a backup, then delete old stories or artwork.',6000);}catch(_){}}return;}throw e;}};})();
 // ─── STATE ───────────────────────────────────────
-const S={
-  xp:   parseInt(localStorage.getItem('sm_xp'))||0,
-  coins:parseInt(localStorage.getItem('sm_coins'))||0,
-  heroes: JSON.parse(localStorage.getItem('sm_heroes')||'null') || [],
-  stories: JSON.parse(localStorage.getItem('sm_stories')||'null') || [
+const SAMPLE_STORIES=[
     // ── Sample story library ──
     {id:"sample-1",theme:"dream world",em:"\ud83c\udf08",title:"\ud83c\udf08 Dream World Adventure",pages:12,bg:"linear-gradient(135deg,#4c1d95,#7c3aed)",data:[`In the realm of Dream World, where moonbeams wove silver threads across the sky, a legendary quest began to unfold. Johnny, a young hero with the essence of nature magic coursing through his veins, stood tall, his heart racing with anticipation. With a deep breath, he embarked on a journey to defeat the sneaky villain, Malakai. The wind whispered secrets in his ear, and the trees nodded in encouragement, their leaves rustling with an otherworldly language.`,`As Johnny ventured deeper into the Dream World, the landscape shifted and swirled, like a tapestry of wonder. The air was alive with the sweet scent of blooming wildflowers, and the soft chirping of celestial birds filled his ears. His companions, a group of brave and noble heroes, each possessed a unique power, waited for him at the threshold of the mystical forest. Together, they would face the darkness that threatened to consume their world, and Johnny felt a surge of excitement and nervousness.`,`The path ahead was treacherous, winding through a maze of twisted shadows and flickering torches that cast eerie silhouettes on the trees. Johnny's heart pounded in his chest as he led the way, his senses on high alert for any sign of danger. The ground beneath their feet began to tremble, and the sky grew dark, as if the very fabric of reality was beginning to unravel. The heroes exchanged cautious glances, their faces set with determination, their eyes gleaming with a fierce inner light.`,`Suddenly, a figure emerged from the darkness, its presence like a cold wind that sent shivers down their spines. Malakai, the sneaky villain, sneered at the heroes, his eyes gleaming with malevolent intent. Johnny stood tall, his nature magic at the ready, as his companions prepared to unleash their own powers. The air was electric with tension, and the outcome of the battle hung precariously in the balance, like a leaf on the edge of a whirlwind.`,`The battle raged on, with the heroes fighting valiantly against Malakai's dark minions. Johnny summoned a blast of thorns to ensnare their enemies, while his companions unleashed their own unique abilities. The sound of clashing steel and the scent of ozone filled the air, as the heroes fought to gain the upper hand. But despite their bravery, the tide of the battle seemed to be turning in favor of the villain, and Johnny's heart sank with a growing sense of unease.`,`Just as all hope seemed lost, a hero named Luna unleashed her power, a brilliant beam of light that cut through the darkness like a shining sword. The minions recoiled, covering their eyes, as the heroes pressed their advantage. Johnny felt a surge of excitement and gratitude towards his companion, and together they charged forward, their bond and determination driving them onward. The villain's powers, however, seemed to be growing stronger, and the heroes knew they had to end the battle quickly, before the darkness consumed them all.`,`The earth began to shudder, and the sky grew darker, as if the very foundations of the world were being torn apart. Malakai's laughter echoed through the land, a cold, mirthless sound that sent shivers down the spines of the heroes. Johnny's nature magic was faltering, and his companions were beginning to tire, their powers waning as the battle raged on. The outcome of the quest hung in the balance, and the heroes knew they had to find a way to defeat the villain, before it was too late, and the Dream World was lost forever.`,`In a desperate bid to turn the tide of the battle, a hero named Aria summoned a fierce storm, with winds that howled like a chorus of banshees and lightning that flashed like a thousand burning stars. The minions were scattered, and Malakai stumbled backward, his powers momentarily disrupted. Johnny and his companions took advantage of the reprieve, launching a fierce counterattack that sent the villain stumbling. But just as victory seemed within their grasp, disaster struck, and the laws of gravity began to falter, like a thread snapped in two.`,`The world around them began to dissolve, as if the very fabric of reality was unraveling. Buildings and trees floated into the air, and the heroes found themselves weightless, drifting like leaves on a windswept sea. Malakai's laughter echoed through the void, a mad, exultant sound that seemed to come from everywhere and nowhere at the same time. Johnny's stomach lurched with a sense of disorientation, as he struggled to comprehend the impossible, and his companions clung to each other, their faces set with determination, their eyes shining with a fierce inner light.`,`In the midst of the chaos, a hero named Kaito used his power to manipulate the air, creating a vortex that pulled the heroes towards him, and kept them from drifting away. Johnny felt a surge of gratitude towards his companion, as they huddled together, trying to make sense of the impossible. The world around them was a surreal landscape of floating objects and distorted gravity, and the heroes knew they had to find a way to restore balance to the universe, before it was too late, and the Dream World was lost forever.`,`With a burst of inspiration, Johnny realized that his nature magic could be used to heal the rift in the fabric of reality. He focused all his energy, calling upon the ancient powers of the earth to aid him. The heroes watched in awe as Johnny's magic took hold, slowly restoring gravity to the world, and pulling everything back down to the ground. The sense of relief was palpable, as the heroes felt the solid earth beneath their feet once more, and the world around them began to return to its natural balance.`,`As the last remnants of chaos dissipated, the heroes stood victorious, their bond and determination having saved the Dream World from the brink of destruction. Johnny felt a sense of pride and wonder, as he gazed out upon the restored landscape, the moonbeams weaving their silver threads once more across the sky. The heroes shared a warm, triumphant smile, their hearts full of joy and gratitude, as they knew that their friendship and courage had saved the day, and the Dream World was once again a place of wonder and magic, where heroes could roam free, and the beauty of the world would never fade.`],heroIds:[],extras:"",illustrations:{}},
     {id:"sample-2",theme:"ancient egypt",em:"\ud83c\udffa",title:"\ud83c\udffa Ancient Egypt Adventure",pages:12,bg:"linear-gradient(135deg,#78350f,#b45309)",data:[`In the scorching deserts of Ancient Egypt, a grand tournament was about to begin, and Johnny and Cathy were ready to prove their worth. Johnny, with his wild hair and nature magic, was nervous but excited. Cathy, with her sharp mind and magic spells, was confident and determined. As they walked towards the tournament grounds, the sound of drums and cheering crowds filled the air, making their hearts beat faster with anticipation.`,`The tournament was a test of magic, wit, and bravery, and the winners would be granted a single wish. Johnny and Cathy had been training for months, and they were determined to win. They were greeted by the tournament host, a mysterious figure with a sly smile, who explained the rules and the challenges they would face. The crowd was filled with competitors from all over the land, each with their unique abilities and strengths.`,`The first challenge was a maze of mirrors, where competitors had to use their wits to find the exit. Johnny and Cathy worked together, using Johnny's nature magic to sense the subtle changes in the environment and Cathy's magic spells to reveal hidden clues. But as they navigated the maze, they began to feel a sense of unease, as if they were being watched by unseen eyes. Suddenly, a loud whisper echoed through the maze, "You'll never win!"`,`The whisper seemed to come from all directions, and Johnny and Cathy exchanged a nervous glance. They quickened their pace, but the maze seemed to shift and change around them, making it harder to find the exit. Cathy used her magic spells to try and locate the source of the whisper, but it seemed to be coming from everywhere and nowhere at the same time. As they turned a corner, they saw a figure lurking in the shadows, but it disappeared before they could get a good look.`,`Johnny and Cathy finally emerged from the maze, gasping for air and relieved to have made it out. But as they looked around, they realized that one of their competitors, a sly-looking boy named Ani, was missing. The tournament host announced that Ani had been disqualified, but Johnny and Cathy suspected that something more sinister was at play. They began to investigate, searching for clues and talking to the other competitors.`,`As they investigated, they discovered a cryptic message scrawled on the wall, "The eyes that see are not the ones that look." Johnny and Cathy puzzled over the meaning, trying to decipher the code. Cathy used her magic spells to analyze the message, but it seemed to be a riddle within a riddle. Johnny, meanwhile, used his nature magic to sense any hidden patterns or connections.`,`The next challenge was a test of bravery, where competitors had to face their deepest fears. Johnny and Cathy stood back-to-back, ready to face whatever lay ahead. But as they turned to face their fears, they were met with a terrifying sight: a giant snake, its eyes glowing with an otherworldly light. Johnny used his nature magic to communicate with the snake, trying to understand its intentions.`,`But just as Johnny was making progress with the snake, a strange sensation washed over him and Cathy. They felt their bodies begin to switch, their minds swapping places. Johnny looked down and saw that he was now in Cathy's body, and Cathy was in his. They were shocked and disoriented, struggling to adjust to their new surroundings.`,`Ani, the disqualified competitor, appeared, laughing maniacally. He revealed that he had cast a powerful spell, one that would allow him to switch bodies with the winners and claim the prize for himself. Johnny and Cathy, now in each other's bodies, realized they had to work together to break the spell and reclaim their own bodies. They used their unique powers in tandem, with Johnny using Cathy's magic spells to try and reverse the spell.`,`The spell was powerful, and it took all of Johnny and Cathy's combined strength to break it. They worked together, using their nature magic and magic spells to create a powerful counter-curse. The air was filled with sparkling lights and swirling energies as the two spells clashed. Slowly but surely, the spell began to weaken, and Johnny and Cathy felt themselves beginning to switch back.`,`As the spell was broken, Johnny and Cathy returned to their own bodies, gasping with relief. Ani, realizing he had been foiled, let out a defeated cry and disappeared into the crowd. The tournament host appeared, a look of surprise and admiration on his face. He announced that Johnny and Cathy had won the tournament, not just because of their magic, but because of their bravery, wit, and teamwork.`,`Johnny and Cathy stood together, holding the prize and grinning from ear to ear. They felt a sense of pride and accomplishment, knowing that they had worked together to overcome the challenges and defeat the villain. As they walked away from the tournament grounds, the sun setting over the desert landscape, they felt a deep connection and friendship, one that would last a lifetime. The stars began to twinkle in the night sky, and Johnny and Cathy knew that their adventure was only just beginning.`],heroIds:[],extras:"",illustrations:{}},
@@ -976,7 +1006,12 @@ const S={
     {id:"sample-12",theme:"volcano island",em:"\ud83c\udf0b",title:"\ud83c\udf0b Volcano Island Adventure",pages:12,bg:"linear-gradient(135deg,#7f1d1d,#b91c1c)",data:[`On the mysterious Volcano Island, where lava rivers glow like embers, three heroes stood united, ready to face the unknown. Jack and William, twins with an unbreakable bond, shared a quick glance, their eyes sparkling with excitement. Their little brother Sam, with a wild mop of curly hair, bounced up and down, eager to begin their quest. As they ventured deeper into the island, the air grew thick with an eerie, pungent smell, like sulfur and smoke.`,`The twins' super smart brother, William, pulled out a tattered map, spreading it wide on a nearby rock, his fingers tracing the winding paths and hidden caves. Jack and Sam huddled closer, their eyes scanning the creased parchment, as William explained the cryptic symbols and markings that supposedly led to a hidden treasure. The sun beat down upon their heads, casting long shadows across the map, as the sound of distant rumbling grew louder. With a determined nod, the trio set off, their hearts pounding in unison.`,`As they navigated through the dense jungle, the ground began to tremble, and the sound of rumbling turned into a deafening roar, like thunder on a summer day. Sam's eyes grew wide with fear, but Jack quickly reassured him, his voice calm and steady, "Don't worry, Sam, I've got a spell to protect us." With a flick of his wrist, Jack conjured a shimmering barrier, shielding them from the impending danger, as the twins exchanged a knowing glance, their bond stronger than any magic. The air was electric with anticipation, as they waited for the unknown threat to pass.`,`The tremors subsided, and an eerie silence fell over the island, like a held breath. William's eyes narrowed, his mind racing with possibilities, as he examined the surrounding environment, taking note of the twisted tree trunks and the charred underbrush. He pointed to a cluster of peculiar rocks, "Look, these rocks are arranged in a pattern, it's a clue, a message from the island itself." Sam's curiosity was piqued, and he eagerly began to decipher the code, his small hands moving swiftly over the rocks, as the twins watched with interest.`,`The rocks, it seemed, were more than just a simple pattern, for as Sam touched the final stone, the ground gave a faint hum, like a harp string vibrating. The air began to shimmer, revealing a hidden path, winding deep into the heart of the volcano, like a serpent slithering through the grass. Jack's eyes sparkled with excitement, as he whispered, "This must be the way to our destination, the place where we'll build something incredible." With a shared glance, the trio set off, their footsteps echoing through the stillness, as the volcano loomed before them, its peak shrouded in mist.`,`As they climbed higher, the air grew hotter, and the smell of sulfur intensified, like a burning match. William's quick thinking and knowledge of geology proved invaluable, as he navigated them through the treacherous terrain, avoiding hidden crevices and steaming vents. Sam's eyes grew wide with wonder, as they approached a massive, ancient door, adorned with mysterious symbols, like a forgotten language. The door, it seemed, was the entrance to a hidden chamber, where their quest would reach its climax.`,`The door creaked open, revealing a cavernous space, filled with strange, glowing orbs, like fireflies on a summer night. Jack's magic spells proved useful, as he conjured a soft, ethereal light, illuminating the dark recesses of the chamber, like a lantern in the darkness. The orbs, it seemed, were the key to unlocking the secrets of the island, and the trio set to work, deciphering the ancient artifacts, their minds racing with possibilities. As they worked, the silence was broken by the sound of scuttling, scratching noises, like rats in the walls.`,`Suddenly, the chamber was filled with the sound of rushing footsteps, like a herd of wild animals. The villains, it seemed, had caught up with them, their nefarious plans threatening to destroy the very thing the heroes sought to build. William's quick thinking and knowledge of the island's hidden passages proved crucial, as he led the trio through a narrow, winding tunnel, like a rabbit in a maze. The sound of their pursuers grew fainter, but the heroes knew they couldn't shake them off for long, like a dog with a bone.`,`As they emerged from the tunnel, the heroes found themselves at the edge of a massive, precipitous drop, like a bird in flight. The wind howled around them, whipping their hair into a frenzy, like a wild storm. Sam's eyes grew wide with fear, but Jack quickly reassured him, his voice calm and steady, "Don't worry, Sam, I've got a spell to get us across." With a flick of his wrist, Jack conjured a shimmering bridge, spanning the chasm, like a rainbow in the sky.`,`The bridge held firm, and the trio made their way across, their hearts pounding in unison, like a drumbeat. As they reached the other side, they found themselves face to face with their arch-nemesis, a figure shrouded in shadows, like a ghost in the night. The villains' plan, it seemed, was to destroy the very heart of the island, a glowing crystal that pulsed with an otherworldly energy, like a living thing. The heroes knew they had to act fast, like a ticking clock.`,`In a flash of inspiration, William realized that the crystal was the key to unlocking the secrets of the island, and that their quest was not just to build something incredible, but to protect the island itself, like a guardian of the land. With a burst of confidence, the trio combined their unique powers, weaving a powerful spell that would shield the crystal from harm, like a magic shield. The villains, it seemed, were no match for the heroes' combined strength, and they were forced to retreat, like a defeated army.`,`As the dust settled, the heroes stood victorious, their bond stronger than ever, like a warm hug. But as they turned to leave, the world around them began to fade, like a dream dissipating at dawn. Sam's eyes grew wide with wonder, as he realized that their entire adventure had been a dream, or had it? The heroes shared a knowing glance, their hearts still pounding from the excitement, as they smiled, knowing that the true magic lay not in the spells or the island, but in the bonds of brotherhood and friendship that had driven them forward, like a beacon in the darkness, shining bright and warm, a feeling that would stay with them forever.`],heroIds:[],extras:"Jack and william are twins and their little brother is sam",illustrations:{}},
     {id:"sample-13",theme:"wild west",em:"\ud83e\udd20",title:"\ud83e\udd20 Wild West Adventure",pages:12,bg:"linear-gradient(135deg,#78350f,#92400e)",data:[`The sun was setting in the Wild West. Sam, Jack, and William were on a mission to deliver a message. They had to be fast, before sunrise!`,`Sam used his 🔮 Magic Spells to blast through rocks. Jack used his 🔮 Magic Spells to make a bridge appear. They were getting close, but it was getting dark!`,`WHOOSH! A strong wind blew, but William used his 🔍 Super Smart brain to create a map. He found a shortcut through the canyon. They were making good time!`,`KABOOM! A loud explosion rocked the ground. Sam and Jack used their 🔮 Magic Spells to put out the flames. William helped them find the source of the blast.`,`It was a group of bandits, trying to stop them! Jack used his 🔮 Magic Spells to create a smoke screen. Sam and William escaped, but the bandits were getting closer!`,`William used his 🔍 Super Smart brain to create a trap. The bandits fell into it, and the heroes continued their journey. They were getting tired, but they didn't give up!`,`Suddenly, a mysterious portal appeared! WHOOSH! It sucked them in, and they felt weightless. Where were they going?`,`They landed with a THUD! in a strange, new land. It was filled with giant cacti and sandy dunes. The heroes looked at each other, confused.`,`Sam used his 🔮 Magic Spells to create a compass. Jack used his 🔮 Magic Spells to make a lantern. William used his 🔍 Super Smart brain to read the stars.`,`They were in the middle of a desert! But they worked together, using their powers to find their way. The sun was starting to rise, but they were almost there!`,`They saw a town in the distance, and the heroes cheered! They delivered the message just in time, and the people were grateful. The heroes smiled, proud of their teamwork.`,`The heroes learned that together, they could overcome any obstacle. Sam, Jack, and William returned home, tired but happy. They knew that with magic, brains, and teamwork, they could conquer anything!`],heroIds:[],extras:"",illustrations:{}},
     {id:"sample-14",theme:"candy world",em:"\ud83c\udf6d",title:"\ud83c\udf6d Candy World Adventure",pages:8,bg:"linear-gradient(135deg,#831843,#9d174d)",data:[`In Candy World, where sweets abound, lived Sam, Jack, and William, a team profound. They worked together, a perfect blend, to help those in need, and be the best of friends, with fun that's found!`,`A tiny creature, with a twirl of its ear, came to them crying, with a most sorrowful fear. A villain was chasing, with a most evil sneer, and the creature needed help, oh so dear, to calm its loud fear!`,`Sam used his 🔮 magic spells so bright, to create a shield, and keep the creature in sight. Jack joined in, with his 🔮 magic so bold, to make the shield stronger, and never to grow old, with magic to hold!`,`William, with his 🔍 super smart brain, figured out the villain's most evil plan and gain. He found a secret path, to lead them to safety and fun, where the creature could play, beneath the bright sun, and dance in the rain!`,`The villain was tricky, with a most wicked guile, but the three friends worked together, with a most happy smile. They used their powers, in a most perfect way, to outsmart the villain, and save the day, in a most happy sway!`,`As they journeyed on, through Candy World's sweet delight, they met gummy bears, and lollipops shining bright. The creature thanked them, with a most happy heart, and the friends felt proud, to have played their part, with love and a brand new start!`,`But then Sam woke up, with a most puzzled face, and thought it was all just a dream, in a most empty space. Or was it a dream, or was it real, he wondered with a grin, as he thought of his friends, and the fun they had within, and the adventure to win!`,`He jumped out of bed, with a most happy shout, and learned that teamwork, can make dreams come about. For when friends work together, with love and with cheer, they can conquer any challenge, and banish all fear, and have fun year after year, with joy that's loud and clear!`],heroIds:[],extras:"",illustrations:{}},
-  ],
+];
+const S={
+  xp:   parseInt(localStorage.getItem('sm_xp'))||0,
+  coins:parseInt(localStorage.getItem('sm_coins'))||0,
+  heroes: JSON.parse(localStorage.getItem('sm_heroes')||'null') || [],
+  stories: JSON.parse(localStorage.getItem('sm_stories')||'null') || SAMPLE_STORIES.map(x=>JSON.parse(JSON.stringify(x))),
   build:{world:'',worldEm:'',quest:'',twist:'',style:'standard fun adventure style — exciting, vivid, and action-packed',selectedHeroes:[]},
   earnedBadges: JSON.parse(localStorage.getItem('sm_badges')||'null') || ['first-story'],
   voiceEngine:'browser',
@@ -996,62 +1031,139 @@ function saveStories(){
 function saveBadges(){localStorage.setItem('sm_badges',JSON.stringify(S.earnedBadges));}
 function saveXP(){localStorage.setItem('sm_xp',S.xp);localStorage.setItem('sm_coins',S.coins);}
 
-// Illustration persistence — each story's artwork stored in its own localStorage key
-// sm_illus_{id} = JSON string of {p0:'data:...', p1:'data:...', ...}
+// ─── ARTWORK STORE (IndexedDB) ───────────────────
+// Artwork lives in IndexedDB, which has no 5 MB cap. A record is {id, img, pages} when every page shares one
+// image, or {id, map:{p0:'data:…',…}, pages} when pages differ. ART.rec is an in-memory copy loaded at start
+// so the rest of the app can keep reading artwork synchronously. If IndexedDB is unavailable the app falls
+// back to the old localStorage keys (sm_illus_{id}).
+const ART={db:null,ok:false,rec:{}};
+function artOpen(){
+  return new Promise(res=>{
+    if(!('indexedDB' in window)){res(null);return;}
+    let req;try{req=indexedDB.open('storymagic',1);}catch(e){res(null);return;}
+    req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains('art'))d.createObjectStore('art',{keyPath:'id'});};
+    req.onsuccess=()=>res(req.result);
+    req.onerror=()=>res(null);
+    req.onblocked=()=>res(null);
+  });
+}
+function artPut(rec){
+  return new Promise(res=>{
+    if(!ART.ok){res(false);return;}
+    try{const tx=ART.db.transaction('art','readwrite');tx.objectStore('art').put(rec);tx.oncomplete=()=>res(true);tx.onerror=tx.onabort=()=>res(false);}catch(e){res(false);}
+  });
+}
+function artGet(id){
+  return new Promise(res=>{
+    try{const r=ART.db.transaction('art','readonly').objectStore('art').get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null);}catch(e){res(null);}
+  });
+}
+function artGetAll(){
+  return new Promise(res=>{
+    try{const r=ART.db.transaction('art','readonly').objectStore('art').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>res([]);}catch(e){res([]);}
+  });
+}
+function artDel(id){
+  return new Promise(res=>{
+    if(!ART.ok){res();return;}
+    try{const tx=ART.db.transaction('art','readwrite');tx.objectStore('art').delete(id);tx.oncomplete=tx.onerror=tx.onabort=()=>res();}catch(e){res();}
+  });
+}
+// Copy old localStorage artwork into IndexedDB. A localStorage copy is removed only after the IndexedDB copy reads back identical.
+async function artMigrate(){
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('sm_illus_'));
+  for(const k of keys){
+    const id=k.slice(9);
+    try{
+      const p=JSON.parse(localStorage.getItem(k));
+      let rec=null;
+      if(p&&typeof p.img==='string'&&p.img) rec={id,img:p.img,pages:p.pages||1};
+      else if(p&&typeof p==='object'){
+        const m={};Object.entries(p).forEach(([a,b])=>{if(/^p\d+$/.test(a)&&typeof b==='string'&&b.startsWith('data:'))m[a]=b;});
+        if(Object.keys(m).length) rec={id,map:m,pages:Object.keys(m).length};
+      }
+      if(!rec) continue; // unreadable: leave it untouched
+      if(!(await artPut(rec))) continue;
+      const back=await artGet(id);
+      const same=back&&(rec.img?back.img===rec.img:(back.map&&Object.keys(rec.map).length===Object.keys(back.map).length&&Object.keys(rec.map).every(q=>back.map[q]===rec.map[q])));
+      if(same){ART.rec[id]=back;localStorage.removeItem(k);}
+    }catch(e){}
+  }
+}
+let _artReady=null;
+function artReady(){
+  if(_artReady) return _artReady;
+  _artReady=(async()=>{
+    ART.db=await artOpen();
+    ART.ok=!!ART.db;
+    if(ART.ok){
+      try{(await artGetAll()).forEach(r=>{ART.rec[r.id]=r;});}catch(e){}
+      try{await artMigrate();}catch(e){}
+      try{if(navigator.storage&&navigator.storage.persist) navigator.storage.persist();}catch(e){}
+    }
+  })().catch(()=>{});
+  return _artReady;
+}
+function artRecordFor(story){
+  const ill=story.illustrations||{};
+  const entries=Object.entries(ill).filter(([k,v])=>/^p\d+$/.test(k)&&typeof v==='string'&&v);
+  if(!entries.length) return null;
+  const pages=story.data?story.data.length:entries.length;
+  const first=entries[0][1];
+  if(entries.every(([,v])=>v===first)) return {id:story.id,img:first,pages};
+  const map={};entries.forEach(([k,v])=>{map[k]=v;});
+  return {id:story.id,map,pages};
+}
+function artApplyTo(story,rec){
+  if(!rec) return;
+  const pc=story.data?story.data.length:(rec.pages||1);
+  story.illustrations={};
+  if(rec.img){for(let i=0;i<pc;i++) story.illustrations['p'+i]=rec.img;}
+  else if(rec.map){Object.assign(story.illustrations,rec.map);}
+  if(Object.keys(story.illustrations).length) story.illustrated=true;
+}
 function saveIllustrations(story){
   if(!story||!story.illustrations) return;
-  const vals=Object.values(story.illustrations).filter(Boolean);
-  if(vals.length===0){
-    localStorage.removeItem('sm_illus_'+story.id);
+  const rec=artRecordFor(story);
+  if(!rec){deleteIllustrations(story.id);return;}
+  if(ART.ok){
+    ART.rec[story.id]=rec;
+    artPut(rec).then(ok=>{if(!ok) toast('⚠️ Could not save artwork on this device. Export a backup.');});
     return;
   }
-  // All pages use the same image — store just one copy, not N copies
-  // Format: JSON {img: "data:...", pages: 6}
-  const payload=JSON.stringify({img:vals[0], pages:story.data?story.data.length:vals.length});
-  try{
-    localStorage.setItem('sm_illus_'+story.id, payload);
-  }catch(e){
-    console.warn('Could not persist illustration for',story.id,'— localStorage quota exceeded');
-    // Try to free space by removing other illus keys for stories not currently in S.stories
+  // Fallback: localStorage (one image per story)
+  const img=rec.img||Object.values(rec.map)[0];
+  try{localStorage.setItem('sm_illus_'+story.id,JSON.stringify({img,pages:rec.pages}));}catch(e){
     pruneOrphanIllustrations();
-    try{ localStorage.setItem('sm_illus_'+story.id, payload); }catch(e2){}
+    try{localStorage.setItem('sm_illus_'+story.id,JSON.stringify({img,pages:rec.pages}));}catch(e2){}
   }
 }
 function loadIllustrations(story){
   if(!story) return;
-  try{
-    const raw=localStorage.getItem('sm_illus_'+story.id);
-    if(!raw) return;
-    const parsed=JSON.parse(raw);
-    // Handle both new format {img, pages} and legacy format {p0, p1, ...}
-    if(parsed.img){
-      // New compact format — reconstruct per-page mapping
-      const pageCount=story.data?story.data.length:(parsed.pages||1);
-      story.illustrations={};
-      for(let i=0;i<pageCount;i++) story.illustrations['p'+i]=parsed.img;
-      story.illustrated=true;
-    } else {
-      // Legacy format — use as-is
-      story.illustrations=parsed;
-      if(Object.keys(parsed).length>0) story.illustrated=true;
-    }
-  }catch(e){ /* corrupt entry — ignore */ }
+  let rec=ART.rec[story.id];
+  if(!rec){ // not migrated yet, or IndexedDB unavailable
+    try{
+      const raw=localStorage.getItem('sm_illus_'+story.id);
+      if(raw){const p=JSON.parse(raw);rec=p.img?{id:story.id,img:p.img,pages:p.pages}:{id:story.id,map:p,pages:Object.keys(p).length};}
+    }catch(e){}
+  }
+  if(rec) artApplyTo(story,rec);
 }
 function deleteIllustrations(storyId){
+  delete ART.rec[storyId];
+  artDel(storyId);
   localStorage.removeItem('sm_illus_'+storyId);
 }
 function rehydrateAllIllustrations(){
   S.stories.forEach(s=>loadIllustrations(s));
 }
 function pruneOrphanIllustrations(){
-  // Remove any sm_illus_ keys for stories no longer in the library
-  const activeIds=new Set(S.stories.map(s=>s.id));
-  Object.keys(localStorage)
-    .filter(k=>k.startsWith('sm_illus_'))
-    .forEach(k=>{
-      const id=k.replace('sm_illus_','');
-      if(!activeIds.has(id)) localStorage.removeItem(k);
-    });
+  // Remove artwork for stories no longer in the library. Skipped when only sample stories exist, so a
+  // damaged story list can never wipe saved artwork.
+  const hasUserStories=S.stories.some(s=>!String(s.id).startsWith('sample-'));
+  const active=new Set(S.stories.map(s=>s.id));
+  if(hasUserStories) Object.keys(ART.rec).forEach(id=>{if(!active.has(id)){delete ART.rec[id];artDel(id);}});
+  Object.keys(localStorage).filter(k=>k.startsWith('sm_illus_')).forEach(k=>{if(!active.has(k.slice(9))&&(hasUserStories||!ART.ok)) localStorage.removeItem(k);});
 }
 
 // ─── STREAK LOGIC ────────────────────────────────
@@ -1764,6 +1876,7 @@ function openReader(id){
   activeStory=s;curPage=0;stopSpeech();
   recordActivity();
   loadIllustrations(activeStory);
+  updateGemGenBox();
   document.getElementById('r-title-tb').textContent=s.title;
   renderReaderPage();go('reader');
 }
@@ -2334,7 +2447,46 @@ function handleLibArtFile(input){
   reader.readAsDataURL(input.files[0]);
 }
 
+
+// ─── SAMPLE LIBRARY (bundled stories + artwork) ──
+const SAMPLE_ART_BASE='samples/';
+function samplesPending(){
+  return SAMPLE_STORIES.filter(x=>{const m=S.stories.find(s=>s.id===x.id);return !m||!(m.illustrations&&m.illustrations.p0);});
+}
+function updateSampleCard(){
+  const c=document.getElementById('sample-card');if(!c) return;
+  const p=samplesPending();
+  c.style.display=p.length?'flex':'none';
+  const t=document.getElementById('sample-card-txt');
+  if(t) t.textContent=p.length+' illustrated '+(p.length===1?'story is':'stories are')+' ready to add. Your own stories and artwork are never changed.';
+}
+async function addSampleLibrary(){
+  const btn=document.getElementById('sample-btn');
+  const pend=samplesPending();if(!pend.length){updateSampleCard();return;}
+  if(btn){btn.disabled=true;btn.textContent='Adding…';}
+  let added=0,arted=0,failed=0;
+  for(const def of pend){
+    try{
+      let st=S.stories.find(s=>s.id===def.id);
+      if(!st){st=JSON.parse(JSON.stringify(def));st.illustrations={};S.stories.push(st);added++;}
+      const r=await fetch(SAMPLE_ART_BASE+def.id+'.webp');
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const blob=await r.blob();
+      const url=await new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(blob);});
+      const pc=st.data?st.data.length:def.pages;
+      st.illustrations={};for(let i=0;i<pc;i++) st.illustrations['p'+i]=url;
+      st.illustrated=true;
+      saveIllustrations(st);arted++;
+    }catch(e){failed++;console.warn('sample art failed',def.id,e);}
+  }
+  saveStories();
+  renderLib();if(typeof renderStoryStrip==='function') renderStoryStrip();
+  if(btn){btn.disabled=false;btn.textContent='✨ Add sample library';}
+  updateSampleCard();
+  toast(failed?('Added '+arted+' — '+failed+' need a connection, try again online'):('✅ Sample library added — '+arted+' illustrated '+(arted===1?'story':'stories')));
+}
 function renderLib(){
+  updateSampleCard();
   const grid=document.getElementById('lib-grid');grid.innerHTML='';
   const vis=S.stories.filter(s=>worldMatches(s.theme, libFilter));
   vis.forEach((s,i)=>{
@@ -2459,14 +2611,15 @@ function renderParent(){
     let illustratedCount=0, totalBytes=0;
     S.stories.forEach(s=>{
       try{
-        const raw=localStorage.getItem('sm_illus_'+s.id);
+        const rec=ART.rec[s.id];
+        const raw=rec?JSON.stringify(rec.img?{img:rec.img,pages:rec.pages}:{map:rec.map,pages:rec.pages}):localStorage.getItem('sm_illus_'+s.id);
         if(raw){
           illustratedCount++;
           // Compact format stores one image — actual export size = image × pages
           const parsed=JSON.parse(raw);
           const imgSize=parsed.img?parsed.img.length:raw.length;
           const pages=s.data?s.data.length:(parsed.pages||1);
-          totalBytes+=imgSize*pages;
+          totalBytes+=parsed.img?imgSize*pages:imgSize;
         } else if(s.illustrations&&Object.keys(s.illustrations).length>0){
           illustratedCount++;
           Object.values(s.illustrations).forEach(v=>totalBytes+=v.length);
@@ -2485,7 +2638,7 @@ function renderParent(){
   }
   const ml=document.getElementById('memory-lane');ml.innerHTML='';
   S.stories.slice(0,4).forEach(s=>{const d=document.createElement('div');d.className='ml-item';d.innerHTML=`<div class="ml-av" style="background:${s.bg}">${s.em}</div><div><div class="ml-t">${s.title}</div><div class="ml-d">${s.pages} pages</div></div><div class="ml-b">+50 XP</div>`;ml.appendChild(d);});
-  const k=localStorage.getItem('groq_key')||'';if(k)document.getElementById('groq-inp').value=k;updateGroqStatus(k);renderGroqModels();
+  const k=localStorage.getItem('groq_key')||'';if(k)document.getElementById('groq-inp').value=k;updateGroqStatus(k);renderGroqModels();{const gk=localStorage.getItem('gem_key')||'';const gi=document.getElementById('gem-inp');if(gi&&gk)gi.value=gk;updateGemStatus();}
   const ek=localStorage.getItem('el_key')||'';if(ek)document.getElementById('el-key-inp').value=ek;updateElStatus(ek);
   const ok=localStorage.getItem('oai_key')||'';if(ok)document.getElementById('oai-key-inp').value=ok;updateOAIStatus(ok);
   const n=localStorage.getItem('par_name');if(n)document.getElementById('par-name').value=n;
@@ -2575,6 +2728,8 @@ function exportAll(includeArtwork=false){
   // For each story, get illustrations from the dedicated sm_illus_ key (authoritative source)
   // rather than from S.stories in memory, which may not be rehydrated in all cases
   function getStoredIllustrations(story){
+    const ar=ART.rec[story.id];
+    if(ar){const pg=story.data?story.data.length:(ar.pages||1);if(ar.img)return {img:ar.img,pages:pg};if(ar.map)return {map:ar.map,pages:pg};}
     try{
       const raw=localStorage.getItem('sm_illus_'+story.id);
       if(raw){
@@ -2626,6 +2781,7 @@ function exportAll(includeArtwork=false){
       groq:  localStorage.getItem('groq_key')||'',
       el:    localStorage.getItem('el_key')||'',
       oai:   localStorage.getItem('oai_key')||'',
+      gemini: localStorage.getItem('gem_key')||'',
     },
     prefs:{
       voice_engine: localStorage.getItem('sm_engine')||'browser',
@@ -2651,6 +2807,10 @@ function exportAll(includeArtwork=false){
 }
 
 // ── Import helpers ──
+function extractArt(o){
+  if(o&&o.map&&typeof o.map==='object') return o; // per-page artwork
+  return extractImg(o);
+}
 function extractImg(o){
   if(!o) return null;
   if(o.img&&typeof o.img==='string'&&o.img.startsWith('data:')) return o.img;
@@ -2673,6 +2833,16 @@ function compressIfNeeded(dataUrl,cb){
 }
 function applyImportedArt(story,img,done){
   if(!img){if(done)done(false);return;}
+  if(typeof img==='object'){ // per-page artwork map
+    const keys=Object.keys(img.map||{}).filter(k=>/^p\d+$/.test(k));
+    if(!keys.length){if(done)done(false);return;}
+    let left=keys.length;story.illustrations={};
+    keys.forEach(k=>compressIfNeeded(img.map[k],c=>{
+      story.illustrations[k]=c;
+      if(--left===0){story.illustrated=true;saveIllustrations(story);if(done)done(true);}
+    }));
+    return;
+  }
   compressIfNeeded(img,compressed=>{
     const pc=story.data?story.data.length:(story.pages||1);
     story.illustrations={};
@@ -2713,7 +2883,7 @@ function importAll(input){
         const newStoriesData=data.stories.filter(s=>!existingIds.has(s.id));
 
         newStoriesData.forEach((s,i)=>{
-          const img=extractImg(s.illustrations);
+          const img=extractArt(s.illustrations);
           if(img) artPromises.push(new Promise(res=>{
             applyImportedArt(newStories[i],img,ok=>{if(ok)artRestoredCount++;res();});
           }));
@@ -2721,7 +2891,7 @@ function importAll(input){
 
         data.stories.forEach(imported=>{
           if(!existingIds.has(imported.id)) return;
-          const img=extractImg(imported.illustrations);
+          const img=extractArt(imported.illustrations);
           if(!img) return;
           const existing=S.stories.find(s=>s.id===imported.id);
           if(existing) artPromises.push(new Promise(res=>{
@@ -2770,6 +2940,7 @@ function importAll(input){
       // Restore API keys
       if(data.keys){
         if(data.keys.groq)  { localStorage.setItem('groq_key', data.keys.groq);  updateGroqStatus(data.keys.groq); results.push('✅ Groq key restored'); }
+        if(data.keys.gemini){ localStorage.setItem('gem_key', data.keys.gemini); localStorage.removeItem('gem_premium'); updateGemStatus(); results.push('✅ Gemini key restored (re-test image access)'); }
         if(data.keys.el)    { localStorage.setItem('el_key',   data.keys.el);    updateElStatus(data.keys.el);   results.push('✅ ElevenLabs key restored'); }
         if(data.keys.oai)   { localStorage.setItem('oai_key',  data.keys.oai);   updateOAIStatus(data.keys.oai); results.push('✅ OpenAI key restored'); }
       }
@@ -2870,6 +3041,178 @@ function updateGreeting(){
   }
 }
 
+// ─── GEMINI IMAGE API (optional, needs a paid key) ───
+// In-app generation turns on only after "Test image access" succeeds. Otherwise the Gemini website flow is used, unchanged.
+const GEM_BASE='https://generativelanguage.googleapis.com/v1beta/';
+const GEM_FALLBACK_MODEL='gemini-3.1-flash-lite-image';
+function gemKey(){return localStorage.getItem('gem_key')||'';}
+function gemPremium(){return !!gemKey()&&localStorage.getItem('gem_premium')==='1';}
+function gemModelList(){try{const l=JSON.parse(localStorage.getItem('gem_models')||'[]');return Array.isArray(l)?l:[];}catch(e){return [];}}
+function gemModel(){return localStorage.getItem('gem_model')||gemModelList()[0]||GEM_FALLBACK_MODEL;}
+function gemRank(id){ // lowest-cost current image models first
+  if(/pro/.test(id)) return 3;
+  if(/nano-banana-2\.1|flash-lite-image/.test(id)) return 0;
+  if(/flash-image/.test(id)) return 1;
+  return 2;
+}
+function updateGemStatus(){
+  const k=gemKey(),l=document.getElementById('gem-led'),t=document.getElementById('gem-st-txt');
+  if(l&&t){
+    const flag=localStorage.getItem('gem_premium');
+    if(!k){l.className='led off';t.textContent='No key — using the Gemini website flow';t.style.color='var(--dim)';}
+    else if(flag==='1'){l.className='led on';t.textContent='Image access confirmed — in-app generation is on ⚡';t.style.color='var(--mint2)';}
+    else if(flag==='0'){l.className='led off';t.textContent='No image access on this key ('+(localStorage.getItem('gem_err')||'free key?').slice(0,80)+') — using the Gemini website flow';t.style.color='var(--dim)';}
+    else{l.className='led off';t.textContent='Key saved — tap Test image access';t.style.color='var(--dim)';}
+  }
+  renderGemModels();
+  updateGemGenBox();
+}
+function updateGemGenBox(){
+  const b=document.getElementById('gem-gen-box');
+  if(b) b.style.display=gemPremium()?'block':'none';
+}
+function renderGemModels(){
+  const sel=document.getElementById('gem-model-sel');if(!sel)return;
+  const fetched=gemModelList(),saved=localStorage.getItem('gem_model')||'';
+  const ids=[...new Set([...fetched,...(saved?[saved]:[])])];
+  sel.innerHTML='';
+  if(!ids.length){const o=document.createElement('option');o.value='';o.textContent='Save your key to load image models';sel.appendChild(o);sel.disabled=true;return;}
+  sel.disabled=false;
+  ids.forEach(id=>{const o=document.createElement('option');o.value=id;o.textContent=id+((fetched.length&&!fetched.includes(id))?' (not in latest list)':'');sel.appendChild(o);});
+  sel.value=saved||ids[0];
+}
+function setGemModel(id){if(!id)return;localStorage.setItem('gem_model',id);localStorage.removeItem('gem_premium');updateGemStatus();toast('✅ Model: '+id+' — re-test image access');}
+function saveGemKey(){
+  const k=(document.getElementById('gem-inp').value||'').trim();
+  if(!k){localStorage.removeItem('gem_key');localStorage.removeItem('gem_premium');localStorage.removeItem('gem_err');updateGemStatus();toast('Gemini key cleared');return;}
+  if(k.length<20){toast('⚠️ That does not look like a Gemini key');return;}
+  localStorage.setItem('gem_key',k);localStorage.removeItem('gem_premium');localStorage.removeItem('gem_err');
+  updateGemStatus();toast('💾 Key saved — loading image models…');
+  refreshGemModels(true);
+}
+async function refreshGemModels(quiet){
+  const k=(document.getElementById('gem-inp')?.value||'').trim()||gemKey();
+  if(!k){toast('⚠️ Enter a Gemini key');return;}
+  try{
+    const r=await fetch(GEM_BASE+'models?pageSize=200',{headers:{'x-goog-api-key':k}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const ids=(d.models||[])
+      .filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&/image/i.test(m.name))
+      .map(m=>m.name.replace(/^models\//,''))
+      .sort((a,b)=>gemRank(a)-gemRank(b)||a.localeCompare(b));
+    localStorage.setItem('gem_models',JSON.stringify(ids));
+    renderGemModels();
+    if(!quiet||!ids.length) toast(ids.length?('✅ '+ids.length+' image models found'):'ℹ️ No image models are listed for this key');
+  }catch(e){if(!quiet) toast('❌ '+String(e.message).slice(0,50));}
+}
+async function gemGenerateImage(parts){
+  const call=async cfg=>{
+    const body={contents:[{role:'user',parts}],generationConfig:cfg};
+    const r=await fetch(GEM_BASE+'models/'+encodeURIComponent(gemModel())+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gemKey()},body:JSON.stringify(body)});
+    let d=null;try{d=await r.json();}catch(e){}
+    if(!r.ok){const err=new Error((d&&d.error&&d.error.message)||('HTTP '+r.status));err.status=r.status;throw err;}
+    return d;
+  };
+  let d;
+  try{d=await call({responseModalities:['TEXT','IMAGE'],imageConfig:{aspectRatio:'4:3'}});}
+  catch(e){
+    // Some models reject imageConfig: retry once without it
+    if(e.status===400&&/aspect|imageConfig|unknown name|invalid json/i.test(e.message)) d=await call({responseModalities:['TEXT','IMAGE']});
+    else throw e;
+  }
+  const ps=(d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
+  const hit=ps.find(p=>p.inlineData||p.inline_data);
+  if(!hit){
+    const why=(d&&d.promptFeedback&&d.promptFeedback.blockReason)||(d&&d.candidates&&d.candidates[0]&&d.candidates[0].finishReason)||'no image returned';
+    const err=new Error('No image: '+why);err.status=0;throw err;
+  }
+  const x=hit.inlineData||hit.inline_data;
+  return 'data:'+(x.mimeType||x.mime_type||'image/png')+';base64,'+x.data;
+}
+async function gemWithRetry(parts){
+  for(let a=0;;a++){
+    try{return await gemGenerateImage(parts);}
+    catch(e){if((e.status===429||e.status===503)&&a<2){await new Promise(r=>setTimeout(r,6000*(a+1)));continue;}throw e;}
+  }
+}
+function gemShrink(dataUrl){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{const c=document.createElement('canvas');const s=Math.min(1,1024/Math.max(img.width,img.height));c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.82));};
+    img.onerror=()=>res(dataUrl);
+    img.src=dataUrl;
+  });
+}
+async function testGemAccess(){
+  const typed=(document.getElementById('gem-inp')?.value||'').trim();
+  if(typed&&typed!==gemKey()){localStorage.setItem('gem_key',typed);}
+  if(!gemKey()){toast('⚠️ Enter a Gemini key');return;}
+  if(!gemModelList().length&&!localStorage.getItem('gem_model')) await refreshGemModels(true);
+  if(!confirm('Test image access?\n\nThis makes one small image request. On a paid key Google bills about 3¢ for it. A free key is turned down at no cost.')) return;
+  toast('🧪 Testing…',8000);
+  try{
+    await gemGenerateImage([{text:'A simple flat cartoon yellow star on a plain light background. No text.'}]);
+    localStorage.setItem('gem_premium','1');localStorage.removeItem('gem_err');
+    toast('✅ Image access confirmed ⚡');
+  }catch(e){
+    localStorage.setItem('gem_premium','0');localStorage.setItem('gem_err',String(e.message||'failed'));
+    toast('❌ '+String(e.message||'failed').slice(0,70),6000);
+  }
+  updateGemStatus();
+}
+function gemProgress(done,total,label){
+  const box=document.getElementById('gem-prog');if(!box)return;
+  if(done===null){box.style.display='none';return;}
+  box.style.display='block';
+  document.getElementById('gem-prog-txt').textContent=label+' ('+done+'/'+total+')';
+  document.getElementById('gem-prog-bar').style.width=Math.round(100*done/Math.max(1,total))+'%';
+}
+function gemPagePrompt(story,i){
+  const heroes=(story.heroIds||[]).map(id=>{const h=S.heroes.find(x=>x.id===id);return h?h.name:null;}).filter(Boolean).join(', ');
+  const text=(story.data[i]||'').slice(0,500);
+  return `Illustrate the next page of this children's storybook. Use exactly the same characters, art style, colours and outline style as the reference image so the heroes are clearly the same characters.
+
+HEROES: ${heroes||'the same group of young adventurers'}.
+STORY PAGE ${i+1} of ${story.data.length}: ${text}
+
+Vibrant, friendly flat cartoon with soft shading. Safe and joyful, nothing scary. Absolutely no text, words, letters or numbers anywhere in the image.`;
+}
+let _gemBusy=false;
+async function gemGenerate(mode){
+  if(!activeStory||_gemBusy) return;
+  if(!gemPremium()){toast('ℹ️ Test your Gemini key first (Parent Area)');return;}
+  const story=activeStory,pages=story.data||[];
+  const n=mode==='pages'?pages.length:1;
+  if(!confirm('Generate '+n+' image'+(n>1?'s':'')+' with Gemini?\n\nGoogle bills your key (roughly 3–4¢ per image on the lowest-cost models). Pages already finished are kept if it stops.')) return;
+  _gemBusy=true;
+  gemProgress(0,n,'Cover art');
+  try{
+    let cover=await gemShrink(await gemWithRetry([{text:buildArtworkPrompt()}]));
+    story.illustrations={};
+    for(let i=0;i<pages.length;i++) story.illustrations['p'+i]=cover; // cover covers every page until its own art is done
+    story.illustrated=true;
+    saveIllustrations(story);
+    if(activeStory===story) renderReaderPage();
+    gemProgress(1,n,'Cover art');
+    if(mode==='pages'){
+      const ref=cover.split(',')[1];
+      for(let i=1;i<pages.length;i++){
+        gemProgress(i,n,'Page '+(i+1)+' of '+pages.length);
+        const img=await gemShrink(await gemWithRetry([{inlineData:{mimeType:'image/jpeg',data:ref}},{text:gemPagePrompt(story,i)}]));
+        story.illustrations['p'+i]=img;
+        saveIllustrations(story);
+        if(activeStory===story&&curPage===i) renderReaderPage();
+        gemProgress(i+1,n,'Page '+(i+1)+' of '+pages.length);
+      }
+    }
+    addXP(25);toast('🎉 Artwork ready! +25 XP');
+  }catch(e){
+    if(e.status===401||e.status===403){localStorage.setItem('gem_premium','0');localStorage.setItem('gem_err',String(e.message||''));updateGemStatus();}
+    toast('⚠️ Stopped: '+String(e.message||'failed').slice(0,60)+'. Finished pages are saved. You can use Get Artwork for the rest.',7000);
+  }finally{_gemBusy=false;gemProgress(null);}
+}
+
 // ─── INIT ────────────────────────────────────────
 function init(){
   // Demo pages for built-in stories that have no data
@@ -2884,6 +3227,7 @@ function init(){
 
   updateGroqStatus(localStorage.getItem('groq_key')||'');
   renderGroqModels();
+  updateGemStatus();
   updateElStatus(localStorage.getItem('el_key')||'');
   updateOAIStatus(localStorage.getItem('oai_key')||'');
   S.voiceEngine=localStorage.getItem('sm_engine')||'browser';
@@ -2915,10 +3259,11 @@ function init(){
   }
   go('home');
 }
+function boot(){artReady().then(init,init);}
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',init);
+  document.addEventListener('DOMContentLoaded',boot);
 }else{
-  init();
+  boot();
 }
 
 // ─── SERVICE WORKER REGISTRATION ─────────────────

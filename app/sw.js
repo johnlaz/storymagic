@@ -1,6 +1,6 @@
-// Story Magic Service Worker v3.2
+// Story Magic Service Worker v3.3
 // Keep CACHE in sync with APP_VERSION in index.html.
-const VERSION = '3.2';
+const VERSION = '3.4';
 const CACHE = 'story-magic-v' + VERSION;
 const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Boogaloo&family=Baloo+2:wght@700;800&display=swap';
 const CORE = [
