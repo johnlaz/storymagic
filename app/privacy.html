@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy · Story Magic</title>
+<meta name="robots" content="index,follow">
+<link rel="icon" type="image/png" href="app/icon-192.png">
+<style>
+  :root{color-scheme:dark}
+  body{margin:0;background:#1a0638;color:#ede9ff;font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:2rem 1.25rem 4rem}
+  h1{font-size:1.9rem;margin:.2rem 0 .3rem}
+  h2{font-size:1.1rem;margin:2rem 0 .4rem;color:#fcd34d}
+  p,li{color:#d4cbf5}
+  a{color:#c4b5fd}
+  .back{display:inline-block;margin-bottom:1rem;text-decoration:none}
+  .meta{color:#a89bd6;font-size:.9rem}
+  li{margin:.35rem 0}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← Story Magic</a>
+  <h1>Privacy</h1>
+  <p class="meta">Last updated October 6, 2026</p>
+
+  <p>Story Magic is built so that a family's stories stay with the family. There is no account, no Story Magic server and no analytics.</p>
+
+  <h2>What stays on your device</h2>
+  <p>Heroes, stories, progress, settings, your parent email if you enter one, and any API keys you add are saved in your browser's local storage on your device. Artwork is saved in your browser's IndexedDB storage on your device. Clearing your browser data removes them. Use <strong>Export</strong> in the Parent Area to keep a backup.</p>
+
+  <h2>What leaves your device, and only if you turn it on</h2>
+  <ul>
+    <li><strong>Groq</strong> (story writing): when you generate a story with your own Groq key, the story request is sent to Groq. It includes your hero names and powers, the world, quest and style you picked, and any extra notes you typed.</li>
+    <li><strong>ElevenLabs or OpenAI</strong> (read-aloud): if you add one of these keys, the story text is sent to that service to produce the voice. Without a key, your device's built-in voice is used and nothing is sent.</li>
+    <li><strong>Gemini website</strong> (artwork, free flow): the app copies a prompt to your clipboard and opens gemini.google.com in a new tab. Anything you paste there is governed by Google's terms. Story Magic does not send it.</li>
+    <li><strong>Gemini API</strong> (artwork, optional): only if you add your own Gemini key and run the in-app generator, the app sends Google the artwork prompt (hero names, world, title and story text for the page) and, for later pages, the cover image as a style reference. Google bills the key you added.</li>
+    <li><strong>Google Fonts</strong>: the pages load fonts from Google, which receives your IP address as any website you visit would.</li>
+  </ul>
+  <p>These services have their own privacy policies. Your keys are sent only to the matching service.</p>
+
+  <h2>Hosting</h2>
+  <p>The site is served by GitHub Pages, which may keep standard access logs such as IP addresses. Story Magic does not receive those logs.</p>
+
+  <h2>Children</h2>
+  <p>Story Magic is meant to be set up and managed by a parent. It does not ask children for personal information, and the Parent Area is where keys and exports live.</p>
+
+  <h2>Contact</h2>
+  <p>Questions: <a href="mailto:lazlab.io@gmail.com">lazlab.io@gmail.com</a> · LAZLAB Creations</p>
+</main>
+</body>
+</html>
