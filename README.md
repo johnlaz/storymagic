@@ -23,6 +23,7 @@ Personalised AI storybooks for kids. Build up to four heroes, pick a world, a qu
 /app/sw.js           service worker (network-first HTML, cache-first assets)
 /app/icon-192.png    app icon
 /app/icon-512.png    app icon
+/app/samples/*.webp  artwork for the 14 sample stories (fetched by the Library's "Add sample library" button)
 /app/shot-*.png      app screenshots (manifest and landing page; shot-desktop.png is a composite of real captures)
 ```
 
@@ -34,7 +35,7 @@ Everything is optional and uses your own keys, set in the app's **Parent Area**.
 |---|---|---|
 | Groq | Story writing | Default model `llama-3.3-70b-versatile`. Saving a key loads Groq's current chat model list into the picker; **Refresh** reloads it. Your saved model is never swapped automatically. If it disappears from Groq's list it stays selected and is flagged. |
 | ElevenLabs / OpenAI | Read-aloud voice | Optional. Without a key the device voice is used. |
-| Gemini | Artwork | No API key. The app copies your story prompt and opens gemini.google.com; you save the image back into the book. |
+| Gemini | Artwork | Two ways. **Free:** the app copies your story prompt and opens gemini.google.com; you save the image back into the book (works with no key). **Paid key (optional):** add a Gemini key in the Parent Area and tap **Test image access**. Only if the test succeeds does the reader offer "Cover art" or "Art for every page", generated in the app; Google bills each image to your key (roughly 3-4 cents on the lowest-cost models). A free key fails the test and the free flow stays as it is. |
 
 Without a Groq key the app uses its built-in sample stories.
 
@@ -53,6 +54,15 @@ Heroes, stories, artwork, progress and keys live in your browser on your device.
 The version shown in the app header comes from `APP_VERSION`.
 
 ## Changelog
+
+### v3.4
+- Library: **Add sample library** button. Adds any of the 14 bundled illustrated stories you don't have, and fills in artwork for sample stories that have none. Never overwrites artwork you already have; hides itself once everything is present.
+
+### v3.3
+- Artwork moved from localStorage (about 5 MB limit) to IndexedDB. Existing artwork is copied over automatically; each old copy is deleted only after the new one reads back identical. If IndexedDB is unavailable the app falls back to the old storage.
+- Artwork can now differ per page (it used to be one image reused on every page). Export and import carry per-page art; older backups still import.
+- Optional in-app Gemini illustrations for paid keys: key field, model list pulled from your key, **Test image access** (one small billed image), then "Cover art" or "Art for every page" in the reader. Pages after the cover use the cover as a style reference. Progress is saved page by page; if a run stops, finished pages stay.
+- Free keys and no key behave exactly as before.
 
 ### v3.2
 - Print ordering hidden: it only simulated sending an email. Landing copy no longer promises printed books; the card now describes PDF export.
