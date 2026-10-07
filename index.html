@@ -44,7 +44,7 @@
   .nav-links { display:flex; gap:1.5rem; list-style:none; }
   .nav-links a { color:var(--text-dim); text-decoration:none; font-weight:700; font-size:0.9rem; transition:color 0.2s; }
   .nav-links a:hover { color:var(--white); }
-  .nav-cta { background:linear-gradient(135deg,var(--purple-mid),var(--purple-light)); color:white; border:none; padding:0.6rem 1.4rem; border-radius:2rem; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.9rem; cursor:pointer; text-decoration:none; box-shadow:0 4px 20px rgba(124,58,237,0.5); transition:transform 0.2s,box-shadow 0.2s; }
+  .nav-cta { background:linear-gradient(135deg,var(--purple-mid),var(--purple-light)); color:white; border:none; padding:0.6rem 1.4rem; border-radius:2rem; white-space:nowrap; flex-shrink:0; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.9rem; cursor:pointer; text-decoration:none; box-shadow:0 4px 20px rgba(124,58,237,0.5); transition:transform 0.2s,box-shadow 0.2s; }
   .nav-cta:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(124,58,237,0.7); }
   
   section { position:relative; z-index:1; }
@@ -178,11 +178,14 @@
   @media(max-width:640px) {
     .nav-toggle { display:block; margin-left:auto; margin-right:0.6rem; }
     nav { padding:0.8rem 1rem; }
+    .nav-cta { padding:0.5rem 1rem; font-size:0.85rem; }
+    .nav-word { font-size:1.15rem; white-space:nowrap; }
     .nav-links { display:none; position:absolute; top:100%; left:0; right:0; flex-direction:column; gap:0; background:rgba(59,7,100,0.97); border-bottom:1px solid rgba(168,85,247,0.25); padding:0.5rem 1rem 1rem; }
     .nav-links.open { display:flex; }
     .nav-links a { display:block; padding:0.8rem 0; font-size:1rem; }
   }
   a:focus-visible, button:focus-visible, .lib-scroll-inner:focus-visible { outline:3px solid var(--gold-light); outline-offset:3px; }
+  @media(max-width:380px) { .nav-word { display:none; } .btn-primary { font-size:1rem !important; padding-left:1.4rem !important; padding-right:1.4rem !important; white-space:nowrap; } }
   @media (prefers-reduced-motion:reduce) {
     *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; }
     .sparkle { display:none; }
@@ -335,9 +338,9 @@
       <p>Kids earn XP and level up from Explorer to Legend as they read and create — keeping the magic alive.</p>
     </div>
     <div class="feature-card">
-      <span class="feature-icon">📦</span>
-      <h3>Order Printed Books</h3>
-      <p>Turn any story into a real hardcover book shipped to your door via Peecho — perfect for gifting.</p>
+      <span class="feature-icon">📄</span>
+      <h3>Export as PDF</h3>
+      <p>Turn any story into a PDF book with its artwork, ready to print at home or take to a print shop.</p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">👨‍👩‍👧</span>
@@ -422,7 +425,7 @@
   <div class="cta-box">
     <h2>Ready for your first adventure?</h2>
     <p>Free to use. No account needed. Works on any device. Create your hero and start your first story in seconds.</p>
-    <a href="app/" class="btn-primary" style="display:inline-block;font-size:1.2rem;padding:1.1rem 3rem;">✨ Open Story Magic</a>
+    <a href="app/" class="btn-primary" style="display:inline-block;font-size:1.2rem;padding:1.1rem 2rem;white-space:nowrap;">✨ Open Story Magic</a>
     <p class="cta-note"><strong>Free to use</strong> · Add a free Groq API key for live story generation · Available on iOS &amp; Android as a PWA</p>
   </div>
 </section>
@@ -434,8 +437,8 @@
     &nbsp;·&nbsp;
     Made with ❤️ for curious kids everywhere
   </p>
-  <p style="margin-bottom:0.5rem">Stories by Groq · Narration by ElevenLabs or OpenAI · Artwork with Gemini · Printing via Peecho</p>
-  <p style="margin-top:1rem;font-size:0.8rem;color:rgba(196,181,253,0.75);">© 2026 LAZLAB Creations. All Rights Reserved. · <a href="mailto:lazlab.io@gmail.com">lazlab.io@gmail.com</a></p>
+  <p style="margin-bottom:0.5rem">Stories by Groq · Narration by ElevenLabs or OpenAI · Artwork with Gemini</p>
+  <p style="margin-top:1rem;font-size:0.8rem;color:rgba(196,181,253,0.75);">© 2026 LAZLAB Creations. All Rights Reserved. · <a href="mailto:lazlab.io@gmail.com">lazlab.io@gmail.com</a> · <a href="privacy.html">Privacy</a></p>
 </footer>
 
 <script>

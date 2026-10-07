@@ -14,6 +14,8 @@ Personalised AI storybooks for kids. Build up to four heroes, pick a world, a qu
 ```
 /index.html          landing page
 /favicon.ico         landing favicon
+/privacy.html        privacy page (linked from the landing footer)
+/sw.js               retires the old root-scope worker from pre-/app installs
 /README.md           this file
 /docs/               README SVGs (banner.svg, data-flow.svg)
 /app/index.html      the PWA (single file)
@@ -21,7 +23,7 @@ Personalised AI storybooks for kids. Build up to four heroes, pick a world, a qu
 /app/sw.js           service worker (network-first HTML, cache-first assets)
 /app/icon-192.png    app icon
 /app/icon-512.png    app icon
-/app/shot-*.png      real app screenshots (used by the manifest and the landing page)
+/app/shot-*.png      app screenshots (manifest and landing page; shot-desktop.png is a composite of real captures)
 ```
 
 ## AI and model setup
@@ -40,7 +42,7 @@ Without a Groq key the app uses its built-in sample stories.
 
 <p align="center"><img src="docs/data-flow.svg" alt="Data flow: everything is stored on your device; story prompts go to Groq, narration text to ElevenLabs or OpenAI if enabled, artwork is made by hand in Gemini" width="100%"></p>
 
-Heroes, stories, artwork, progress and keys live in your browser on your device. There is no Story Magic server or account. Text is sent only to the providers you turn on with your own key (see the diagram). Use **Export** in the Parent Area to back up or move your data.
+Heroes, stories, artwork, progress and keys live in your browser on your device. There is no Story Magic server or account. Text is sent only to the providers you turn on with your own key (see the diagram). Use **Export** in the Parent Area to back up or move your data. Full details: [privacy.html](privacy.html).
 
 ## Deploy and update
 
@@ -51,6 +53,13 @@ Heroes, stories, artwork, progress and keys live in your browser on your device.
 The version shown in the app header comes from `APP_VERSION`.
 
 ## Changelog
+
+### v3.2
+- Print ordering hidden: it only simulated sending an email. Landing copy no longer promises printed books; the card now describes PDF export.
+- Landing: "Open App" and the bottom button no longer wrap on small phones; added a Privacy page and footer link.
+- First run starts with no pre-made heroes; the library counts only your own stories (samples are labelled as samples); "2 heros" is now "2 heroes".
+- Storage-full guard: a clear message instead of silently failing to save.
+- Manifest: added a wide screenshot. Added a root `sw.js` that removes the old root-scope worker for installs made before the `/app` move (those installs should be reinstalled from `/app/`).
 
 ### v3.1
 - Fixed icons: manifest and app icons now live in `/app` (they were pointing at a folder that didn't exist).
