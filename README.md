@@ -23,7 +23,7 @@ Personalised AI storybooks for kids. Build up to four heroes, pick a world, a qu
 /app/sw.js           service worker (network-first HTML, cache-first assets)
 /app/icon-192.png    app icon
 /app/icon-512.png    app icon
-/app/samples/*.webp  artwork for the 14 sample stories (fetched by the Library's "Add sample library" button)
+/app/index.html also carries the 14 sample illustrations inline
 /app/shot-*.png      app screenshots (manifest and landing page; shot-desktop.png is a composite of real captures)
 ```
 
@@ -54,6 +54,15 @@ Heroes, stories, artwork, progress and keys live in your browser on your device.
 The version shown in the app header comes from `APP_VERSION`.
 
 ## Changelog
+
+### v3.7
+- Sample artwork is now embedded in the app itself (no separate image requests), so Add sample library works offline and on any host.
+
+### v3.6
+- The library now starts empty. **Add sample library** loads the 14 illustrated stories; if an artwork file can't be loaded, the message now says why.
+
+### v3.5
+- Library sample card now stays visible whenever sample stories exist, with **Clear samples** (removes sample stories and their art, keeps yours) next to **Add sample library**. Header version badge fixed.
 
 ### v3.4
 - Library: **Add sample library** button. Adds any of the 14 bundled illustrated stories you don't have, and fills in artwork for sample stories that have none. Never overwrites artwork you already have; hides itself once everything is present.
