@@ -345,7 +345,7 @@ select.inp{appearance:none;cursor:pointer;}
   <div class="quads">
     <div class="quad q-heroes" onclick="go('heroes')"><div class="q-ic">🛡️</div><div class="q-t">My Heroes</div><div class="q-s" id="hero-count-lbl">Build your squad</div></div>
     <div class="quad q-story" onclick="go('build')"><div class="q-ic">✨</div><div class="q-t">Make a Story</div><div class="q-s">Build your adventure</div></div>
-    <div class="quad q-lib" onclick="go('library')"><div class="q-ic">📚</div><div class="q-t">My Library</div><div class="q-s" id="lib-count-lbl">14 stories saved</div></div>
+    <div class="quad q-lib" onclick="go('library')"><div class="q-ic">📚</div><div class="q-t">My Library</div><div class="q-s" id="lib-count-lbl">Sample stories</div></div>
     <div class="quad q-par" onclick="go('parent')"><div class="q-ic">👨‍👩‍👧</div><div class="q-t">Parent Area</div><div class="q-s">Settings & printing</div></div>
   </div>
   <div class="sec"><div class="sec-t">🛡️ My Hero Squad</div><div class="sec-lk" onclick="go('heroes')">Manage heroes</div></div>
@@ -651,7 +651,7 @@ select.inp{appearance:none;cursor:pointer;}
       <input class="inp" id="par-name" type="text" placeholder="e.g. Alex">
       <label class="lbl">Age Group</label>
       <select class="inp" id="par-age"><option>5–6 years</option><option selected>7–9 years</option><option>10–12 years</option></select>
-      <label class="lbl">Parent Email <em>(for print approvals)</em></label>
+      <label class="lbl">Parent Email <em>(optional)</em></label>
       <input class="inp" id="par-email" type="email" placeholder="parent@email.com">
       <button class="btn btn-m" onclick="saveProfile()">💾 Save Profile</button>
     </div>
@@ -748,8 +748,9 @@ select.inp{appearance:none;cursor:pointer;}
     </div>
 
     <!-- Print -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">📦 Order a Printed Book</div></div>
-    <div class="print-req">
+    <!-- Hidden until real print ordering exists (requestPrint() only simulates a send). -->
+    <div class="sec" style="padding:0 0 11px;display:none;"><div class="sec-t">📦 Order a Printed Book</div></div>
+    <div class="print-req" style="display:none;">
       <div class="pr-t">Request a Hardcover Book</div>
       <div class="pr-s">We'll email you a secure checkout link — your child never sees payment details. Printed and shipped via Peecho.</div>
       <label class="lbl">Select Story</label>
@@ -854,7 +855,7 @@ select.inp{appearance:none;cursor:pointer;}
 
 <script>
 'use strict';
-const APP_VERSION='3.1'; // keep in sync with CACHE in sw.js (story-magic-v3.1)
+const APP_VERSION='3.2'; // keep in sync with VERSION in sw.js
 // ─── HELPERS ────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let _tt;
@@ -951,14 +952,14 @@ const ILLUS={
 function getIllus(theme,page){const t=(theme||'space').toLowerCase();return(ILLUS[t]||ILLUS.space)(page);}
 function getAv(id){return(AVATARS.find(a=>a.id===id)||AVATARS[0]).svg;}
 
+function libCountText(){const real=S.stories.filter(x=>!String(x.id).startsWith('sample-')).length;return real?real+(real===1?' story saved':' stories saved'):S.stories.length+' sample stories';}
+// Storage-full guard: tell the user instead of failing silently (stopgap until artwork moves to IndexedDB).
+(function(){const o=Storage.prototype.setItem;let last=0;Storage.prototype.setItem=function(k,v){try{return o.call(this,k,v);}catch(e){if(e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014)){const t=Date.now();if(t-last>8000){last=t;try{toast('⚠️ Device storage is full. Export a backup, then delete old stories or artwork.',6000);}catch(_){}}return;}throw e;}};})();
 // ─── STATE ───────────────────────────────────────
 const S={
   xp:   parseInt(localStorage.getItem('sm_xp'))||0,
   coins:parseInt(localStorage.getItem('sm_coins'))||0,
-  heroes: JSON.parse(localStorage.getItem('sm_heroes')||'null') || [
-    {id:'h1',name:'Alex',avatarId:'knight',power:'⚡ Super Speed'},
-    {id:'h2',name:'Mia', avatarId:'wizard',power:'🔮 Magic Spells'},
-  ],
+  heroes: JSON.parse(localStorage.getItem('sm_heroes')||'null') || [],
   stories: JSON.parse(localStorage.getItem('sm_stories')||'null') || [
     // ── Sample story library ──
     {id:"sample-1",theme:"dream world",em:"\ud83c\udf08",title:"\ud83c\udf08 Dream World Adventure",pages:12,bg:"linear-gradient(135deg,#4c1d95,#7c3aed)",data:[`In the realm of Dream World, where moonbeams wove silver threads across the sky, a legendary quest began to unfold. Johnny, a young hero with the essence of nature magic coursing through his veins, stood tall, his heart racing with anticipation. With a deep breath, he embarked on a journey to defeat the sneaky villain, Malakai. The wind whispered secrets in his ear, and the trees nodded in encouragement, their leaves rustling with an otherworldly language.`,`As Johnny ventured deeper into the Dream World, the landscape shifted and swirled, like a tapestry of wonder. The air was alive with the sweet scent of blooming wildflowers, and the soft chirping of celestial birds filled his ears. His companions, a group of brave and noble heroes, each possessed a unique power, waited for him at the threshold of the mystical forest. Together, they would face the darkness that threatened to consume their world, and Johnny felt a surge of excitement and nervousness.`,`The path ahead was treacherous, winding through a maze of twisted shadows and flickering torches that cast eerie silhouettes on the trees. Johnny's heart pounded in his chest as he led the way, his senses on high alert for any sign of danger. The ground beneath their feet began to tremble, and the sky grew dark, as if the very fabric of reality was beginning to unravel. The heroes exchanged cautious glances, their faces set with determination, their eyes gleaming with a fierce inner light.`,`Suddenly, a figure emerged from the darkness, its presence like a cold wind that sent shivers down their spines. Malakai, the sneaky villain, sneered at the heroes, his eyes gleaming with malevolent intent. Johnny stood tall, his nature magic at the ready, as his companions prepared to unleash their own powers. The air was electric with tension, and the outcome of the battle hung precariously in the balance, like a leaf on the edge of a whirlwind.`,`The battle raged on, with the heroes fighting valiantly against Malakai's dark minions. Johnny summoned a blast of thorns to ensnare their enemies, while his companions unleashed their own unique abilities. The sound of clashing steel and the scent of ozone filled the air, as the heroes fought to gain the upper hand. But despite their bravery, the tide of the battle seemed to be turning in favor of the villain, and Johnny's heart sank with a growing sense of unease.`,`Just as all hope seemed lost, a hero named Luna unleashed her power, a brilliant beam of light that cut through the darkness like a shining sword. The minions recoiled, covering their eyes, as the heroes pressed their advantage. Johnny felt a surge of excitement and gratitude towards his companion, and together they charged forward, their bond and determination driving them onward. The villain's powers, however, seemed to be growing stronger, and the heroes knew they had to end the battle quickly, before the darkness consumed them all.`,`The earth began to shudder, and the sky grew darker, as if the very foundations of the world were being torn apart. Malakai's laughter echoed through the land, a cold, mirthless sound that sent shivers down the spines of the heroes. Johnny's nature magic was faltering, and his companions were beginning to tire, their powers waning as the battle raged on. The outcome of the quest hung in the balance, and the heroes knew they had to find a way to defeat the villain, before it was too late, and the Dream World was lost forever.`,`In a desperate bid to turn the tide of the battle, a hero named Aria summoned a fierce storm, with winds that howled like a chorus of banshees and lightning that flashed like a thousand burning stars. The minions were scattered, and Malakai stumbled backward, his powers momentarily disrupted. Johnny and his companions took advantage of the reprieve, launching a fierce counterattack that sent the villain stumbling. But just as victory seemed within their grasp, disaster struck, and the laws of gravity began to falter, like a thread snapped in two.`,`The world around them began to dissolve, as if the very fabric of reality was unraveling. Buildings and trees floated into the air, and the heroes found themselves weightless, drifting like leaves on a windswept sea. Malakai's laughter echoed through the void, a mad, exultant sound that seemed to come from everywhere and nowhere at the same time. Johnny's stomach lurched with a sense of disorientation, as he struggled to comprehend the impossible, and his companions clung to each other, their faces set with determination, their eyes shining with a fierce inner light.`,`In the midst of the chaos, a hero named Kaito used his power to manipulate the air, creating a vortex that pulled the heroes towards him, and kept them from drifting away. Johnny felt a surge of gratitude towards his companion, as they huddled together, trying to make sense of the impossible. The world around them was a surreal landscape of floating objects and distorted gravity, and the heroes knew they had to find a way to restore balance to the universe, before it was too late, and the Dream World was lost forever.`,`With a burst of inspiration, Johnny realized that his nature magic could be used to heal the rift in the fabric of reality. He focused all his energy, calling upon the ancient powers of the earth to aid him. The heroes watched in awe as Johnny's magic took hold, slowly restoring gravity to the world, and pulling everything back down to the ground. The sense of relief was palpable, as the heroes felt the solid earth beneath their feet once more, and the world around them began to return to its natural balance.`,`As the last remnants of chaos dissipated, the heroes stood victorious, their bond and determination having saved the Dream World from the brink of destruction. Johnny felt a sense of pride and wonder, as he gazed out upon the restored landscape, the moonbeams weaving their silver threads once more across the sky. The heroes shared a warm, triumphant smile, their hearts full of joy and gratitude, as they knew that their friendship and courage had saved the day, and the Dream World was once again a place of wonder and magic, where heroes could roam free, and the beauty of the world would never fade.`],heroIds:[],extras:"",illustrations:{}},
@@ -1187,7 +1188,7 @@ function renderHeroLibrary(){
 
   // Update hero count label
   document.getElementById('hero-count-lbl').textContent=
-    S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
+    S.heroes.length===0?'Build your squad':S.heroes.length+(S.heroes.length>1?' heroes':' hero');
 }
 
 function addHero(){
@@ -1412,7 +1413,7 @@ PAGE 2: [text]
   saveStories();
   modal.classList.remove('on');
   addXP(50);checkBadges();toast('🎉 Story created! +50 XP');
-  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  document.getElementById('lib-count-lbl').textContent=libCountText();
   renderStoryStrip();
   const out=document.getElementById('groq-out');
   const prev=pagesArr.slice(0,2).map((p,i)=>`<strong style="color:var(--v2)">Page ${i+1}:</strong> ${p}`).join('<br><br>');
@@ -2362,7 +2363,7 @@ function renderLib(){
   const plus=document.createElement('div');plus.className='lc';plus.onclick=()=>go('build');
   plus.innerHTML=`<div class="lcov" style="background:var(--card);border:2px dashed rgba(255,255,255,.12)">✨</div><div class="li"><div class="lt" style="color:var(--v2)">Create New Story</div><div class="lm">Tap to begin</div></div>`;
   grid.appendChild(plus);
-  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  document.getElementById('lib-count-lbl').textContent=libCountText();
   const sel=document.getElementById('print-sel');if(sel)sel.innerHTML=S.stories.map(s=>`<option value="${s.id}">${s.title}</option>`).join('');
 }
 
@@ -2384,7 +2385,7 @@ function deleteStory(id){
   saveStories();
   renderLib();
   renderStoryStrip();
-  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  document.getElementById('lib-count-lbl').textContent=libCountText();
   toast('🗑️ Story deleted');
 }
 function filterLib(el,f){
@@ -2786,7 +2787,7 @@ function importAll(input){
       // Re-render UI — renderParent repopulates key fields immediately
       renderHeroStrip(); renderStoryStrip(); renderLib(); renderParent();
       updateStreakDisplay();
-      document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+      document.getElementById('lib-count-lbl').textContent=libCountText();
 
       const el=document.getElementById('import-result');
       el.style.display='block';
@@ -2898,9 +2899,9 @@ function init(){
   updateFollowToggleBtn();
 
   renderHeroStrip();renderStoryStrip();
-  document.getElementById('lib-count-lbl').textContent=S.stories.length+' stories saved';
+  document.getElementById('lib-count-lbl').textContent=libCountText();
   document.getElementById('hero-count-lbl').textContent=
-    S.heroes.length===0?'Build your squad':S.heroes.length+' hero'+(S.heroes.length>1?'s':'');
+    S.heroes.length===0?'Build your squad':S.heroes.length+(S.heroes.length>1?' heroes':' hero');
 
   window.speechSynthesis?.getVoices();
   // voiceschanged fires asynchronously in Chrome — store voices when ready
