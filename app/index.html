@@ -275,6 +275,23 @@ select.inp{appearance:none;cursor:pointer;}
 .pr-t{font-family:'Baloo 2',cursive;font-weight:800;font-size:.98rem;margin-bottom:4px;}
 .pr-s{font-size:.76rem;color:var(--dim);margin-bottom:13px;line-height:1.5;}
 .pr-confirm{display:none;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.24);border-radius:var(--r);padding:13px;margin-top:10px;font-size:.81rem;line-height:1.6;}
+/* accordion sections (Parent Area) */
+.acc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);margin-bottom:12px;overflow:hidden;}
+.acc[open]{border-color:rgba(167,139,250,.28);}
+.acc>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;min-height:60px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.acc>summary::-webkit-details-marker{display:none;}
+.acc>summary:focus-visible{outline:2px solid var(--v2);outline-offset:-2px;}
+.acc-ic{font-size:1.35rem;width:30px;text-align:center;flex-shrink:0;}
+.acc-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.acc-t{font-family:'Baloo 2',cursive;font-size:1.02rem;font-weight:800;line-height:1.15;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.acc-tag{font-family:'Nunito',sans-serif;font-size:.6rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);border:1px solid var(--bdr);border-radius:var(--pill);padding:1px 7px;}
+.acc-s{font-size:.72rem;color:var(--dim);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.acc-s.ok{color:var(--mint2);}
+.acc-chev{font-size:1.5rem;line-height:1;color:var(--dim);transition:transform .2s;flex-shrink:0;}
+.acc[open]>summary .acc-chev{transform:rotate(90deg);}
+.acc-b{padding:2px 16px 18px;}
+.acc-b>.api-t:first-child{margin-top:0;}
+@media (prefers-reduced-motion:reduce){.acc-chev{transition:none;}}
 /* voice picker */
 .voice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
 .vc{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--r);padding:12px 10px;cursor:pointer;transition:all .15s;}
@@ -664,8 +681,9 @@ select.inp{appearance:none;cursor:pointer;}
     </div>
 
     <!-- Profile -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">👤 Profile</div></div>
-    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
+<details class="acc" id="acc-profile" data-acc="profile" open>
+      <summary><span class="acc-ic" aria-hidden="true">👤</span><span class="acc-tx"><span class="acc-t">Profile</span><span class="acc-s" id="sum-profile">Child's name & age</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
       <label class="lbl">Child's Name</label>
       <input class="inp" id="par-name" type="text" placeholder="e.g. Alex">
       <label class="lbl">Age Group</label>
@@ -673,11 +691,13 @@ select.inp{appearance:none;cursor:pointer;}
       <label class="lbl">Parent Email <em>(optional)</em></label>
       <input class="inp" id="par-email" type="email" placeholder="parent@email.com">
       <button class="btn btn-m" onclick="saveProfile()">💾 Save Profile</button>
-    </div>
+      </div>
+    </details>
 
     <!-- Artwork Tools (Parent/Advanced) -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎨 Artwork Tools</div></div>
-    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
+<details class="acc" id="acc-art" data-acc="art">
+      <summary><span class="acc-ic" aria-hidden="true">🎨</span><span class="acc-tx"><span class="acc-t">Artwork Tools<span class="acc-tag">Optional</span></span><span class="acc-s" id="sum-art">Add artwork to a story by image URL</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
       <p style="font-size:.78rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Add artwork to the currently open story. Open a story in the reader first, then use one of these tools.</p>
 
       <!-- Add Artwork by URL -->
@@ -692,11 +712,13 @@ select.inp{appearance:none;cursor:pointer;}
       <div style="background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:var(--r);padding:11px 13px;font-size:.76rem;color:var(--dim);line-height:1.5;">
         💡 <strong style="color:var(--txt);">Tip:</strong> Use the <strong style="color:var(--txt);">🎨 Get Artwork</strong> or <strong style="color:var(--txt);">🖼️ Get Full Illustration</strong> buttons in the reader — they copy your story prompt automatically and open Gemini for you.
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- Voice -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎙️ Narrator Voice</div></div>
-    <div class="api-wrap">
+<details class="acc" id="acc-voice" data-acc="voice">
+      <summary><span class="acc-ic" aria-hidden="true">🎙️</span><span class="acc-tx"><span class="acc-t">Narrator Voice<span class="acc-tag">Optional</span></span><span class="acc-s" id="sum-voice">Device voice</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
       <div class="api-t">Choose Voice Engine</div>
       <div class="api-s">Pick how the story gets read aloud. <strong>Device Voice</strong> is free and works on all devices — sounds great on iPhone/iPad with Siri voices. <strong>ElevenLabs</strong> is the most lifelike. <strong>OpenAI</strong> is very natural at a tiny cost.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
@@ -745,11 +767,13 @@ select.inp{appearance:none;cursor:pointer;}
           <div class="voice-grid" id="oai-voice-grid"></div>
         </div>
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- Groq -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🧠 Groq AI (Story Generation)</div></div>
-    <div class="api-wrap">
+<details class="acc" id="acc-groq" data-acc="groq">
+      <summary><span class="acc-ic" aria-hidden="true">🧠</span><span class="acc-tx"><span class="acc-t">Story AI</span><span class="acc-s" id="sum-groq">Groq · no key, demo stories</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
       <div class="api-t">🔑 Groq API Key</div>
       <div class="api-s">Enables live AI story generation (default model: Llama 3.3 70B). Get a free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></div>
       <div class="api-iw"><input class="inp" id="groq-inp" type="password" placeholder="gsk_xxxxxxxxxxxxxxxxxxxx"><div class="api-eye" onclick="toggleEye('groq-inp')">👁️</div></div>
@@ -764,11 +788,13 @@ select.inp{appearance:none;cursor:pointer;}
         <button class="btn btn-ghost" style="width:auto;margin:0;padding:12px 14px;font-size:.85rem;" onclick="refreshGroqModels()">🔄 Refresh</button>
       </div>
       <div class="api-s" id="groq-model-note" style="margin:6px 0 0;"></div>
-    </div>
+      </div>
+    </details>
 
     <!-- Gemini API (optional, paid key) -->
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">🎨 Gemini API (optional · paid key)</div></div>
-    <div class="api-wrap">
+<details class="acc" id="acc-gem" data-acc="gem">
+      <summary><span class="acc-ic" aria-hidden="true">✨</span><span class="acc-tx"><span class="acc-t">Illustration AI<span class="acc-tag">Optional · paid key</span></span><span class="acc-s" id="sum-gem">Gemini · website flow</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
       <div class="api-t">🔑 Gemini API Key</div>
       <div class="api-s">Optional. With a paid Google key (billing enabled) the reader can generate illustrations for you in one tap. Without one, artwork keeps using the Gemini website flow. Get a key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>.</div>
       <div class="api-iw"><input class="inp" id="gem-inp" type="password" placeholder="AIza…" aria-label="Gemini API key"><div class="api-eye" onclick="toggleEye('gem-inp')">👁️</div></div>
@@ -782,7 +808,8 @@ select.inp{appearance:none;cursor:pointer;}
         <select class="inp" id="gem-model-sel" aria-labelledby="gem-model-lbl" onchange="setGemModel(this.value)" style="margin:0;flex:1;min-width:0;"></select>
         <button class="btn btn-ghost" style="width:auto;margin:0;padding:12px 14px;font-size:.85rem;" onclick="refreshGemModels()">🔄 Refresh</button>
       </div>
-    </div>
+      </div>
+    </details>
 
     <!-- Print -->
     <!-- Hidden until real print ordering exists (requestPrint() only simulates a send). -->
@@ -798,12 +825,21 @@ select.inp{appearance:none;cursor:pointer;}
       <div class="pr-confirm" id="pr-confirm">✅ <strong>Email sent!</strong> Check your inbox for the secure Peecho checkout link.</div>
     </div>
 
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">📅 Memory Lane</div></div>
-    <div id="memory-lane"></div>
-    <div class="sec" style="padding:12px 0 11px;"><div class="sec-t">📄 Export Stories as PDF</div></div>
-    <div id="pdf-story-list" style="margin-bottom:16px;"></div>
-    <div class="sec" style="padding:0 0 11px;"><div class="sec-t">💾 Data & Keys</div></div>
-    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--rr);padding:18px;margin-bottom:16px;">
+<details class="acc" id="acc-mem" data-acc="mem">
+      <summary><span class="acc-ic" aria-hidden="true">📅</span><span class="acc-tx"><span class="acc-t">Memory Lane</span><span class="acc-s" id="sum-mem">Recent stories</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
+        <div id="memory-lane"></div>
+      </div>
+    </details>
+    <details class="acc" id="acc-pdf" data-acc="pdf">
+      <summary><span class="acc-ic" aria-hidden="true">📄</span><span class="acc-tx"><span class="acc-t">Export Stories as PDF</span><span class="acc-s" id="sum-pdf">Save a story to print or share</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
+        <div id="pdf-story-list"></div>
+      </div>
+    </details>
+<details class="acc" id="acc-data" data-acc="data">
+      <summary><span class="acc-ic" aria-hidden="true">💾</span><span class="acc-tx"><span class="acc-t">Data & Keys</span><span class="acc-s" id="sum-data">Back up, export & restore</span></span><span class="acc-chev" aria-hidden="true">›</span></summary>
+      <div class="acc-b">
       <p style="font-size:.8rem;color:var(--dim);line-height:1.55;margin-bottom:14px;">Export saves your stories, heroes, API keys, XP and progress. Import restores everything on any device.</p>
 
       <div style="background:var(--ink3);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:12px;">
@@ -822,7 +858,8 @@ select.inp{appearance:none;cursor:pointer;}
       <button class="btn btn-ghost" onclick="document.getElementById('import-file-inp').click()">📥 Import / Restore from JSON</button>
       <input type="file" id="import-file-inp" accept=".json,application/json" style="display:none" onchange="importAll(this)">
       <div id="import-result" style="display:none;margin-top:12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:var(--r);padding:12px;font-size:.8rem;line-height:1.55;"></div>
-    </div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -896,7 +933,7 @@ const SAMPLE_ART={"sample-1": "data:image/webp;base64,UklGRhrnAABXRUJQVlA4IA7nAA
 </script>
 <script>
 'use strict';
-const APP_VERSION='3.7'; // keep in sync with VERSION in sw.js
+const APP_VERSION='3.8'; // keep in sync with VERSION in sw.js
 // ─── HELPERS ────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let _tt;
@@ -3366,6 +3403,41 @@ function showInstallBanner() {
   document.getElementById('install-no').onclick = () => banner.remove();
   setTimeout(() => banner?.remove(), 8000);
 }
+
+// ── Parent Area: collapsible sections ──
+function parSum(){
+  const set=(id,txt,ok)=>{const e=document.getElementById('sum-'+id);if(!e)return;e.textContent=txt;e.classList.toggle('ok',!!ok);};
+  const ls=k=>{try{return localStorage.getItem(k)||'';}catch(e){return '';}};
+  const eng=(typeof S!=='undefined'&&S.voiceEngine)||ls('sm_engine')||'browser';
+  const ek=ls('el_key'),ok=ls('oai_key');
+  if(eng==='elevenlabs')set('voice',ek.length>8?'ElevenLabs · connected':'ElevenLabs · add key',ek.length>8);
+  else if(eng==='openai')set('voice',ok.startsWith('sk-')?'OpenAI TTS · connected':'OpenAI TTS · add key',ok.startsWith('sk-'));
+  else set('voice','Device voice',false);
+  const gk=ls('groq_key');
+  set('groq',gk.startsWith('gsk_')?'Groq · connected':'Groq · no key, demo stories',gk.startsWith('gsk_'));
+  const mk=ls('gem_key'),fl=ls('gem_premium');
+  if(!mk)set('gem','Gemini · website flow',false);
+  else if(fl==='1')set('gem','Gemini · in-app art on',true);
+  else if(fl==='0')set('gem','Gemini · key has no image access',false);
+  else set('gem','Gemini · key saved, not tested',false);
+  const nm=ls('par_name');
+  set('profile',nm?nm+(document.getElementById('par-age')?' · '+document.getElementById('par-age').value:''):"Child's name & age",false);
+}
+(function initAcc(){
+  let st={};try{st=JSON.parse(localStorage.getItem('sm_acc')||'{}');}catch(e){}
+  document.querySelectorAll('#pg-parent details.acc').forEach(d=>{
+    const id=d.dataset.acc;
+    if(id in st)d.open=!!st[id];
+    d.addEventListener('toggle',()=>{st[id]=d.open;try{localStorage.setItem('sm_acc',JSON.stringify(st));}catch(e){}});
+  });
+  ['updateGroqStatus','updateElStatus','updateOAIStatus','updateGemStatus','setVoiceEngine','saveProfile'].forEach(n=>{
+    const f=window[n];if(typeof f!=='function')return;
+    window[n]=function(){const r=f.apply(this,arguments);try{parSum();}catch(e){}return r;};
+  });
+  const pg=document.getElementById('pg-parent');
+  if(pg)pg.addEventListener('click',e=>{if(e.target.closest('.btn,.vc'))setTimeout(parSum,50);});
+  parSum();
+})();
 </script>
 </body>
 </html>
