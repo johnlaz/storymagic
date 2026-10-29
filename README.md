@@ -55,6 +55,9 @@ The version shown in the app header comes from `APP_VERSION`.
 
 ## Changelog
 
+### v3.8
+- Parent Area is now a set of collapsible sections with a one-line status on each (Profile stays open; voice, AI keys, artwork tools, memory lane, PDF export and data are tucked away). Open/closed state is remembered.
+
 ### v3.7
 - Sample artwork is now embedded in the app itself (no separate image requests), so Add sample library works offline and on any host.
 
